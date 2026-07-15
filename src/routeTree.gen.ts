@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
@@ -17,7 +18,13 @@ import { Route as AuthenticatedLicencasRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedCalendarioRouteImport } from './routes/_authenticated/calendario'
 import { Route as AuthenticatedUnidadesIdRouteImport } from './routes/_authenticated/unidades.$id'
+import { Route as ApiPublicHooksEnviarAlertasRouteImport } from './routes/api/public/hooks/enviar-alertas'
 
+const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
+  id: '/sitemap.xml',
+  path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthRoute = AuthRouteImport.update({
   id: '/auth',
   path: '/auth',
@@ -57,75 +64,102 @@ const AuthenticatedUnidadesIdRoute = AuthenticatedUnidadesIdRouteImport.update({
   path: '/$id',
   getParentRoute: () => AuthenticatedUnidadesRoute,
 } as any)
+const ApiPublicHooksEnviarAlertasRoute =
+  ApiPublicHooksEnviarAlertasRouteImport.update({
+    id: '/api/public/hooks/enviar-alertas',
+    path: '/api/public/hooks/enviar-alertas',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/calendario': typeof AuthenticatedCalendarioRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/licencas': typeof AuthenticatedLicencasRoute
   '/unidades': typeof AuthenticatedUnidadesRouteWithChildren
   '/unidades/$id': typeof AuthenticatedUnidadesIdRoute
+  '/api/public/hooks/enviar-alertas': typeof ApiPublicHooksEnviarAlertasRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/calendario': typeof AuthenticatedCalendarioRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/licencas': typeof AuthenticatedLicencasRoute
   '/unidades': typeof AuthenticatedUnidadesRouteWithChildren
   '/unidades/$id': typeof AuthenticatedUnidadesIdRoute
+  '/api/public/hooks/enviar-alertas': typeof ApiPublicHooksEnviarAlertasRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/sitemap.xml': typeof SitemapDotxmlRoute
   '/_authenticated/calendario': typeof AuthenticatedCalendarioRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/licencas': typeof AuthenticatedLicencasRoute
   '/_authenticated/unidades': typeof AuthenticatedUnidadesRouteWithChildren
   '/_authenticated/unidades/$id': typeof AuthenticatedUnidadesIdRoute
+  '/api/public/hooks/enviar-alertas': typeof ApiPublicHooksEnviarAlertasRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/auth'
+    | '/sitemap.xml'
     | '/calendario'
     | '/dashboard'
     | '/licencas'
     | '/unidades'
     | '/unidades/$id'
+    | '/api/public/hooks/enviar-alertas'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
+    | '/sitemap.xml'
     | '/calendario'
     | '/dashboard'
     | '/licencas'
     | '/unidades'
     | '/unidades/$id'
+    | '/api/public/hooks/enviar-alertas'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/sitemap.xml'
     | '/_authenticated/calendario'
     | '/_authenticated/dashboard'
     | '/_authenticated/licencas'
     | '/_authenticated/unidades'
     | '/_authenticated/unidades/$id'
+    | '/api/public/hooks/enviar-alertas'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  ApiPublicHooksEnviarAlertasRoute: typeof ApiPublicHooksEnviarAlertasRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/sitemap.xml': {
+      id: '/sitemap.xml'
+      path: '/sitemap.xml'
+      fullPath: '/sitemap.xml'
+      preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth': {
       id: '/auth'
       path: '/auth'
@@ -182,6 +216,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedUnidadesIdRouteImport
       parentRoute: typeof AuthenticatedUnidadesRoute
     }
+    '/api/public/hooks/enviar-alertas': {
+      id: '/api/public/hooks/enviar-alertas'
+      path: '/api/public/hooks/enviar-alertas'
+      fullPath: '/api/public/hooks/enviar-alertas'
+      preLoaderRoute: typeof ApiPublicHooksEnviarAlertasRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -219,6 +260,8 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  SitemapDotxmlRoute: SitemapDotxmlRoute,
+  ApiPublicHooksEnviarAlertasRoute: ApiPublicHooksEnviarAlertasRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
