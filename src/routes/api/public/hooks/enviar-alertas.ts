@@ -53,12 +53,12 @@ export const Route = createFileRoute("/api/public/hooks/enviar-alertas")({
             </div>`;
 
             try {
-              const { sendLovableEmail } = await import("@lovable.dev/email-js");
-              await sendLovableEmail({
-                apiKey: process.env.LOVABLE_API_KEY!,
-                from: "IGESDF Compliance <notify@lovable.app>",
-                to: destinatario, subject, html,
-              } as any);
+              const mod: any = await import("@lovable.dev/email-js");
+              const send = mod.sendLovableEmail ?? mod.default?.sendLovableEmail ?? mod.default;
+              await send(
+                { apiKey: process.env.LOVABLE_API_KEY!, from: "IGESDF Compliance <notify@lovable.app>", to: destinatario, subject, html },
+                {}
+              );
               await supabaseAdmin.from("notificacoes_vencimento").insert({
                 licenca_id: l.id, dias_antes: dias, destinatario,
               });
