@@ -11,16 +11,16 @@ export type StatusLicenca =
 export type TipoUnidade = "hospital" | "upa" | "administrativo" | "laboratorio" | "outro";
 
 export const ORGAOS: { value: Orgao; label: string; descricao: string }[] = [
-  { value: "VISA", label: "Vigilância Sanitária", descricao: "DIVISA/SES-DF — Certificado de Licenciamento Sanitário" },
+  { value: "VISA", label: "DIVISA/SES-DF (Vigilância Sanitária)", descricao: "Certificado de Licenciamento Sanitário — licenciamento por CNAE" },
   { value: "CBMDF", label: "Corpo de Bombeiros", descricao: "Segurança contra incêndio e pânico (Risco III)" },
-  { value: "IBRAM", label: "Brasília Ambiental", descricao: "Licenciamento ambiental + PGRSS" },
-  { value: "SEOP", label: "SEOP-DF", descricao: "Proteção da Ordem Urbanística" },
+  { value: "IBRAM", label: "IBRAM (Brasília Ambiental)", descricao: "Licenciamento ambiental + PGRSS" },
+  { value: "SEOP", label: "SEPROT-DF (Ordem Urbanística)", descricao: "Viabilidade de endereço / uso do solo" },
   { value: "DEFESA_CIVIL", label: "Defesa Civil", descricao: "Subsecretaria do Sistema de Defesa Civil" },
   { value: "PCDF", label: "Polícia Civil DF", descricao: "Licenciamento PCDF" },
-  { value: "SEAGRI", label: "SEAGRI", descricao: "Agricultura, Abastecimento e Desenvolvimento Rural" },
-  { value: "SEEDF", label: "SEEDF", descricao: "Secretaria de Educação DF" },
+  { value: "SEAGRI", label: "SEAGRI-DF", descricao: "Serviços de alimentação / nutrição hospitalar" },
+  { value: "SEEDF", label: "SEEDF", descricao: "Secretaria de Estado de Educação do DF" },
   { value: "CNES", label: "CNES/DATASUS", descricao: "Cadastro Nacional de Estabelecimentos de Saúde" },
-  { value: "ADM_REGIONAL", label: "Adm. Regional", descricao: "Licença de Funcionamento" },
+  { value: "ADM_REGIONAL", label: "Administração Regional", descricao: "Licença de Funcionamento" },
   { value: "ANVISA", label: "ANVISA (AFE)", descricao: "Autorização de Funcionamento (medicamentos controlados)" },
   { value: "CNEN", label: "CNEN", descricao: "Autoridade Nuclear (radiodiagnóstico)" },
   { value: "CRM", label: "CRM-DF", descricao: "Conselho Regional de Medicina" },
@@ -29,6 +29,13 @@ export const ORGAOS: { value: Orgao; label: string; descricao: string }[] = [
   { value: "JUCIS", label: "JUCIS-DF", descricao: "Junta Comercial" },
   { value: "OUTRO", label: "Outro", descricao: "Outro órgão" },
 ];
+
+export const CHECKLIST_STATUS_LABEL: Record<string, string> = {
+  pendente: "Pendente",
+  em_curso: "Em curso",
+  concluido: "Concluído",
+  nao_aplicavel: "Não aplicável",
+};
 
 export const STATUS_LABEL: Record<StatusLicenca, string> = {
   nao_iniciado: "Não iniciado",

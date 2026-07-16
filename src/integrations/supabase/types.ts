@@ -44,11 +44,170 @@ export type Database = {
         }
         Relationships: []
       }
-      documentos: {
+      checklist_itens: {
         Row: {
-          categoria: string
+          concluido_por: string | null
+          created_at: string
+          data_conclusao: string | null
+          descricao: string | null
+          id: string
+          licenca_id: string
+          observacoes: string | null
+          ordem: number
+          responsavel: string | null
+          status: string
+          template_id: string | null
+          tipo: string
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          concluido_por?: string | null
+          created_at?: string
+          data_conclusao?: string | null
+          descricao?: string | null
+          id?: string
+          licenca_id: string
+          observacoes?: string | null
+          ordem?: number
+          responsavel?: string | null
+          status?: string
+          template_id?: string | null
+          tipo?: string
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          concluido_por?: string | null
+          created_at?: string
+          data_conclusao?: string | null
+          descricao?: string | null
+          id?: string
+          licenca_id?: string
+          observacoes?: string | null
+          ordem?: number
+          responsavel?: string | null
+          status?: string
+          template_id?: string | null
+          tipo?: string
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checklist_itens_licenca_id_fkey"
+            columns: ["licenca_id"]
+            isOneToOne: false
+            referencedRelation: "licencas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checklist_itens_licenca_id_fkey"
+            columns: ["licenca_id"]
+            isOneToOne: false
+            referencedRelation: "v_licencas_dashboard"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "checklist_itens_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "checklist_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      checklist_templates: {
+        Row: {
           created_at: string
           descricao: string | null
+          id: string
+          obrigatorio: boolean
+          ordem: number
+          orgao: Database["public"]["Enums"]["orgao_licenciador"]
+          responsavel_padrao: string | null
+          tipo: string
+          titulo: string
+        }
+        Insert: {
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          obrigatorio?: boolean
+          ordem: number
+          orgao: Database["public"]["Enums"]["orgao_licenciador"]
+          responsavel_padrao?: string | null
+          tipo?: string
+          titulo: string
+        }
+        Update: {
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          obrigatorio?: boolean
+          ordem?: number
+          orgao?: Database["public"]["Enums"]["orgao_licenciador"]
+          responsavel_padrao?: string | null
+          tipo?: string
+          titulo?: string
+        }
+        Relationships: []
+      }
+      cnaes_unidade: {
+        Row: {
+          cnpj_ses_legado: string | null
+          codigo: string
+          created_at: string
+          data_vencimento: string | null
+          descricao: string
+          id: string
+          observacoes: string | null
+          status: Database["public"]["Enums"]["status_licenca"]
+          unidade_id: string
+          updated_at: string
+        }
+        Insert: {
+          cnpj_ses_legado?: string | null
+          codigo: string
+          created_at?: string
+          data_vencimento?: string | null
+          descricao: string
+          id?: string
+          observacoes?: string | null
+          status?: Database["public"]["Enums"]["status_licenca"]
+          unidade_id: string
+          updated_at?: string
+        }
+        Update: {
+          cnpj_ses_legado?: string | null
+          codigo?: string
+          created_at?: string
+          data_vencimento?: string | null
+          descricao?: string
+          id?: string
+          observacoes?: string | null
+          status?: Database["public"]["Enums"]["status_licenca"]
+          unidade_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "cnaes_unidade_unidade_id_fkey"
+            columns: ["unidade_id"]
+            isOneToOne: false
+            referencedRelation: "unidades"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      documentos: {
+        Row: {
+          ativo: boolean
+          categoria: string
+          comentario_versao: string | null
+          created_at: string
+          descricao: string | null
+          documento_pai_id: string | null
           id: string
           licenca_id: string | null
           mime_type: string | null
@@ -57,11 +216,15 @@ export type Database = {
           tamanho_bytes: number | null
           unidade_id: string | null
           uploaded_by: string | null
+          versao: number
         }
         Insert: {
+          ativo?: boolean
           categoria?: string
+          comentario_versao?: string | null
           created_at?: string
           descricao?: string | null
+          documento_pai_id?: string | null
           id?: string
           licenca_id?: string | null
           mime_type?: string | null
@@ -70,11 +233,15 @@ export type Database = {
           tamanho_bytes?: number | null
           unidade_id?: string | null
           uploaded_by?: string | null
+          versao?: number
         }
         Update: {
+          ativo?: boolean
           categoria?: string
+          comentario_versao?: string | null
           created_at?: string
           descricao?: string | null
+          documento_pai_id?: string | null
           id?: string
           licenca_id?: string | null
           mime_type?: string | null
@@ -83,8 +250,16 @@ export type Database = {
           tamanho_bytes?: number | null
           unidade_id?: string | null
           uploaded_by?: string | null
+          versao?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "documentos_documento_pai_id_fkey"
+            columns: ["documento_pai_id"]
+            isOneToOne: false
+            referencedRelation: "documentos"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "documentos_licenca_id_fkey"
             columns: ["licenca_id"]
