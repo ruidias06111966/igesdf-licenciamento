@@ -510,7 +510,7 @@ function DocsInline({ licencaId, unidadeId, docs }: { licencaId: string; unidade
         <SheetHeader><SheetTitle>Documentos da licença</SheetTitle></SheetHeader>
         <div className="p-4 space-y-2">
           <UploadDoc unidadeId={unidadeId} licencaId={licencaId} />
-          {docs.map(d => <DocRow key={d.id} d={d} qk={["unidade", unidadeId]} />)}
+          {docs.map(d => <DocRow key={d.id} d={d} qk={["unidade", unidadeId]} unidadeId={unidadeId} />)}
           {docs.length===0 && <p className="text-sm text-muted-foreground text-center py-4">Sem documentos.</p>}
         </div>
       </SheetContent>
