@@ -7,9 +7,12 @@ export const Route = createFileRoute("/api/public/hooks/enviar-alertas")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const apikey = request.headers.get("apikey");
-        const expected = process.env.SUPABASE_PUBLISHABLE_KEY;
-        if (!apikey || apikey !== expected) {
+        const provided =
+          request.headers.get("x-cron-secret") ??
+          request.headers.get("authorization")?.replace(/^Bearer\s+/i, "") ??
+          "";
+        const expected = process.env.ALERTAS_CRON_SECRET;
+        if (!expected || !provided || provided !== expected) {
           return new Response("Unauthorized", { status: 401 });
         }
         const destinatario = process.env.ALERTAS_EMAIL_DESTINATARIO;
