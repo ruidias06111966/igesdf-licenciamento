@@ -80,10 +80,14 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { title: "IGESDF Compliance — Gestão de Licenciamentos" },
       { name: "description", content: "Sistema de gestão de licenciamentos, alvarás e compliance regulatório da rede hospitalar do IGESDF." },
       { name: "author", content: "IGESDF Compliance" },
-      { property: "og:title", content: "IGESDF Compliance" },
-      { property: "og:description", content: "Controlo integral de licenciamentos, vencimentos e documentos regulatórios." },
+      { property: "og:title", content: "IGESDF Compliance — Gestão de Licenciamentos" },
+      { property: "og:description", content: "Sistema de gestão de licenciamentos, alvarás e compliance regulatório da rede hospitalar do IGESDF." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
+      { name: "twitter:title", content: "IGESDF Compliance — Gestão de Licenciamentos" },
+      { name: "twitter:description", content: "Sistema de gestão de licenciamentos, alvarás e compliance regulatório da rede hospitalar do IGESDF." },
+      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/540dc688-b057-48b8-a6bc-468f43d81e8c/id-preview-ff2015fb--04535702-b9c5-44cc-b745-3d93e4172941.lovable.app-1784162460644.png" },
+      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/540dc688-b057-48b8-a6bc-468f43d81e8c/id-preview-ff2015fb--04535702-b9c5-44cc-b745-3d93e4172941.lovable.app-1784162460644.png" },
     ],
     links: [
       {
