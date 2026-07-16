@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery, queryOptions, useMutation, useQueryClient } from "@tanstack/react-query";
-import { listUnidades, upsertUnidade } from "@/lib/licencas.functions";
+import { listUnidades, upsertUnidade, deleteUnidade } from "@/lib/licencas.functions";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -9,8 +9,9 @@ import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { TIPO_UNIDADE_LABEL, TipoUnidade } from "@/lib/domain";
-import { Plus, Search } from "lucide-react";
+import { Plus, Search, Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -46,26 +47,46 @@ function UnidadesPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
         {filtered.map((u: any) => (
-          <Link key={u.id} to="/unidades/$id" params={{id: u.id}}>
-            <Card className="hover:border-primary/50 transition cursor-pointer h-full">
-              <CardContent className="p-5 space-y-2">
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <div className="text-xs text-muted-foreground">Nº {u.numero_iges ?? "—"}</div>
-                    <div className="font-semibold leading-tight">{u.nome}</div>
-                  </div>
-                  <Badge variant="secondary">{TIPO_UNIDADE_LABEL[u.tipo as TipoUnidade] ?? u.tipo}</Badge>
-                </div>
-                <div className="text-xs text-muted-foreground space-y-0.5">
-                  <div>CNPJ: {u.cnpj ?? "—"}</div>
-                  <div className="line-clamp-2">{u.endereco ?? "Sem endereço"}</div>
-                </div>
-              </CardContent>
-            </Card>
-          </Link>
+          <UnidadeCard key={u.id} u={u} />
         ))}
       </div>
     </div>
+  );
+}
+
+function UnidadeCard({ u }: { u: any }) {
+  const qc = useQueryClient();
+  const del = useMutation({
+    mutationFn: () => deleteUnidade({ data: { id: u.id } }),
+    onSuccess: () => { toast.success("Unidade removida"); qc.invalidateQueries({ queryKey: ["unidades"] }); },
+    onError: (e: any) => toast.error(e.message),
+  });
+  return (
+    <Card className="hover:border-primary/50 transition h-full">
+      <CardContent className="p-5 space-y-2">
+        <div className="flex items-start justify-between gap-2">
+          <Link to="/unidades/$id" params={{id: u.id}} className="flex-1 min-w-0">
+            <div className="text-xs text-muted-foreground">Nº {u.numero_iges ?? "—"}</div>
+            <div className="font-semibold leading-tight hover:underline">{u.nome}</div>
+          </Link>
+          <Badge variant="secondary">{TIPO_UNIDADE_LABEL[u.tipo as TipoUnidade] ?? u.tipo}</Badge>
+        </div>
+        <div className="text-xs text-muted-foreground space-y-0.5">
+          <div>CNPJ: {u.cnpj ?? "—"}</div>
+          <div className="line-clamp-2">{u.endereco ?? "Sem endereço"}</div>
+        </div>
+        <div className="flex justify-end gap-1 pt-1 border-t">
+          <UnidadeForm initial={u} trigger={<Button size="sm" variant="ghost"><Pencil className="size-3.5 mr-1" /> Alterar</Button>} />
+          <AlertDialog>
+            <AlertDialogTrigger asChild><Button size="sm" variant="ghost" className="text-destructive hover:text-destructive"><Trash2 className="size-3.5 mr-1" /> Excluir</Button></AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader><AlertDialogTitle>Remover unidade</AlertDialogTitle><AlertDialogDescription>A unidade será desativada. Licenças, CNAEs e documentos ficam preservados no histórico.</AlertDialogDescription></AlertDialogHeader>
+              <AlertDialogFooter><AlertDialogCancel>Cancelar</AlertDialogCancel><AlertDialogAction disabled={del.isPending} onClick={()=>del.mutate()}>Excluir</AlertDialogAction></AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
 
