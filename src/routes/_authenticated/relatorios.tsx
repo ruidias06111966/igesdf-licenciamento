@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { ORGAOS, STATUS_LABEL, semaforoColor, formatDate, parseCnae } from "@/lib/domain";
 import { supabase } from "@/integrations/supabase/client";
 import { Printer, Upload, FileCheck2 } from "lucide-react";
-import { useState, useMemo } from "react";
+import { useState, useMemo, Fragment } from "react";
 import { toast } from "sonner";
 
 const opts = queryOptions({ queryKey: ["licencas-all"], queryFn: () => listDashboard() });
@@ -145,8 +145,8 @@ function RelatoriosPage() {
                   const org = ORGAOS.find(o => o.value === d.orgao);
                   const cn = parseCnae(d.descricao);
                   return (
-                    <>
-                    <tr key={d.id} className="border-b last:border-0">
+                    <Fragment key={d.id}>
+                    <tr className="border-b last:border-0">
                       <td className="p-2">{modo === "unidade" ? (org?.label ?? d.orgao) : d.unidade_nome}</td>
                       <td className="p-2 font-mono text-xs whitespace-nowrap">{cn.codigo ?? "—"}</td>
                       <td className="p-2 text-xs">{cn.label ?? "—"}</td>
@@ -161,7 +161,7 @@ function RelatoriosPage() {
                         <td colSpan={8} className="px-2 pb-2 text-xs italic text-muted-foreground">Obs.: {d.observacoes}</td>
                       </tr>
                     )}
-                    </>
+                    </Fragment>
                   );
                 })}
               </tbody>
