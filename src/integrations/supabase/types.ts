@@ -206,6 +206,7 @@ export type Database = {
           categoria: string
           comentario_versao: string | null
           created_at: string
+          data_validade: string | null
           descricao: string | null
           documento_pai_id: string | null
           id: string
@@ -223,6 +224,7 @@ export type Database = {
           categoria?: string
           comentario_versao?: string | null
           created_at?: string
+          data_validade?: string | null
           descricao?: string | null
           documento_pai_id?: string | null
           id?: string
@@ -240,6 +242,7 @@ export type Database = {
           categoria?: string
           comentario_versao?: string | null
           created_at?: string
+          data_validade?: string | null
           descricao?: string | null
           documento_pai_id?: string | null
           id?: string
@@ -603,6 +606,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      set_versao_vigente: { Args: { _doc_id: string }; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "analista" | "viewer"
