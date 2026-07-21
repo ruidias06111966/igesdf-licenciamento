@@ -451,14 +451,23 @@ function DocRow({ d, qk, unidadeId }: { d: any; qk: any[]; unidadeId?: string })
       window.open(url, "_blank");
     } catch (e: any) { toast.error(e.message); }
   }
+  const validade = d.data_validade ? new Date(d.data_validade) : null;
+  const validadeCls = validade
+    ? (validade < new Date() ? "bg-destructive/15 text-destructive" : ((validade.getTime()-Date.now())/86400000 <= 90 ? "bg-warning/20" : "bg-success/15 text-success"))
+    : "";
   return (
     <div className="flex items-center justify-between border rounded-md p-3 gap-2">
       <div className="min-w-0 flex-1">
-        <div className="text-sm font-medium truncate">{d.nome} {d.versao > 1 && <Badge variant="secondary" className="ml-1 text-[10px]">v{d.versao}</Badge>}</div>
-        <div className="text-xs text-muted-foreground">{d.mime_type ?? "—"} • {(d.tamanho_bytes ?? 0)/1024 | 0} KB</div>
+        <div className="text-sm font-medium truncate flex flex-wrap items-center gap-1">
+          {d.nome}
+          <Badge variant="secondary" className="text-[10px]">v{d.versao}</Badge>
+          {d.ativo && <Badge className="text-[10px] bg-success/15 text-success border-0">vigente</Badge>}
+          {validade && <Badge className={`text-[10px] border-0 ${validadeCls}`}>Validade {formatDate(d.data_validade)}</Badge>}
+        </div>
+        <div className="text-xs text-muted-foreground">{d.mime_type ?? "—"} • {(d.tamanho_bytes ?? 0)/1024 | 0} KB · Carregado {new Date(d.created_at).toLocaleDateString("pt-PT")}</div>
       </div>
       {unidadeId && <NovaVersaoBtn documentoId={d.id} unidadeId={unidadeId} qk={qk} />}
-      <HistoricoBtn documentoId={d.id} />
+      <HistoricoBtn documentoId={d.id} qk={qk} />
       <Button size="icon" variant="ghost" onClick={download}><Download className="size-4" /></Button>
       <DeleteBtn onConfirm={()=>deleteDocumento({ data: { id: d.id, storage_path: d.storage_path } })} qk={qk} />
     </div>
