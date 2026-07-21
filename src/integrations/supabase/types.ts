@@ -624,6 +624,8 @@ export type Database = {
         | "ANVISA"
         | "JUCIS"
         | "OUTRO"
+        | "DF_LEGAL"
+        | "SUSDEC"
       status_licenca:
         | "nao_iniciado"
         | "em_analise"
@@ -787,6 +789,8 @@ export const Constants = {
         "ANVISA",
         "JUCIS",
         "OUTRO",
+        "DF_LEGAL",
+        "SUSDEC",
       ],
       status_licenca: [
         "nao_iniciado",

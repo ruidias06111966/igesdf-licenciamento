@@ -210,7 +210,7 @@ export const upsertUnidade = createServerFn({ method: "POST" })
 const licencaSchema = z.object({
   id: z.string().uuid().optional(),
   unidade_id: z.string().uuid(),
-  orgao: z.enum(["VISA","CBMDF","IBRAM","SEOP","PCDF","SEAGRI","SEEDF","DEFESA_CIVIL","CNES","ADM_REGIONAL","CRM","COREN","CRF","CNEN","ANVISA","JUCIS","OUTRO"]),
+  orgao: z.enum(["VISA","CBMDF","IBRAM","SEOP","DF_LEGAL","SUSDEC","PCDF","SEAGRI","SEEDF","DEFESA_CIVIL","CNES","ADM_REGIONAL","CRM","COREN","CRF","CNEN","ANVISA","JUCIS","OUTRO"]),
   descricao: z.string().trim().max(200).nullable().optional(),
   numero: z.string().trim().max(80).nullable().optional(),
   processo_sei: z.string().trim().max(60).nullable().optional(),

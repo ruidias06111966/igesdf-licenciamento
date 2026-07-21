@@ -1,6 +1,6 @@
 // Domínio: mapeamentos de enums e helpers de apresentação
 export type Orgao =
-  | "VISA" | "CBMDF" | "IBRAM" | "SEOP" | "PCDF" | "SEAGRI" | "SEEDF"
+  | "VISA" | "CBMDF" | "IBRAM" | "SEOP" | "DF_LEGAL" | "SUSDEC" | "PCDF" | "SEAGRI" | "SEEDF"
   | "DEFESA_CIVIL" | "CNES" | "ADM_REGIONAL" | "CRM" | "COREN" | "CRF"
   | "CNEN" | "ANVISA" | "JUCIS" | "OUTRO";
 
@@ -11,14 +11,16 @@ export type StatusLicenca =
 export type TipoUnidade = "hospital" | "upa" | "administrativo" | "laboratorio" | "outro";
 
 export const ORGAOS: { value: Orgao; label: string; descricao: string }[] = [
-  { value: "VISA", label: "DIVISA/SES-DF (Vigilância Sanitária)", descricao: "Certificado de Licenciamento Sanitário — licenciamento por CNAE" },
-  { value: "CBMDF", label: "Corpo de Bombeiros", descricao: "Segurança contra incêndio e pânico (Risco III)" },
-  { value: "IBRAM", label: "IBRAM (Brasília Ambiental)", descricao: "Licenciamento ambiental + PGRSS" },
-  { value: "SEOP", label: "SEPROT-DF (Ordem Urbanística)", descricao: "Viabilidade de endereço / uso do solo" },
-  { value: "DEFESA_CIVIL", label: "Defesa Civil", descricao: "Subsecretaria do Sistema de Defesa Civil" },
+  { value: "DF_LEGAL", label: "DF LEGAL", descricao: "Secretaria de Estado de Proteção da Ordem Urbanística do DF" },
+  { value: "SUSDEC", label: "SUSDEC", descricao: "Subsecretaria do Sistema de Defesa Civil" },
+  { value: "CBMDF", label: "CBM", descricao: "Corpo de Bombeiros Militar do DF — segurança contra incêndio e pânico" },
+  { value: "IBRAM", label: "IBRAM", descricao: "Instituto Brasília Ambiental — licenciamento ambiental + PGRSS" },
+  { value: "VISA", label: "VISADF", descricao: "Vigilância Sanitária do DF — licenciamento sanitário por CNAE" },
   { value: "PCDF", label: "Polícia Civil DF", descricao: "Licenciamento PCDF" },
-  { value: "SEAGRI", label: "SEAGRI-DF", descricao: "Serviços de alimentação / nutrição hospitalar" },
+  { value: "SEAGRI", label: "SEAGRI", descricao: "Secretaria de Agricultura, Abastecimento e Desenvolvimento Rural do DF" },
   { value: "SEEDF", label: "SEEDF", descricao: "Secretaria de Estado de Educação do DF" },
+  { value: "SEOP", label: "SEOP (legado)", descricao: "Antiga nomenclatura da DF LEGAL" },
+  { value: "DEFESA_CIVIL", label: "Defesa Civil (legado)", descricao: "Antiga nomenclatura da SUSDEC" },
   { value: "CNES", label: "CNES/DATASUS", descricao: "Cadastro Nacional de Estabelecimentos de Saúde" },
   { value: "ADM_REGIONAL", label: "Administração Regional", descricao: "Licença de Funcionamento" },
   { value: "ANVISA", label: "ANVISA (AFE)", descricao: "Autorização de Funcionamento (medicamentos controlados)" },
