@@ -134,6 +134,7 @@ export const registrarNovaVersao = createServerFn({ method: "POST" })
     mime_type: z.string().max(100).nullable().optional(),
     tamanho_bytes: z.number().int().nullable().optional(),
     comentario_versao: z.string().max(400).nullable().optional(),
+    data_validade: z.string().nullable().optional(),
   }).parse(input))
   .handler(async ({ data, context }) => {
     const { data: pai, error: pe } = await context.supabase.from("documentos").select("*").eq("id", data.documento_pai_id).maybeSingle();
@@ -149,6 +150,7 @@ export const registrarNovaVersao = createServerFn({ method: "POST" })
       tamanho_bytes: data.tamanho_bytes ?? null, uploaded_by: context.userId,
       documento_pai_id: pai.id, versao: (pai.versao ?? 1) + 1, ativo: true,
       comentario_versao: data.comentario_versao ?? null,
+      data_validade: data.data_validade || null,
     }).select("id").single();
     if (error) throw error;
     return { id: ins.id };
@@ -295,9 +297,12 @@ export const registrarDocumento = createServerFn({ method: "POST" })
     mime_type: z.string().max(100).nullable().optional(),
     tamanho_bytes: z.number().int().nullable().optional(),
     descricao: z.string().max(500).nullable().optional(),
+    data_validade: z.string().nullable().optional(),
   }).parse(input))
   .handler(async ({ data, context }) => {
-    const { data: ins, error } = await context.supabase.from("documentos").insert({ ...data, uploaded_by: context.userId }).select("id").single();
+    const clean: any = { ...data, uploaded_by: context.userId };
+    if (!clean.data_validade) clean.data_validade = null;
+    const { data: ins, error } = await context.supabase.from("documentos").insert(clean).select("id").single();
     if (error) throw error;
     return { id: ins.id };
   });
@@ -319,4 +324,53 @@ export const signedDocUrl = createServerFn({ method: "POST" })
     const { data: sig, error } = await context.supabase.storage.from("licencas-docs").createSignedUrl(data.path, 300);
     if (error) throw error;
     return { url: sig.signedUrl };
+  });
+
+// Marca uma versão específica como vigente (arquiva as demais do mesmo grupo)
+export const setVersaoVigente = createServerFn({ method: "POST" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { error } = await context.supabase.rpc("set_versao_vigente", { _doc_id: data.id });
+    if (error) throw error;
+    return { ok: true };
+  });
+
+// Dossiê completo por unidade (para relatório)
+export const getDossieUnidade = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const [uni, lics, rts, docs, cnaes, checklist] = await Promise.all([
+      context.supabase.from("unidades").select("*").eq("id", data.id).maybeSingle(),
+      context.supabase.from("licencas").select("*").eq("unidade_id", data.id).order("orgao"),
+      context.supabase.from("responsaveis_tecnicos").select("*").eq("unidade_id", data.id).order("nome"),
+      context.supabase.from("documentos").select("*").eq("unidade_id", data.id).eq("ativo", true).order("created_at", { ascending: false }),
+      context.supabase.from("cnaes_unidade").select("*").eq("unidade_id", data.id).order("codigo"),
+      context.supabase.from("checklist_itens").select("*, licencas!inner(unidade_id, orgao)").eq("licencas.unidade_id", data.id).order("ordem"),
+    ]);
+    if (uni.error) throw uni.error;
+    if (!uni.data) throw new Error("Unidade não encontrada");
+    return {
+      unidade: uni.data,
+      licencas: lics.data ?? [],
+      responsaveis: rts.data ?? [],
+      documentos: docs.data ?? [],
+      cnaes: cnaes.data ?? [],
+      checklist: checklist.data ?? [],
+    };
+  });
+
+// Próximos passos globais: itens de checklist pendentes/em curso ordenados
+export const listProximosPassos = createServerFn({ method: "GET" })
+  .middleware([requireSupabaseAuth])
+  .handler(async ({ context }) => {
+    const { data, error } = await context.supabase
+      .from("checklist_itens")
+      .select("id, titulo, status, responsavel, data_conclusao, ordem, licencas!inner(id, orgao, unidade_id, data_vencimento, descricao, unidades!inner(id, nome))")
+      .in("status", ["pendente","em_curso"])
+      .order("ordem")
+      .limit(200);
+    if (error) throw error;
+    return data ?? [];
   });
