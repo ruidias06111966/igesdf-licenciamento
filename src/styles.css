@@ -157,18 +157,38 @@
 }
 
 @media print {
-  @page { size: A4 landscape; margin: 12mm; }
-  body { background: white !important; color: black !important; }
+  @page { size: A4 landscape; margin: 8mm; }
+  html, body { background: white !important; color: black !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
+  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
   .no-print, nav, aside, [data-sidebar], header.app-header { display: none !important; }
   .print-only { display: block !important; }
   .print-only-cell { display: table-cell !important; }
   .print-only-row { display: table-row !important; }
-  main, .print-area { padding: 0 !important; }
+  main, .print-area { padding: 0 !important; margin: 0 !important; overflow: visible !important; }
+  /* Force single-column layout on the print root so the sidebar space is reclaimed */
+  body > div, #root, main { display: block !important; grid-template-columns: none !important; width: 100% !important; }
   a { color: inherit !important; text-decoration: none !important; }
-  table { page-break-inside: auto; }
-  tr { page-break-inside: avoid; page-break-after: auto; }
-  .print-area table { font-size: 10px; }
-  .print-area th, .print-area td { padding: 4px 6px !important; }
+
+  /* Tables: allow wrapping, keep rows intact, avoid truncation */
+  .print-area table { font-size: 8.5px; width: 100% !important; table-layout: auto; border-collapse: collapse; }
+  .print-area th, .print-area td {
+    padding: 2px 4px !important;
+    white-space: normal !important;
+    word-break: break-word;
+    overflow: visible !important;
+    text-overflow: clip !important;
+    max-width: none !important;
+    vertical-align: top;
+  }
+  .print-area .truncate { overflow: visible !important; text-overflow: clip !important; white-space: normal !important; }
+
+  /* Avoid breaking data mid-record */
+  .print-area tr, .print-area .print-row { page-break-inside: avoid; break-inside: avoid; }
+  .print-area .card, .print-area [class*="rounded"] { page-break-inside: avoid; break-inside: avoid; }
+  .print-area .grid { display: grid !important; }
+
+  /* Badges: keep their fill visible when printed */
+  .print-area .badge, .print-area [class*="Badge"] { border: 1px solid #999 !important; }
 }
 .print-only { display: none; }
 .print-only-cell { display: none; }
