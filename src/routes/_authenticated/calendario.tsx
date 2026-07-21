@@ -1,14 +1,19 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useSuspenseQuery, queryOptions } from "@tanstack/react-query";
-import { listDashboard } from "@/lib/licencas.functions";
+import { listDashboard, listUnidades } from "@/lib/licencas.functions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Printer } from "lucide-react";
+import { useState } from "react";
 import { ORGAOS, semaforoColor, formatDate, parseCnae } from "@/lib/domain";
 
 const opts = queryOptions({ queryKey: ["licencas-all"], queryFn: () => listDashboard() });
+const unidadesOpts = queryOptions({ queryKey: ["unidades"], queryFn: () => listUnidades() });
 
 export const Route = createFileRoute("/_authenticated/calendario")({
-  loader: ({ context }) => context.queryClient.ensureQueryData(opts),
+  loader: ({ context }) => Promise.all([context.queryClient.ensureQueryData(opts), context.queryClient.ensureQueryData(unidadesOpts)]),
   component: Cal,
   head: () => ({ meta: [{ title: "Vencimentos — IGESDF Compliance" }] }),
   errorComponent: ({ error }) => <div className="p-8 text-destructive">{error.message}</div>,
@@ -27,7 +32,18 @@ function groupByMonth(items: any[]) {
 
 function Cal() {
   const { data } = useSuspenseQuery(opts);
-  const upcoming = data.filter((d: any) => d.data_vencimento && !["dispensada","indeferida"].includes(d.status));
+  const { data: unidades } = useSuspenseQuery(unidadesOpts);
+  const [unidadeF, setUnidadeF] = useState<string>("todos");
+  const [orgaoF, setOrgaoF] = useState<string>("todos");
+  const [cnaeF, setCnaeF] = useState<string>("todos");
+  const cnaesUnicos = Array.from(new Set(data.map((d: any) => parseCnae(d.descricao).codigo).filter(Boolean))).sort() as string[];
+  const upcoming = data.filter((d: any) => {
+    if (!d.data_vencimento || ["dispensada","indeferida"].includes(d.status)) return false;
+    if (unidadeF !== "todos" && d.unidade_id !== unidadeF) return false;
+    if (orgaoF !== "todos" && d.orgao !== orgaoF) return false;
+    if (cnaeF !== "todos" && parseCnae(d.descricao).codigo !== cnaeF) return false;
+    return true;
+  });
   const groups = groupByMonth(upcoming);
   const monthName = (yyyymm: string) => {
     const [y,m] = yyyymm.split("-");
@@ -35,11 +51,37 @@ function Cal() {
   };
 
   return (
-    <div className="p-8 space-y-6">
-      <header>
-        <h1 className="text-2xl font-semibold">Calendário de vencimentos</h1>
-        <p className="text-sm text-muted-foreground">Renove a licença sanitária com pelo menos 60 dias de antecedência.</p>
+    <div className="p-8 space-y-6 print-area">
+      <header className="flex items-center justify-between no-print">
+        <div>
+          <h1 className="text-2xl font-semibold">Calendário de vencimentos</h1>
+          <p className="text-sm text-muted-foreground">Renove a licença sanitária com pelo menos 60 dias de antecedência.</p>
+        </div>
+        <Button variant="outline" onClick={() => window.print()}><Printer className="size-4 mr-1" /> Imprimir PDF</Button>
       </header>
+      <div className="print-only mb-4">
+        <h1 className="text-xl font-semibold">Calendário de vencimentos — IGESDF</h1>
+        <p className="text-xs">
+          {unidadeF !== "todos" && <>Unidade: {unidades.find((u:any)=>u.id===unidadeF)?.nome} · </>}
+          {orgaoF !== "todos" && <>Órgão: {ORGAOS.find(o=>o.value===orgaoF)?.label} · </>}
+          {cnaeF !== "todos" && <>CNAE: {cnaeF} · </>}
+          Emitido {new Date().toLocaleDateString("pt-PT")}
+        </p>
+      </div>
+      <div className="grid md:grid-cols-3 gap-3 no-print">
+        <Select value={unidadeF} onValueChange={setUnidadeF}>
+          <SelectTrigger><SelectValue placeholder="Unidade" /></SelectTrigger>
+          <SelectContent><SelectItem value="todos">Todas as unidades</SelectItem>{unidades.map((u:any)=><SelectItem key={u.id} value={u.id}>{u.nome}</SelectItem>)}</SelectContent>
+        </Select>
+        <Select value={orgaoF} onValueChange={setOrgaoF}>
+          <SelectTrigger><SelectValue placeholder="Órgão" /></SelectTrigger>
+          <SelectContent><SelectItem value="todos">Todos os órgãos</SelectItem>{ORGAOS.map(o=><SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
+        </Select>
+        <Select value={cnaeF} onValueChange={setCnaeF}>
+          <SelectTrigger><SelectValue placeholder="CNAE" /></SelectTrigger>
+          <SelectContent><SelectItem value="todos">Todos os CNAEs</SelectItem>{cnaesUnicos.map(c=><SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+        </Select>
+      </div>
       {groups.map(([month, items]) => (
         <Card key={month}>
           <CardHeader><CardTitle className="capitalize">{monthName(month)}</CardTitle></CardHeader>

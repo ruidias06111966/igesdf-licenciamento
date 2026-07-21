@@ -11,7 +11,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ORGAOS, STATUS_LABEL, semaforoColor, formatDate, parseCnae } from "@/lib/domain";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, Printer } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -31,25 +31,50 @@ function LicencasPage() {
   const { data: unidades } = useSuspenseQuery(unidadesOpts);
   const [orgao, setOrgao] = useState<string>("todos");
   const [sem, setSem] = useState<string>("todos");
+  const [unidadeF, setUnidadeF] = useState<string>("todos");
+  const [cnaeF, setCnaeF] = useState<string>("todos");
   const [q, setQ] = useState("");
+  const cnaesUnicos = Array.from(new Set(data.map((d: any) => parseCnae(d.descricao).codigo).filter(Boolean))).sort() as string[];
   const filtered = data.filter((d: any) => {
     if (orgao !== "todos" && d.orgao !== orgao) return false;
     if (sem !== "todos" && d.semaforo !== sem) return false;
+    if (unidadeF !== "todos" && d.unidade_id !== unidadeF) return false;
+    if (cnaeF !== "todos" && parseCnae(d.descricao).codigo !== cnaeF) return false;
     if (q && !(d.unidade_nome + " " + (d.descricao ?? "") + " " + (d.observacoes ?? "")).toLowerCase().includes(q.toLowerCase())) return false;
     return true;
   });
 
   return (
-    <div className="p-8 space-y-4">
-      <header className="flex items-center justify-between">
+    <div className="p-8 space-y-4 print-area">
+      <header className="flex items-center justify-between no-print">
         <div><h1 className="text-2xl font-semibold">Todas as licenças</h1><p className="text-sm text-muted-foreground">{filtered.length} de {data.length} registos.</p></div>
-        <LicencaFormGlobal unidades={unidades} trigger={<Button><Plus className="size-4 mr-1" /> Incluir licença</Button>} />
+        <div className="flex gap-2">
+          <Button variant="outline" onClick={() => window.print()}><Printer className="size-4 mr-1" /> Imprimir PDF</Button>
+          <LicencaFormGlobal unidades={unidades} trigger={<Button><Plus className="size-4 mr-1" /> Incluir licença</Button>} />
+        </div>
       </header>
-      <div className="grid md:grid-cols-3 gap-3">
+      <div className="print-only mb-4">
+        <h1 className="text-xl font-semibold">Licenças — IGESDF</h1>
+        <p className="text-xs">
+          {unidadeF !== "todos" && <>Unidade: {unidades.find((u:any)=>u.id===unidadeF)?.nome} · </>}
+          {orgao !== "todos" && <>Órgão: {ORGAOS.find(o=>o.value===orgao)?.label} · </>}
+          {cnaeF !== "todos" && <>CNAE: {cnaeF} · </>}
+          Total: {filtered.length} · Emitido {new Date().toLocaleDateString("pt-PT")}
+        </p>
+      </div>
+      <div className="grid md:grid-cols-5 gap-3 no-print">
         <Input placeholder="Procurar…" value={q} onChange={(e)=>setQ(e.target.value)} />
+        <Select value={unidadeF} onValueChange={setUnidadeF}>
+          <SelectTrigger><SelectValue placeholder="Unidade" /></SelectTrigger>
+          <SelectContent><SelectItem value="todos">Todas as unidades</SelectItem>{unidades.map((u:any)=><SelectItem key={u.id} value={u.id}>{u.nome}</SelectItem>)}</SelectContent>
+        </Select>
         <Select value={orgao} onValueChange={setOrgao}>
           <SelectTrigger><SelectValue placeholder="Órgão" /></SelectTrigger>
           <SelectContent><SelectItem value="todos">Todos os órgãos</SelectItem>{ORGAOS.map(o=> <SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
+        </Select>
+        <Select value={cnaeF} onValueChange={setCnaeF}>
+          <SelectTrigger><SelectValue placeholder="CNAE" /></SelectTrigger>
+          <SelectContent><SelectItem value="todos">Todos os CNAEs</SelectItem>{cnaesUnicos.map(c=> <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
         </Select>
         <Select value={sem} onValueChange={setSem}>
           <SelectTrigger><SelectValue placeholder="Estado" /></SelectTrigger>
@@ -83,7 +108,7 @@ function LicencasPage() {
                   <td className="p-3"><Badge className={`${s.bg} ${s.text} border-0`}>{s.label}</Badge></td>
                   <td className="p-3">{formatDate(d.data_vencimento)}</td>
                   <td className="p-3">{d.dias_restantes ?? "—"}</td>
-                  <td className="p-3 text-right space-x-1 whitespace-nowrap">
+                  <td className="p-3 text-right space-x-1 whitespace-nowrap no-print">
                     <LicencaFormGlobal unidades={unidades} initial={d} trigger={<Button size="icon" variant="ghost" title="Alterar"><Pencil className="size-4" /></Button>} />
                     <DeleteLicBtn id={d.id} />
                   </td>
