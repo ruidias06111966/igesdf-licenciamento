@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Printer } from "lucide-react";
 import { useState } from "react";
-import { ORGAOS, semaforoColor, formatDate, parseCnae } from "@/lib/domain";
+import { ORGAOS, STATUS_LABEL, semaforoColor, formatDate, parseCnae } from "@/lib/domain";
 
 const opts = queryOptions({ queryKey: ["licencas-all"], queryFn: () => listDashboard() });
 const unidadesOpts = queryOptions({ queryKey: ["unidades"], queryFn: () => listUnidades() });
@@ -100,6 +100,12 @@ function Cal() {
                       {cn.label && <> — {cn.label}</>}
                     </div>
                     <div className="text-xs text-muted-foreground">Vence em {formatDate(d.data_vencimento)}</div>
+                    <div className="text-xs text-muted-foreground print-only">
+                      Estado: {STATUS_LABEL[d.status as keyof typeof STATUS_LABEL] ?? d.status}
+                      {d.numero && <> · Nº {d.numero}</>}
+                      {d.processo_sei && <> · SEI {d.processo_sei}</>}
+                    </div>
+                    {d.observacoes && <div className="text-xs italic text-muted-foreground print-only">Obs.: {d.observacoes}</div>}
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="text-sm text-muted-foreground">{d.dias_restantes}d</span>
