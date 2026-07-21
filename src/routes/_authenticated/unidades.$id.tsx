@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useSuspenseQuery, useQuery, queryOptions, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getUnidade, upsertLicenca, deleteLicenca, upsertRT, deleteRT, registrarDocumento, deleteDocumento, signedDocUrl, deleteUnidade, upsertCnae, deleteCnae, getChecklist, updateChecklistItem, registrarNovaVersao, listVersoesDocumento } from "@/lib/licencas.functions";
+import { getUnidade, upsertLicenca, deleteLicenca, upsertRT, deleteRT, registrarDocumento, deleteDocumento, signedDocUrl, deleteUnidade, upsertCnae, deleteCnae, getChecklist, updateChecklistItem, registrarNovaVersao, listVersoesDocumento, setVersaoVigente } from "@/lib/licencas.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { ORGAOS, STATUS_LABEL, semaforoColor, formatDate, StatusLicenca, CHECKLIST_STATUS_LABEL, parseCnae } from "@/lib/domain";
-import { ArrowLeft, Plus, Pencil, Trash2, Upload, Download, FileText, UserCog, ListChecks, History, ChevronDown } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Trash2, Upload, Download, FileText, UserCog, ListChecks, History, ChevronDown, FileBarChart2, CheckCircle2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { UnidadeForm } from "./unidades";
@@ -72,6 +72,7 @@ function UnidadeDetalhe() {
           {unidade.endereco && <div className="text-sm mt-2 max-w-2xl">{unidade.endereco}</div>}
         </div>
         <div className="flex gap-2">
+          <Link to="/unidades/$id/dossie" params={{ id }}><Button variant="outline"><FileBarChart2 className="size-4 mr-1" /> Dossiê / PDF</Button></Link>
           <UnidadeForm initial={unidade} trigger={<Button variant="outline"><Pencil className="size-4 mr-1" /> Alterar</Button>} />
           <AlertDialog>
             <AlertDialogTrigger asChild><Button variant="outline" className="text-destructive"><Trash2 className="size-4 mr-1" /> Excluir</Button></AlertDialogTrigger>
@@ -450,14 +451,23 @@ function DocRow({ d, qk, unidadeId }: { d: any; qk: any[]; unidadeId?: string })
       window.open(url, "_blank");
     } catch (e: any) { toast.error(e.message); }
   }
+  const validade = d.data_validade ? new Date(d.data_validade) : null;
+  const validadeCls = validade
+    ? (validade < new Date() ? "bg-destructive/15 text-destructive" : ((validade.getTime()-Date.now())/86400000 <= 90 ? "bg-warning/20" : "bg-success/15 text-success"))
+    : "";
   return (
     <div className="flex items-center justify-between border rounded-md p-3 gap-2">
       <div className="min-w-0 flex-1">
-        <div className="text-sm font-medium truncate">{d.nome} {d.versao > 1 && <Badge variant="secondary" className="ml-1 text-[10px]">v{d.versao}</Badge>}</div>
-        <div className="text-xs text-muted-foreground">{d.mime_type ?? "—"} • {(d.tamanho_bytes ?? 0)/1024 | 0} KB</div>
+        <div className="text-sm font-medium truncate flex flex-wrap items-center gap-1">
+          {d.nome}
+          <Badge variant="secondary" className="text-[10px]">v{d.versao}</Badge>
+          {d.ativo && <Badge className="text-[10px] bg-success/15 text-success border-0">vigente</Badge>}
+          {validade && <Badge className={`text-[10px] border-0 ${validadeCls}`}>Validade {formatDate(d.data_validade)}</Badge>}
+        </div>
+        <div className="text-xs text-muted-foreground">{d.mime_type ?? "—"} • {(d.tamanho_bytes ?? 0)/1024 | 0} KB · Carregado {new Date(d.created_at).toLocaleDateString("pt-PT")}</div>
       </div>
       {unidadeId && <NovaVersaoBtn documentoId={d.id} unidadeId={unidadeId} qk={qk} />}
-      <HistoricoBtn documentoId={d.id} />
+      <HistoricoBtn documentoId={d.id} qk={qk} />
       <Button size="icon" variant="ghost" onClick={download}><Download className="size-4" /></Button>
       <DeleteBtn onConfirm={()=>deleteDocumento({ data: { id: d.id, storage_path: d.storage_path } })} qk={qk} />
     </div>
@@ -467,31 +477,56 @@ function DocRow({ d, qk, unidadeId }: { d: any; qk: any[]; unidadeId?: string })
 function NovaVersaoBtn({ documentoId, unidadeId, qk }: { documentoId: string; unidadeId: string; qk: any[] }) {
   const qc = useQueryClient();
   const [busy, setBusy] = useState(false);
-  async function onFile(f: File) {
+  const [pending, setPending] = useState<File | null>(null);
+  const [validade, setValidade] = useState("");
+  const [comentario, setComentario] = useState("");
+  function onFile(f: File) { setPending(f); }
+  async function submit() {
+    if (!pending) return;
     setBusy(true);
     try {
-      const path = `${unidadeId}/versoes/${documentoId}/${Date.now()}-${f.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
-      const { error } = await supabase.storage.from("licencas-docs").upload(path, f);
+      const path = `${unidadeId}/versoes/${documentoId}/${Date.now()}-${pending.name.replace(/[^a-zA-Z0-9._-]/g, "_")}`;
+      const { error } = await supabase.storage.from("licencas-docs").upload(path, pending);
       if (error) throw error;
-      await registrarNovaVersao({ data: { documento_pai_id: documentoId, storage_path: path, mime_type: f.type, tamanho_bytes: f.size } });
+      await registrarNovaVersao({ data: { documento_pai_id: documentoId, storage_path: path, mime_type: pending.type, tamanho_bytes: pending.size, data_validade: validade || null, comentario_versao: comentario || null } });
       toast.success("Nova versão registada");
+      setPending(null); setValidade(""); setComentario("");
       qc.invalidateQueries({ queryKey: qk });
     } catch (e: any) { toast.error(e.message); }
     finally { setBusy(false); }
   }
   return (
+    <>
     <label title="Nova versão">
       <input type="file" hidden onChange={(e)=>{ const f=e.target.files?.[0]; if (f) onFile(f); e.currentTarget.value=""; }} />
       <Button asChild size="icon" variant="ghost" disabled={busy}>
         <span className="cursor-pointer"><Upload className="size-4" /></span>
       </Button>
     </label>
+    <Sheet open={!!pending} onOpenChange={(o)=>{ if (!o) setPending(null); }}>
+      <SheetContent className="sm:max-w-md">
+        <SheetHeader><SheetTitle>Nova versão · {pending?.name}</SheetTitle></SheetHeader>
+        <div className="p-4 space-y-3">
+          <div className="space-y-1"><Label className="text-xs">Data de validade do documento (opcional)</Label><Input type="date" value={validade} onChange={(e)=>setValidade(e.target.value)} /></div>
+          <div className="space-y-1"><Label className="text-xs">Comentário da versão</Label><Textarea rows={3} value={comentario} onChange={(e)=>setComentario(e.target.value)} placeholder="Ex.: renovação anual, ajuste de razão social…" /></div>
+          <p className="text-xs text-muted-foreground">Ao guardar, esta versão passa a ser a <b>vigente</b> e as anteriores ficam arquivadas no histórico.</p>
+          <div className="flex justify-end gap-2"><Button variant="outline" onClick={()=>setPending(null)}>Cancelar</Button><Button disabled={busy} onClick={submit}>{busy ? "A enviar…" : "Guardar"}</Button></div>
+        </div>
+      </SheetContent>
+    </Sheet>
+    </>
   );
 }
 
-function HistoricoBtn({ documentoId }: { documentoId: string }) {
+function HistoricoBtn({ documentoId, qk }: { documentoId: string; qk: any[] }) {
+  const qc = useQueryClient();
   const [open, setOpen] = useState(false);
   const { data: versoes } = useQuery({ queryKey: ["versoes", documentoId], queryFn: () => listVersoesDocumento({ data: { documento_id: documentoId } }), enabled: open });
+  const marcar = useMutation({
+    mutationFn: (id: string) => setVersaoVigente({ data: { id } }),
+    onSuccess: () => { toast.success("Versão marcada como vigente"); qc.invalidateQueries({ queryKey: ["versoes", documentoId] }); qc.invalidateQueries({ queryKey: qk }); },
+    onError: (e: any) => toast.error(e.message),
+  });
   return (
     <Sheet open={open} onOpenChange={setOpen}>
       <SheetTrigger asChild><Button size="icon" variant="ghost" title="Histórico"><History className="size-4" /></Button></SheetTrigger>
@@ -501,10 +536,13 @@ function HistoricoBtn({ documentoId }: { documentoId: string }) {
           {(versoes ?? []).map((v: any) => (
             <div key={v.id} className="border rounded-md p-3">
               <div className="flex items-center justify-between">
-                <div className="text-sm font-medium">v{v.versao} {v.ativo && <Badge className="ml-1 text-[10px]">atual</Badge>}</div>
-                <Button size="icon" variant="ghost" onClick={async ()=>{ const { url } = await signedDocUrl({ data: { path: v.storage_path } }); window.open(url, "_blank"); }}><Download className="size-4" /></Button>
+                <div className="text-sm font-medium flex items-center gap-1">v{v.versao} {v.ativo && <Badge className="text-[10px] bg-success/15 text-success border-0">vigente</Badge>}</div>
+                <div className="flex items-center gap-1">
+                  {!v.ativo && <Button size="sm" variant="ghost" title="Marcar como vigente" disabled={marcar.isPending} onClick={()=>marcar.mutate(v.id)}><CheckCircle2 className="size-4 mr-1" /> Vigente</Button>}
+                  <Button size="icon" variant="ghost" onClick={async ()=>{ const { url } = await signedDocUrl({ data: { path: v.storage_path } }); window.open(url, "_blank"); }}><Download className="size-4" /></Button>
+                </div>
               </div>
-              <div className="text-xs text-muted-foreground">{new Date(v.created_at).toLocaleString("pt-PT")}</div>
+              <div className="text-xs text-muted-foreground">{new Date(v.created_at).toLocaleString("pt-PT")}{v.data_validade ? ` · Validade ${formatDate(v.data_validade)}` : ""}</div>
               {v.comentario_versao && <div className="text-xs mt-1">{v.comentario_versao}</div>}
             </div>
           ))}

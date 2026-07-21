@@ -158,6 +158,7 @@
 
 @media print {
   @page { size: A4 landscape; margin: 8mm; }
+  body.print-portrait @page { size: A4 portrait; margin: 10mm; }
   html, body { background: white !important; color: black !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
   * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
   .no-print, nav, aside, [data-sidebar], header.app-header { display: none !important; }
