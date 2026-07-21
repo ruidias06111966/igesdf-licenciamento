@@ -14,6 +14,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedUnidadesRouteImport } from './routes/_authenticated/unidades'
+import { Route as AuthenticatedOrgaosRouteImport } from './routes/_authenticated/orgaos'
 import { Route as AuthenticatedLicencasRouteImport } from './routes/_authenticated/licencas'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedCalendarioRouteImport } from './routes/_authenticated/calendario'
@@ -42,6 +43,11 @@ const IndexRoute = IndexRouteImport.update({
 const AuthenticatedUnidadesRoute = AuthenticatedUnidadesRouteImport.update({
   id: '/unidades',
   path: '/unidades',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedOrgaosRoute = AuthenticatedOrgaosRouteImport.update({
+  id: '/orgaos',
+  path: '/orgaos',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedLicencasRoute = AuthenticatedLicencasRouteImport.update({
@@ -78,6 +84,7 @@ export interface FileRoutesByFullPath {
   '/calendario': typeof AuthenticatedCalendarioRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/licencas': typeof AuthenticatedLicencasRoute
+  '/orgaos': typeof AuthenticatedOrgaosRoute
   '/unidades': typeof AuthenticatedUnidadesRouteWithChildren
   '/unidades/$id': typeof AuthenticatedUnidadesIdRoute
   '/api/public/hooks/enviar-alertas': typeof ApiPublicHooksEnviarAlertasRoute
@@ -89,6 +96,7 @@ export interface FileRoutesByTo {
   '/calendario': typeof AuthenticatedCalendarioRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/licencas': typeof AuthenticatedLicencasRoute
+  '/orgaos': typeof AuthenticatedOrgaosRoute
   '/unidades': typeof AuthenticatedUnidadesRouteWithChildren
   '/unidades/$id': typeof AuthenticatedUnidadesIdRoute
   '/api/public/hooks/enviar-alertas': typeof ApiPublicHooksEnviarAlertasRoute
@@ -102,6 +110,7 @@ export interface FileRoutesById {
   '/_authenticated/calendario': typeof AuthenticatedCalendarioRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/licencas': typeof AuthenticatedLicencasRoute
+  '/_authenticated/orgaos': typeof AuthenticatedOrgaosRoute
   '/_authenticated/unidades': typeof AuthenticatedUnidadesRouteWithChildren
   '/_authenticated/unidades/$id': typeof AuthenticatedUnidadesIdRoute
   '/api/public/hooks/enviar-alertas': typeof ApiPublicHooksEnviarAlertasRoute
@@ -115,6 +124,7 @@ export interface FileRouteTypes {
     | '/calendario'
     | '/dashboard'
     | '/licencas'
+    | '/orgaos'
     | '/unidades'
     | '/unidades/$id'
     | '/api/public/hooks/enviar-alertas'
@@ -126,6 +136,7 @@ export interface FileRouteTypes {
     | '/calendario'
     | '/dashboard'
     | '/licencas'
+    | '/orgaos'
     | '/unidades'
     | '/unidades/$id'
     | '/api/public/hooks/enviar-alertas'
@@ -138,6 +149,7 @@ export interface FileRouteTypes {
     | '/_authenticated/calendario'
     | '/_authenticated/dashboard'
     | '/_authenticated/licencas'
+    | '/_authenticated/orgaos'
     | '/_authenticated/unidades'
     | '/_authenticated/unidades/$id'
     | '/api/public/hooks/enviar-alertas'
@@ -186,6 +198,13 @@ declare module '@tanstack/react-router' {
       path: '/unidades'
       fullPath: '/unidades'
       preLoaderRoute: typeof AuthenticatedUnidadesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/orgaos': {
+      id: '/_authenticated/orgaos'
+      path: '/orgaos'
+      fullPath: '/orgaos'
+      preLoaderRoute: typeof AuthenticatedOrgaosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/licencas': {
@@ -243,6 +262,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCalendarioRoute: typeof AuthenticatedCalendarioRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedLicencasRoute: typeof AuthenticatedLicencasRoute
+  AuthenticatedOrgaosRoute: typeof AuthenticatedOrgaosRoute
   AuthenticatedUnidadesRoute: typeof AuthenticatedUnidadesRouteWithChildren
 }
 
@@ -250,6 +270,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCalendarioRoute: AuthenticatedCalendarioRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedLicencasRoute: AuthenticatedLicencasRoute,
+  AuthenticatedOrgaosRoute: AuthenticatedOrgaosRoute,
   AuthenticatedUnidadesRoute: AuthenticatedUnidadesRouteWithChildren,
 }
 

@@ -1,6 +1,6 @@
 import { createFileRoute, Link, Outlet, redirect, useRouter } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
-import { Building2, LayoutDashboard, FileCheck2, CalendarClock, LogOut, ShieldCheck } from "lucide-react";
+import { Building2, LayoutDashboard, FileCheck2, CalendarClock, LogOut, ShieldCheck, Landmark } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_authenticated")({
@@ -17,6 +17,7 @@ const nav = [
   { to: "/dashboard", label: "Painel", icon: LayoutDashboard },
   { to: "/unidades", label: "Unidades", icon: Building2 },
   { to: "/licencas", label: "Licenças", icon: FileCheck2 },
+  { to: "/orgaos", label: "Órgãos", icon: Landmark },
   { to: "/calendario", label: "Vencimentos", icon: CalendarClock },
 ];
 
