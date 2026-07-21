@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useSuspenseQuery, useQuery, queryOptions, useMutation, useQueryClient } from "@tanstack/react-query";
-import { getUnidade, upsertLicenca, deleteLicenca, upsertRT, deleteRT, registrarDocumento, deleteDocumento, signedDocUrl, deleteUnidade, upsertCnae, deleteCnae, getChecklist, updateChecklistItem, registrarNovaVersao, listVersoesDocumento } from "@/lib/licencas.functions";
+import { getUnidade, upsertLicenca, deleteLicenca, upsertRT, deleteRT, registrarDocumento, deleteDocumento, signedDocUrl, deleteUnidade, upsertCnae, deleteCnae, getChecklist, updateChecklistItem, registrarNovaVersao, listVersoesDocumento, setVersaoVigente } from "@/lib/licencas.functions";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -12,7 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { ORGAOS, STATUS_LABEL, semaforoColor, formatDate, StatusLicenca, CHECKLIST_STATUS_LABEL, parseCnae } from "@/lib/domain";
-import { ArrowLeft, Plus, Pencil, Trash2, Upload, Download, FileText, UserCog, ListChecks, History, ChevronDown } from "lucide-react";
+import { ArrowLeft, Plus, Pencil, Trash2, Upload, Download, FileText, UserCog, ListChecks, History, ChevronDown, FileBarChart2, CheckCircle2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 import { UnidadeForm } from "./unidades";
@@ -72,6 +72,7 @@ function UnidadeDetalhe() {
           {unidade.endereco && <div className="text-sm mt-2 max-w-2xl">{unidade.endereco}</div>}
         </div>
         <div className="flex gap-2">
+          <Link to="/unidades/$id/dossie" params={{ id }}><Button variant="outline"><FileBarChart2 className="size-4 mr-1" /> Dossiê / PDF</Button></Link>
           <UnidadeForm initial={unidade} trigger={<Button variant="outline"><Pencil className="size-4 mr-1" /> Alterar</Button>} />
           <AlertDialog>
             <AlertDialogTrigger asChild><Button variant="outline" className="text-destructive"><Trash2 className="size-4 mr-1" /> Excluir</Button></AlertDialogTrigger>
