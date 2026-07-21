@@ -10,7 +10,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { Textarea } from "@/components/ui/textarea";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ORGAOS, STATUS_LABEL, semaforoColor, formatDate } from "@/lib/domain";
+import { ORGAOS, STATUS_LABEL, semaforoColor, formatDate, parseCnae } from "@/lib/domain";
 import { Plus, Pencil, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -35,7 +35,7 @@ function LicencasPage() {
   const filtered = data.filter((d: any) => {
     if (orgao !== "todos" && d.orgao !== orgao) return false;
     if (sem !== "todos" && d.semaforo !== sem) return false;
-    if (q && !(d.unidade_nome + " " + (d.observacoes ?? "")).toLowerCase().includes(q.toLowerCase())) return false;
+    if (q && !(d.unidade_nome + " " + (d.descricao ?? "") + " " + (d.observacoes ?? "")).toLowerCase().includes(q.toLowerCase())) return false;
     return true;
   });
 
@@ -67,20 +67,22 @@ function LicencasPage() {
       <Card><CardContent className="p-0">
         <table className="w-full text-sm">
           <thead className="text-left text-xs text-muted-foreground border-b">
-            <tr><th className="p-3">Unidade</th><th className="p-3">Órgão</th><th className="p-3">Estado</th><th className="p-3">Vencimento</th><th className="p-3">Dias</th><th className="p-3">Observação</th><th className="p-3 text-right">Ações</th></tr>
+            <tr><th className="p-3">Unidade</th><th className="p-3">Órgão</th><th className="p-3">CNAE</th><th className="p-3">Atividade</th><th className="p-3">Estado</th><th className="p-3">Vencimento</th><th className="p-3">Dias</th><th className="p-3 text-right">Ações</th></tr>
           </thead>
           <tbody>
             {filtered.map((d: any) => {
               const s = semaforoColor(d.semaforo);
               const org = ORGAOS.find(o => o.value === d.orgao);
+              const cn = parseCnae(d.descricao);
               return (
                 <tr key={d.id} className="border-b last:border-0 hover:bg-muted/30">
                   <td className="p-3"><Link to="/unidades/$id" params={{id: d.unidade_id}} className="font-medium hover:underline">{d.unidade_nome}</Link></td>
                   <td className="p-3">{org?.label ?? d.orgao}</td>
+                  <td className="p-3 font-mono text-xs whitespace-nowrap">{cn.codigo ?? "—"}</td>
+                  <td className="p-3 text-xs max-w-xs truncate" title={cn.label ?? ""}>{cn.label ?? "—"}</td>
                   <td className="p-3"><Badge className={`${s.bg} ${s.text} border-0`}>{s.label}</Badge></td>
                   <td className="p-3">{formatDate(d.data_vencimento)}</td>
                   <td className="p-3">{d.dias_restantes ?? "—"}</td>
-                  <td className="p-3 text-xs text-muted-foreground max-w-md truncate">{d.observacoes ?? "—"}</td>
                   <td className="p-3 text-right space-x-1 whitespace-nowrap">
                     <LicencaFormGlobal unidades={unidades} initial={d} trigger={<Button size="icon" variant="ghost" title="Alterar"><Pencil className="size-4" /></Button>} />
                     <DeleteLicBtn id={d.id} />
@@ -88,7 +90,7 @@ function LicencasPage() {
                 </tr>
               );
             })}
-            {filtered.length===0 && <tr><td colSpan={7} className="p-6 text-center text-muted-foreground">Sem resultados.</td></tr>}
+            {filtered.length===0 && <tr><td colSpan={8} className="p-6 text-center text-muted-foreground">Sem resultados.</td></tr>}
           </tbody>
         </table>
       </CardContent></Card>
