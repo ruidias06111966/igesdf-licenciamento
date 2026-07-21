@@ -79,3 +79,14 @@ export function formatDate(iso: string | null | undefined): string {
   const [y, m, d] = iso.slice(0, 10).split("-");
   return `${d}/${m}/${y}`;
 }
+
+// Extrai código e rótulo do CNAE a partir do campo `descricao` da licença.
+// Formato esperado: "CNAE 8610-1/02 — Pronto-socorro" (ou variantes com "-" simples).
+export function parseCnae(descricao: string | null | undefined): { codigo: string | null; label: string | null } {
+  if (!descricao) return { codigo: null, label: null };
+  const m = descricao.match(/CNAE\s+([0-9]{4}-?[0-9](?:\/[0-9]{2})?)\s*[—\-–]\s*(.+)/i);
+  if (m) return { codigo: m[1], label: m[2].trim() };
+  const m2 = descricao.match(/([0-9]{4}-?[0-9](?:\/[0-9]{2})?)/);
+  if (m2) return { codigo: m2[1], label: descricao.replace(m2[1], "").replace(/^[\s—\-–:]+/, "").trim() || null };
+  return { codigo: null, label: descricao };
+}
