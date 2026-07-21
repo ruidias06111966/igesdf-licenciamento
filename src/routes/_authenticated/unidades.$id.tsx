@@ -355,6 +355,10 @@ function LicencaForm({ unidadeId, initial, trigger }: { unidadeId: string; initi
               </Select>
             </div>
           </div>
+          <div className="space-y-1"><Label className="text-xs">CNAE / Atividade licenciada</Label>
+            <Input placeholder="Ex.: CNAE 8610-1/02 — Pronto-socorro" value={form.descricao ?? ""} onChange={(e)=>setForm({...form, descricao: e.target.value})} />
+            <p className="text-[10px] text-muted-foreground">Identifica a atividade a que a licença se refere.</p>
+          </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1"><Label className="text-xs">Data emissão</Label><Input type="date" value={form.data_emissao ?? ""} onChange={(e)=>setForm({...form, data_emissao: e.target.value || null})} /></div>
             <div className="space-y-1"><Label className="text-xs">Data vencimento</Label><Input type="date" value={form.data_vencimento ?? ""} onChange={(e)=>setForm({...form, data_vencimento: e.target.value || null})} /></div>
