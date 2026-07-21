@@ -92,7 +92,19 @@ function LicencasPage() {
       <Card><CardContent className="p-0">
         <table className="w-full text-sm">
           <thead className="text-left text-xs text-muted-foreground border-b">
-            <tr><th className="p-3">Unidade</th><th className="p-3">Órgão</th><th className="p-3">CNAE</th><th className="p-3">Atividade</th><th className="p-3">Estado</th><th className="p-3">Vencimento</th><th className="p-3">Dias</th><th className="p-3 text-right">Ações</th></tr>
+            <tr>
+              <th className="p-3">Unidade</th>
+              <th className="p-3">Órgão</th>
+              <th className="p-3">CNAE</th>
+              <th className="p-3">Atividade</th>
+              <th className="p-3">Estado</th>
+              <th className="p-3 print-only-cell">Situação</th>
+              <th className="p-3 print-only-cell">Nº</th>
+              <th className="p-3 print-only-cell">Processo SEI</th>
+              <th className="p-3">Vencimento</th>
+              <th className="p-3">Dias</th>
+              <th className="p-3 text-right no-print">Ações</th>
+            </tr>
           </thead>
           <tbody>
             {filtered.map((d: any) => {
@@ -100,12 +112,16 @@ function LicencasPage() {
               const org = ORGAOS.find(o => o.value === d.orgao);
               const cn = parseCnae(d.descricao);
               return (
-                <tr key={d.id} className="border-b last:border-0 hover:bg-muted/30">
+                <>
+                <tr key={d.id} className="border-b hover:bg-muted/30 print-row">
                   <td className="p-3"><Link to="/unidades/$id" params={{id: d.unidade_id}} className="font-medium hover:underline">{d.unidade_nome}</Link></td>
                   <td className="p-3">{org?.label ?? d.orgao}</td>
                   <td className="p-3 font-mono text-xs whitespace-nowrap">{cn.codigo ?? "—"}</td>
                   <td className="p-3 text-xs max-w-xs truncate" title={cn.label ?? ""}>{cn.label ?? "—"}</td>
                   <td className="p-3"><Badge className={`${s.bg} ${s.text} border-0`}>{s.label}</Badge></td>
+                  <td className="p-3 text-xs print-only-cell">{STATUS_LABEL[d.status as keyof typeof STATUS_LABEL] ?? d.status}</td>
+                  <td className="p-3 text-xs print-only-cell">{d.numero ?? "—"}</td>
+                  <td className="p-3 text-xs print-only-cell">{d.processo_sei ?? "—"}</td>
                   <td className="p-3">{formatDate(d.data_vencimento)}</td>
                   <td className="p-3">{d.dias_restantes ?? "—"}</td>
                   <td className="p-3 text-right space-x-1 whitespace-nowrap no-print">
@@ -113,9 +129,15 @@ function LicencasPage() {
                     <DeleteLicBtn id={d.id} />
                   </td>
                 </tr>
+                {d.observacoes && (
+                  <tr key={d.id + "-obs"} className="border-b last:border-0 print-only-row">
+                    <td colSpan={11} className="px-3 pb-2 text-xs italic text-muted-foreground">Obs.: {d.observacoes}</td>
+                  </tr>
+                )}
+                </>
               );
             })}
-            {filtered.length===0 && <tr><td colSpan={8} className="p-6 text-center text-muted-foreground">Sem resultados.</td></tr>}
+            {filtered.length===0 && <tr><td colSpan={11} className="p-6 text-center text-muted-foreground">Sem resultados.</td></tr>}
           </tbody>
         </table>
       </CardContent></Card>
