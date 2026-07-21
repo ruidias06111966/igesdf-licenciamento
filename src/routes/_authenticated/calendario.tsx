@@ -3,7 +3,7 @@ import { useSuspenseQuery, queryOptions } from "@tanstack/react-query";
 import { listDashboard } from "@/lib/licencas.functions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { ORGAOS, semaforoColor, formatDate } from "@/lib/domain";
+import { ORGAOS, semaforoColor, formatDate, parseCnae } from "@/lib/domain";
 
 const opts = queryOptions({ queryKey: ["licencas-all"], queryFn: () => listDashboard() });
 
@@ -47,11 +47,17 @@ function Cal() {
             {items.sort((a,b)=>a.data_vencimento.localeCompare(b.data_vencimento)).map(d => {
               const s = semaforoColor(d.semaforo);
               const org = ORGAOS.find(o => o.value === d.orgao);
+              const cn = parseCnae(d.descricao);
               return (
                 <Link key={d.id} to="/unidades/$id" params={{id: d.unidade_id}} className="flex items-center justify-between border rounded-md p-3 hover:bg-muted/30">
                   <div>
                     <div className="text-sm font-medium">{d.unidade_nome}</div>
-                    <div className="text-xs text-muted-foreground">{org?.label ?? d.orgao} • vence em {formatDate(d.data_vencimento)}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {org?.label ?? d.orgao}
+                      {cn.codigo && <> • <span className="font-mono">CNAE {cn.codigo}</span></>}
+                      {cn.label && <> — {cn.label}</>}
+                    </div>
+                    <div className="text-xs text-muted-foreground">Vence em {formatDate(d.data_vencimento)}</div>
                   </div>
                   <div className="flex items-center gap-3">
                     <span className="text-sm text-muted-foreground">{d.dias_restantes}d</span>

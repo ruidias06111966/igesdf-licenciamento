@@ -11,7 +11,7 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/co
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { ORGAOS, STATUS_LABEL, semaforoColor, formatDate, StatusLicenca, CHECKLIST_STATUS_LABEL } from "@/lib/domain";
+import { ORGAOS, STATUS_LABEL, semaforoColor, formatDate, StatusLicenca, CHECKLIST_STATUS_LABEL, parseCnae } from "@/lib/domain";
 import { ArrowLeft, Plus, Pencil, Trash2, Upload, Download, FileText, UserCog, ListChecks, History, ChevronDown } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -91,7 +91,7 @@ function UnidadeDetalhe() {
         <CardContent className="p-0">
           <table className="w-full text-sm">
             <thead className="text-left text-xs text-muted-foreground border-b">
-              <tr><th className="p-3">Órgão</th><th className="p-3">Estado</th><th className="p-3">Nº</th><th className="p-3">Emissão</th><th className="p-3">Vencimento</th><th className="p-3">Processo SEI</th><th className="p-3"></th></tr>
+              <tr><th className="p-3">Órgão</th><th className="p-3">CNAE / Atividade</th><th className="p-3">Estado</th><th className="p-3">Nº</th><th className="p-3">Emissão</th><th className="p-3">Vencimento</th><th className="p-3">SEI</th><th className="p-3"></th></tr>
             </thead>
             <tbody>
               {licencas.map((l: any) => {
@@ -101,7 +101,7 @@ function UnidadeDetalhe() {
                   <LicencaRow key={l.id} l={l} org={org} s={s} unidadeId={unidade.id} documentos={documentos} />
                 );
               })}
-              {licencas.length === 0 && <tr><td colSpan={7} className="p-6 text-center text-muted-foreground">Nenhuma licença registada.</td></tr>}
+              {licencas.length === 0 && <tr><td colSpan={8} className="p-6 text-center text-muted-foreground">Nenhuma licença registada.</td></tr>}
             </tbody>
           </table>
         </CardContent>
@@ -152,12 +152,21 @@ function UnidadeDetalhe() {
 
 function LicencaRow({ l, org, s, unidadeId, documentos }: any) {
   const [open, setOpen] = useState(false);
+  const cn = parseCnae(l.descricao);
   return (
     <>
       <tr className="border-b hover:bg-muted/30">
                     <td className="p-3">
                       <div className="font-medium">{org?.label ?? l.orgao}</div>
                       <div className="text-xs text-muted-foreground">{org?.descricao}</div>
+                    </td>
+                    <td className="p-3">
+                      {cn.codigo ? (
+                        <>
+                          <div className="font-mono text-xs font-medium">{cn.codigo}</div>
+                          <div className="text-xs text-muted-foreground max-w-xs truncate" title={cn.label ?? ""}>{cn.label ?? "—"}</div>
+                        </>
+                      ) : <span className="text-xs text-muted-foreground">—</span>}
                     </td>
                     <td className="p-3"><Badge className={`${s.bg} ${s.text} border-0`}>{s.label}</Badge></td>
                     <td className="p-3">{l.numero ?? "—"}</td>
@@ -173,7 +182,7 @@ function LicencaRow({ l, org, s, unidadeId, documentos }: any) {
                   </tr>
       {open && (
         <tr className="bg-muted/20 border-b">
-          <td colSpan={7} className="p-4">
+          <td colSpan={8} className="p-4">
             <ChecklistInline licencaId={l.id} />
           </td>
         </tr>
@@ -345,6 +354,10 @@ function LicencaForm({ unidadeId, initial, trigger }: { unidadeId: string; initi
                 <SelectContent>{Object.entries(STATUS_LABEL).map(([k,v])=> <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
               </Select>
             </div>
+          </div>
+          <div className="space-y-1"><Label className="text-xs">CNAE / Atividade licenciada</Label>
+            <Input placeholder="Ex.: CNAE 8610-1/02 — Pronto-socorro" value={form.descricao ?? ""} onChange={(e)=>setForm({...form, descricao: e.target.value})} />
+            <p className="text-[10px] text-muted-foreground">Identifica a atividade a que a licença se refere.</p>
           </div>
           <div className="grid grid-cols-2 gap-3">
             <div className="space-y-1"><Label className="text-xs">Data emissão</Label><Input type="date" value={form.data_emissao ?? ""} onChange={(e)=>setForm({...form, data_emissao: e.target.value || null})} /></div>
