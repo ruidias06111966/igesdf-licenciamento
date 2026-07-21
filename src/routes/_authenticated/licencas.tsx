@@ -12,7 +12,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ORGAOS, STATUS_LABEL, semaforoColor, formatDate, parseCnae } from "@/lib/domain";
 import { Plus, Pencil, Trash2, Printer } from "lucide-react";
-import { useState } from "react";
+import { useState, Fragment } from "react";
 import { toast } from "sonner";
 
 const opts = queryOptions({ queryKey: ["licencas-all"], queryFn: () => listDashboard() });
@@ -112,8 +112,8 @@ function LicencasPage() {
               const org = ORGAOS.find(o => o.value === d.orgao);
               const cn = parseCnae(d.descricao);
               return (
-                <>
-                <tr key={d.id} className="border-b hover:bg-muted/30 print-row">
+                <Fragment key={d.id}>
+                <tr className="border-b hover:bg-muted/30 print-row">
                   <td className="p-3"><Link to="/unidades/$id" params={{id: d.unidade_id}} className="font-medium hover:underline">{d.unidade_nome}</Link></td>
                   <td className="p-3">{org?.label ?? d.orgao}</td>
                   <td className="p-3 font-mono text-xs whitespace-nowrap">{cn.codigo ?? "—"}</td>
@@ -130,11 +130,11 @@ function LicencasPage() {
                   </td>
                 </tr>
                 {d.observacoes && (
-                  <tr key={d.id + "-obs"} className="border-b last:border-0 print-only-row">
+                  <tr className="border-b last:border-0 print-only-row">
                     <td colSpan={11} className="px-3 pb-2 text-xs italic text-muted-foreground">Obs.: {d.observacoes}</td>
                   </tr>
                 )}
-                </>
+                </Fragment>
               );
             })}
             {filtered.length===0 && <tr><td colSpan={11} className="p-6 text-center text-muted-foreground">Sem resultados.</td></tr>}
