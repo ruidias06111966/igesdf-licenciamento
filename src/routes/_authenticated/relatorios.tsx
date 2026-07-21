@@ -44,7 +44,7 @@ function RelatoriosPage() {
   const grupos = useMemo(() => {
     const g: Record<string, any[]> = {};
     for (const it of filtrados) {
-      const k = modo === "unidade" ? it.unidade_nome : (ORGAOS.find(o=>o.value===it.orgao)?.label ?? it.orgao);
+      const k: string = (modo === "unidade" ? it.unidade_nome : (ORGAOS.find(o=>o.value===it.orgao)?.label ?? it.orgao)) ?? "—";
       (g[k] ??= []).push(it);
     }
     return Object.entries(g).sort(([a],[b])=>a.localeCompare(b));
