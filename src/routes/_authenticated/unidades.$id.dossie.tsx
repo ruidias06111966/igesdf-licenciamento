@@ -5,7 +5,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ORGAOS, STATUS_LABEL, CHECKLIST_STATUS_LABEL, semaforoColor, formatDate, parseCnae } from "@/lib/domain";
-import { ArrowLeft, Printer, FileText, ListChecks, UserCog } from "lucide-react";
+import { ArrowLeft, FileText, ListChecks, UserCog } from "lucide-react";
+import { PrintModeToggle } from "@/components/print-mode-toggle";
 import { useEffect } from "react";
 
 function dossieOpts(id: string) {
@@ -58,7 +59,7 @@ function Dossie() {
     <div className="p-8 space-y-6 print-area max-w-5xl mx-auto">
       <div className="flex items-center gap-2 no-print">
         <Link to="/unidades/$id" params={{ id }}><Button variant="ghost" size="sm"><ArrowLeft className="size-4 mr-1" /> Voltar à unidade</Button></Link>
-        <div className="ml-auto"><Button variant="outline" onClick={() => window.print()}><Printer className="size-4 mr-1" /> Imprimir PDF</Button></div>
+        <div className="ml-auto"><PrintModeToggle defaultOrientation="portrait" /></div>
       </div>
 
       <header className="border-b pb-4">

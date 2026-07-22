@@ -11,7 +11,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ORGAOS, STATUS_LABEL, semaforoColor, formatDate, parseCnae } from "@/lib/domain";
-import { Plus, Pencil, Trash2, Printer } from "lucide-react";
+import { Plus, Pencil, Trash2 } from "lucide-react";
+import { PrintModeToggle } from "@/components/print-mode-toggle";
 import { useState, Fragment } from "react";
 import { toast } from "sonner";
 
@@ -49,7 +50,7 @@ function LicencasPage() {
       <header className="flex items-center justify-between no-print">
         <div><h1 className="text-2xl font-semibold">Todas as licenças</h1><p className="text-sm text-muted-foreground">{filtered.length} de {data.length} registos.</p></div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => window.print()}><Printer className="size-4 mr-1" /> Imprimir PDF</Button>
+          <PrintModeToggle defaultOrientation="landscape" />
           <LicencaFormGlobal unidades={unidades} trigger={<Button><Plus className="size-4 mr-1" /> Incluir licença</Button>} />
         </div>
       </header>

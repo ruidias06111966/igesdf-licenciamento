@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Printer } from "lucide-react";
+import { PrintModeToggle } from "@/components/print-mode-toggle";
 import { useState } from "react";
 import { ORGAOS, STATUS_LABEL, semaforoColor, formatDate, parseCnae } from "@/lib/domain";
 
@@ -57,7 +57,7 @@ function Cal() {
           <h1 className="text-2xl font-semibold">Calendário de vencimentos</h1>
           <p className="text-sm text-muted-foreground">Renove a licença sanitária com pelo menos 60 dias de antecedência.</p>
         </div>
-        <Button variant="outline" onClick={() => window.print()}><Printer className="size-4 mr-1" /> Imprimir PDF</Button>
+        <PrintModeToggle defaultOrientation="landscape" />
       </header>
       <div className="print-only mb-4">
         <h1 className="text-xl font-semibold">Calendário de vencimentos — IGESDF</h1>
