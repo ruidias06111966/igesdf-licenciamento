@@ -9,7 +9,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { ORGAOS, STATUS_LABEL, semaforoColor, formatDate, parseCnae } from "@/lib/domain";
 import { supabase } from "@/integrations/supabase/client";
-import { Printer, Upload, FileCheck2 } from "lucide-react";
+import { Upload, FileCheck2 } from "lucide-react";
+import { PrintModeToggle } from "@/components/print-mode-toggle";
 import { useState, useMemo, Fragment } from "react";
 import { toast } from "sonner";
 
@@ -68,7 +69,7 @@ function RelatoriosPage() {
           <h1 className="text-2xl font-semibold">Relatórios de conformidade</h1>
           <p className="text-sm text-muted-foreground">Relatório de licenciamentos por unidade ou por órgão, com pendências e prazos de renovação.</p>
         </div>
-        <Button variant="outline" onClick={() => window.print()}><Printer className="size-4 mr-1" /> Imprimir PDF</Button>
+        <PrintModeToggle defaultOrientation="landscape" />
       </header>
 
       <div className="grid md:grid-cols-4 gap-3 no-print">
