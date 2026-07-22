@@ -7,7 +7,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { formatDate, semaforoColor, ORGAOS, STATUS_LABEL, CHECKLIST_STATUS_LABEL, parseCnae } from "@/lib/domain";
-import { AlertTriangle, Clock, CheckCircle2, FileWarning, Printer, ListChecks } from "lucide-react";
+import { AlertTriangle, Clock, CheckCircle2, FileWarning, ListChecks } from "lucide-react";
+import { PrintModeToggle } from "@/components/print-mode-toggle";
 import { useState, useMemo } from "react";
 
 const opts = queryOptions({ queryKey: ["dashboard"], queryFn: () => listDashboard() });
@@ -61,7 +62,7 @@ function Dashboard() {
           <h1 className="text-2xl font-semibold">Painel de Compliance</h1>
           <p className="text-sm text-muted-foreground">Visão consolidada — {total} de {data.length} licenças no filtro atual.</p>
         </div>
-        <Button variant="outline" onClick={() => window.print()}><Printer className="size-4 mr-1" /> Imprimir PDF</Button>
+        <PrintModeToggle defaultOrientation="landscape" />
       </header>
 
       <div className="print-only mb-4">
