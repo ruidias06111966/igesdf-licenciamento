@@ -21,7 +21,6 @@
     "property-no-unknown": [true, { "ignoreProperties": ["/^--/"] }],
     "selector-pseudo-class-no-unknown": [true, { "ignorePseudoClasses": ["is", "where"] }],
     "selector-type-no-unknown": [true, { "ignore": ["custom-elements"] }],
-    "font-family-no-missing-generic-family-keyword": null,
-    "no-nested-at-rule-of-type": "page"
+    "font-family-no-missing-generic-family-keyword": null
   }
 }
