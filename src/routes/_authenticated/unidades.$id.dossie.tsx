@@ -8,6 +8,7 @@ import { ORGAOS, STATUS_LABEL, CHECKLIST_STATUS_LABEL, semaforoColor, formatDate
 import { ArrowLeft, FileText, ListChecks, UserCog } from "lucide-react";
 import { PrintModeToggle } from "@/components/print-mode-toggle";
 import { useEffect } from "react";
+import { applyPrintMode, getSavedPrintMode } from "@/lib/print-mode";
 
 function dossieOpts(id: string) {
   return queryOptions({ queryKey: ["dossie", id], queryFn: () => getDossieUnidade({ data: { id } }) });
@@ -16,6 +17,7 @@ function dossieOpts(id: string) {
 export const Route = createFileRoute("/_authenticated/unidades/$id/dossie")({
   loader: ({ context, params }) => context.queryClient.ensureQueryData(dossieOpts(params.id)),
   component: Dossie,
+  validateSearch: (s: Record<string, unknown>) => ({ print: s.print ? 1 : undefined }) as { print?: 1 },
   head: () => ({ meta: [{ title: "Dossiê da unidade — IGESDF Compliance" }] }),
   errorComponent: ({ error }) => <div className="p-8 text-destructive">{error.message}</div>,
   notFoundComponent: () => <div className="p-8">Unidade não encontrada.</div>,
@@ -33,6 +35,7 @@ function semaforoOf(l: any) {
 
 function Dossie() {
   const { id } = Route.useParams();
+  const { print } = Route.useSearch();
   const { data } = useSuspenseQuery(dossieOpts(id));
   const { unidade, licencas, responsaveis, documentos, cnaes, checklist } = data as any;
 
@@ -41,6 +44,15 @@ function Dossie() {
     document.body.classList.add("print-portrait");
     return () => { document.body.classList.remove("print-portrait"); };
   }, []);
+
+  // Auto-abre o diálogo de impressão quando chegamos via botão "Dossiê PDF".
+  useEffect(() => {
+    if (print !== 1) return;
+    const saved = getSavedPrintMode();
+    applyPrintMode("portrait", saved.scale);
+    const t = setTimeout(() => window.print(), 600);
+    return () => clearTimeout(t);
+  }, [print]);
 
   const kpi = {
     total: licencas.length,
