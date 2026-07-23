@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { TIPO_UNIDADE_LABEL, TipoUnidade } from "@/lib/domain";
-import { Plus, Search, Pencil, Trash2 } from "lucide-react";
+import { Plus, Search, Pencil, Trash2, FileDown } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -76,6 +76,9 @@ function UnidadeCard({ u }: { u: any }) {
           <div className="line-clamp-2">{u.endereco ?? "Sem endereço"}</div>
         </div>
         <div className="flex justify-end gap-1 pt-1 border-t">
+          <Link to="/unidades/$id/dossie" params={{id: u.id}} search={{ print: 1 }}>
+            <Button size="sm" variant="ghost"><FileDown className="size-3.5 mr-1" /> Dossiê PDF</Button>
+          </Link>
           <UnidadeForm initial={u} trigger={<Button size="sm" variant="ghost"><Pencil className="size-3.5 mr-1" /> Alterar</Button>} />
           <AlertDialog>
             <AlertDialogTrigger asChild><Button size="sm" variant="ghost" className="text-destructive hover:text-destructive"><Trash2 className="size-3.5 mr-1" /> Excluir</Button></AlertDialogTrigger>
