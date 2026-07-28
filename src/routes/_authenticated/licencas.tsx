@@ -22,7 +22,16 @@ const unidadesOpts = queryOptions({ queryKey: ["unidades"], queryFn: () => listU
 export const Route = createFileRoute("/_authenticated/licencas")({
   loader: ({ context }) => Promise.all([context.queryClient.ensureQueryData(opts), context.queryClient.ensureQueryData(unidadesOpts)]),
   component: LicencasPage,
-  head: () => ({ meta: [{ title: "Licenças — IGESDF Compliance" }] }),
+  head: () => ({
+    meta: [
+      { title: "Licenças — IGESDF Compliance" },
+      { name: "description", content: "Listagem global de licenças e alvarás por unidade, CNAE e órgão (VISADF, CBMDF, IBRAM, DF LEGAL) da rede IGESDF." },
+      { property: "og:title", content: "Licenças — IGESDF Compliance" },
+      { property: "og:description", content: "Gestão global de licenças e alvarás da rede hospitalar do IGESDF." },
+      { property: "og:url", content: "https://igesdf-licenciamento.qidominios.tech/licencas" },
+    ],
+    links: [{ rel: "canonical", href: "https://igesdf-licenciamento.qidominios.tech/licencas" }],
+  }),
   errorComponent: ({ error }) => <div className="p-8 text-destructive">{error.message}</div>,
   notFoundComponent: () => <div className="p-8">Sem licenças.</div>,
 });
