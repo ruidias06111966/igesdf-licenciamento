@@ -20,7 +20,16 @@ const opts = queryOptions({ queryKey: ["unidades"], queryFn: () => listUnidades(
 export const Route = createFileRoute("/_authenticated/unidades")({
   loader: ({ context }) => context.queryClient.ensureQueryData(opts),
   component: UnidadesPage,
-  head: () => ({ meta: [{ title: "Unidades — IGESDF Compliance" }] }),
+  head: () => ({
+    meta: [
+      { title: "Unidades — IGESDF Compliance" },
+      { name: "description", content: "Cadastro das unidades hospitalares e UPAs do IGESDF, com CNPJ, CF/DF, processo SEI e situação de licenciamento por órgão." },
+      { property: "og:title", content: "Unidades — IGESDF Compliance" },
+      { property: "og:description", content: "Hospitais e UPAs da rede IGESDF e respetivo estado de licenciamento." },
+      { property: "og:url", content: "https://igesdf-licenciamento.qidominios.tech/unidades" },
+    ],
+    links: [{ rel: "canonical", href: "https://igesdf-licenciamento.qidominios.tech/unidades" }],
+  }),
   errorComponent: ({ error }) => <div className="p-8 text-destructive">{error.message}</div>,
   notFoundComponent: () => <div className="p-8">Sem unidades.</div>,
 });
