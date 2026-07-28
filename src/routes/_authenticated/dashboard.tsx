@@ -20,7 +20,16 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
     context.queryClient.ensureQueryData(passosOpts),
   ]),
   component: Dashboard,
-  head: () => ({ meta: [{ title: "Painel — IGESDF Compliance" }] }),
+  head: () => ({
+    meta: [
+      { title: "Painel — IGESDF Compliance" },
+      { name: "description", content: "Painel consolidado de compliance da rede IGESDF: KPIs de licenças vigentes, vencidas, críticas e próximos passos por órgão." },
+      { property: "og:title", content: "Painel de Compliance — IGESDF" },
+      { property: "og:description", content: "Visão consolidada de licenças, vencimentos e próximos passos da rede hospitalar do IGESDF." },
+      { property: "og:url", content: "https://igesdf-licenciamento.qidominios.tech/dashboard" },
+    ],
+    links: [{ rel: "canonical", href: "https://igesdf-licenciamento.qidominios.tech/dashboard" }],
+  }),
   errorComponent: ({ error }) => <div className="p-8 text-destructive">{error.message}</div>,
   notFoundComponent: () => <div className="p-8">Sem dados.</div>,
 });
@@ -66,7 +75,7 @@ function Dashboard() {
       </header>
 
       <div className="print-only mb-4">
-        <h1 className="text-xl font-semibold">Painel de Compliance — IGESDF</h1>
+        <h2 className="text-xl font-semibold">Painel de Compliance — IGESDF</h2>
         <p className="text-xs">
           {orgao !== "todos" && <>Órgão: {ORGAOS.find(o=>o.value===orgao)?.label} · </>}
           {de && <>De: {formatDate(de)} · </>}
@@ -77,11 +86,11 @@ function Dashboard() {
 
       <div className="grid md:grid-cols-4 gap-3 no-print">
         <Select value={orgao} onValueChange={setOrgao}>
-          <SelectTrigger><SelectValue placeholder="Órgão" /></SelectTrigger>
+          <SelectTrigger aria-label="Filtrar por órgão"><SelectValue placeholder="Órgão" /></SelectTrigger>
           <SelectContent><SelectItem value="todos">Todos os órgãos</SelectItem>{ORGAOS.map(o=><SelectItem key={o.value} value={o.value}>{o.label}</SelectItem>)}</SelectContent>
         </Select>
-        <div className="flex items-center gap-2"><span className="text-xs text-muted-foreground shrink-0">Vence de</span><Input type="date" value={de} onChange={(e)=>setDe(e.target.value)} /></div>
-        <div className="flex items-center gap-2"><span className="text-xs text-muted-foreground shrink-0">até</span><Input type="date" value={ate} onChange={(e)=>setAte(e.target.value)} /></div>
+        <div className="flex items-center gap-2"><label htmlFor="dash-de" className="text-xs text-muted-foreground shrink-0">Vence de</label><Input id="dash-de" type="date" value={de} onChange={(e)=>setDe(e.target.value)} /></div>
+        <div className="flex items-center gap-2"><label htmlFor="dash-ate" className="text-xs text-muted-foreground shrink-0">até</label><Input id="dash-ate" type="date" value={ate} onChange={(e)=>setAte(e.target.value)} /></div>
         <Button variant="ghost" onClick={()=>{ setOrgao("todos"); setDe(""); setAte(""); }}>Limpar filtros</Button>
       </div>
 
