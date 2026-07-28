@@ -83,11 +83,10 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { property: "og:title", content: "IGESDF Compliance — Gestão de Licenciamentos" },
       { property: "og:description", content: "Sistema de gestão de licenciamentos, alvarás e compliance regulatório da rede hospitalar do IGESDF." },
       { property: "og:type", content: "website" },
+      { property: "og:site_name", content: "IGESDF Compliance" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "IGESDF Compliance — Gestão de Licenciamentos" },
       { name: "twitter:description", content: "Sistema de gestão de licenciamentos, alvarás e compliance regulatório da rede hospitalar do IGESDF." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/540dc688-b057-48b8-a6bc-468f43d81e8c/id-preview-ff2015fb--04535702-b9c5-44cc-b745-3d93e4172941.lovable.app-1784162460644.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/540dc688-b057-48b8-a6bc-468f43d81e8c/id-preview-ff2015fb--04535702-b9c5-44cc-b745-3d93e4172941.lovable.app-1784162460644.png" },
     ],
     links: [
       {
@@ -98,6 +97,28 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "preconnect", href: "https://fonts.gstatic.com", crossOrigin: "anonymous" },
       { rel: "stylesheet", href: "https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" },
       { rel: "icon", href: "/favicon.ico", type: "image/x-icon" },
+    ],
+    scripts: [
+      {
+        type: "application/ld+json",
+        children: JSON.stringify({
+          "@context": "https://schema.org",
+          "@graph": [
+            {
+              "@type": "Organization",
+              name: "IGESDF — Instituto de Gestão Estratégica de Saúde do Distrito Federal",
+              url: "https://igesdf-licenciamento.qidominios.tech",
+              description: "Rede pública hospitalar do Distrito Federal (hospitais e UPAs) gerida pelo IGESDF.",
+            },
+            {
+              "@type": "WebSite",
+              name: "IGESDF Compliance",
+              url: "https://igesdf-licenciamento.qidominios.tech",
+              description: "Sistema de gestão de licenciamentos, alvarás e compliance regulatório da rede hospitalar do IGESDF.",
+            },
+          ],
+        }),
+      },
     ],
   }),
   shellComponent: RootShell,

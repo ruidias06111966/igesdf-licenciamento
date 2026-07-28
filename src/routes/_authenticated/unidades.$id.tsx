@@ -24,7 +24,16 @@ function unidadeOpts(id: string) {
 export const Route = createFileRoute("/_authenticated/unidades/$id")({
   loader: ({ context, params }) => context.queryClient.ensureQueryData(unidadeOpts(params.id)),
   component: UnidadeDetalhe,
-  head: ({ params }) => ({ meta: [{ title: `Unidade — IGESDF Compliance` }] }),
+  head: ({ params }) => ({
+    meta: [
+      { title: "Unidade — IGESDF Compliance" },
+      { name: "description", content: "Ficha detalhada da unidade: CNAEs, licenças por órgão, documentos versionados, checklists e responsáveis técnicos." },
+      { property: "og:title", content: "Ficha da Unidade — IGESDF Compliance" },
+      { property: "og:description", content: "Detalhe de licenciamento, documentos e checklists da unidade IGESDF." },
+      { property: "og:url", content: `https://igesdf-licenciamento.qidominios.tech/unidades/${params.id}` },
+    ],
+    links: [{ rel: "canonical", href: `https://igesdf-licenciamento.qidominios.tech/unidades/${params.id}` }],
+  }),
   errorComponent: ({ error }) => <div className="p-8 text-destructive">{error.message}</div>,
   notFoundComponent: () => <div className="p-8">Unidade não encontrada.</div>,
 });

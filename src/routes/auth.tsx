@@ -13,7 +13,16 @@ import { ShieldCheck } from "lucide-react";
 export const Route = createFileRoute("/auth")({
   ssr: false,
   component: AuthPage,
-  head: () => ({ meta: [{ title: "Entrar — IGESDF Compliance" }] }),
+  head: () => ({
+    meta: [
+      { title: "Entrar — IGESDF Compliance" },
+      { name: "description", content: "Acesso ao painel de compliance regulatório do IGESDF: gestão de licenças, alvarás e prazos de renovação da rede hospitalar do Distrito Federal." },
+      { property: "og:title", content: "Entrar — IGESDF Compliance" },
+      { property: "og:description", content: "Acesso ao painel de compliance regulatório do IGESDF." },
+      { property: "og:url", content: "https://igesdf-licenciamento.qidominios.tech/auth" },
+    ],
+    links: [{ rel: "canonical", href: "https://igesdf-licenciamento.qidominios.tech/auth" }],
+  }),
 });
 
 function AuthPage() {
@@ -57,7 +66,7 @@ function AuthPage() {
   }
 
   return (
-    <div className="min-h-screen grid lg:grid-cols-2">
+    <main className="min-h-screen grid lg:grid-cols-2">
       <div className="hidden lg:flex flex-col justify-between p-12 bg-sidebar text-sidebar-foreground">
         <div className="flex items-center gap-3">
           <ShieldCheck className="size-8 text-sidebar-primary" />
@@ -104,6 +113,6 @@ function AuthPage() {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </main>
   );
 }

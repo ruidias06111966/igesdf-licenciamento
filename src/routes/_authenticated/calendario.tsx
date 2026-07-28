@@ -15,7 +15,16 @@ const unidadesOpts = queryOptions({ queryKey: ["unidades"], queryFn: () => listU
 export const Route = createFileRoute("/_authenticated/calendario")({
   loader: ({ context }) => Promise.all([context.queryClient.ensureQueryData(opts), context.queryClient.ensureQueryData(unidadesOpts)]),
   component: Cal,
-  head: () => ({ meta: [{ title: "Vencimentos — IGESDF Compliance" }] }),
+  head: () => ({
+    meta: [
+      { title: "Vencimentos — IGESDF Compliance" },
+      { name: "description", content: "Calendário de vencimentos de licenças e alvarás da rede IGESDF, com semáforo por prazo e filtros por órgão e unidade." },
+      { property: "og:title", content: "Calendário de Vencimentos — IGESDF" },
+      { property: "og:description", content: "Datas de vencimento e renovação de licenças da rede hospitalar do IGESDF." },
+      { property: "og:url", content: "https://igesdf-licenciamento.qidominios.tech/calendario" },
+    ],
+    links: [{ rel: "canonical", href: "https://igesdf-licenciamento.qidominios.tech/calendario" }],
+  }),
   errorComponent: ({ error }) => <div className="p-8 text-destructive">{error.message}</div>,
   notFoundComponent: () => <div className="p-8">Sem dados.</div>,
 });
