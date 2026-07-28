@@ -20,7 +20,16 @@ const unidadesOpts = queryOptions({ queryKey: ["unidades"], queryFn: () => listU
 export const Route = createFileRoute("/_authenticated/relatorios")({
   loader: ({ context }) => Promise.all([context.queryClient.ensureQueryData(opts), context.queryClient.ensureQueryData(unidadesOpts)]),
   component: RelatoriosPage,
-  head: () => ({ meta: [{ title: "Relatórios — IGESDF Compliance" }] }),
+  head: () => ({
+    meta: [
+      { title: "Relatórios — IGESDF Compliance" },
+      { name: "description", content: "Relatórios de conformidade por unidade e por órgão, com pendências, prazos de renovação e exportação PDF para auditoria." },
+      { property: "og:title", content: "Relatórios de Conformidade — IGESDF" },
+      { property: "og:description", content: "Relatórios de conformidade regulatória e exportação PDF para auditoria." },
+      { property: "og:url", content: "https://igesdf-licenciamento.qidominios.tech/relatorios" },
+    ],
+    links: [{ rel: "canonical", href: "https://igesdf-licenciamento.qidominios.tech/relatorios" }],
+  }),
   errorComponent: ({ error }) => <div className="p-8 text-destructive">{error.message}</div>,
   notFoundComponent: () => <div className="p-8">Sem dados.</div>,
 });
