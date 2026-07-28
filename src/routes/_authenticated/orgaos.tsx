@@ -18,7 +18,16 @@ const opts = queryOptions({ queryKey: ["orgaos"], queryFn: () => listOrgaos() })
 export const Route = createFileRoute("/_authenticated/orgaos")({
   loader: ({ context }) => context.queryClient.ensureQueryData(opts),
   component: OrgaosPage,
-  head: () => ({ meta: [{ title: "Órgãos — IGESDF Compliance" }] }),
+  head: () => ({
+    meta: [
+      { title: "Órgãos — IGESDF Compliance" },
+      { name: "description", content: "Cadastro dos órgãos licenciadores utilizados pelo IGESDF: DF LEGAL, SUSDEC, CBMDF, IBRAM, VISADF, PCDF, SEAGRI e SEEDF." },
+      { property: "og:title", content: "Órgãos Licenciadores — IGESDF" },
+      { property: "og:description", content: "Órgãos oficiais envolvidos no licenciamento das unidades do IGESDF." },
+      { property: "og:url", content: "https://igesdf-licenciamento.qidominios.tech/orgaos" },
+    ],
+    links: [{ rel: "canonical", href: "https://igesdf-licenciamento.qidominios.tech/orgaos" }],
+  }),
   errorComponent: ({ error }) => <div className="p-8 text-destructive">{error.message}</div>,
   notFoundComponent: () => <div className="p-8">Sem órgãos.</div>,
 });
