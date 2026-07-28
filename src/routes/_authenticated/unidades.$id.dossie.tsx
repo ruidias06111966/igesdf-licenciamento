@@ -18,7 +18,17 @@ export const Route = createFileRoute("/_authenticated/unidades/$id/dossie")({
   loader: ({ context, params }) => context.queryClient.ensureQueryData(dossieOpts(params.id)),
   component: Dossie,
   validateSearch: (s: Record<string, unknown>) => ({ print: s.print ? 1 : undefined }) as { print?: 1 },
-  head: () => ({ meta: [{ title: "Dossiê da unidade — IGESDF Compliance" }] }),
+  head: ({ params }) => ({
+    meta: [
+      { title: "Dossiê da unidade — IGESDF Compliance" },
+      { name: "description", content: "Dossiê consolidado de conformidade da unidade: licenças por órgão, checklists, documentos e responsáveis técnicos, pronto para auditoria." },
+      { property: "og:title", content: "Dossiê de Conformidade — IGESDF" },
+      { property: "og:description", content: "Relatório consolidado de conformidade da unidade IGESDF." },
+      { property: "og:url", content: `https://igesdf-licenciamento.qidominios.tech/unidades/${params.id}/dossie` },
+      { name: "robots", content: "noindex" },
+    ],
+    links: [{ rel: "canonical", href: `https://igesdf-licenciamento.qidominios.tech/unidades/${params.id}/dossie` }],
+  }),
   errorComponent: ({ error }) => <div className="p-8 text-destructive">{error.message}</div>,
   notFoundComponent: () => <div className="p-8">Unidade não encontrada.</div>,
 });
