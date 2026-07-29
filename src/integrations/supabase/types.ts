@@ -342,6 +342,69 @@ export type Database = {
           },
         ]
       }
+      normativas: {
+        Row: {
+          ambito: string
+          ano: number | null
+          aplicacao: string[]
+          created_at: string
+          data_publicacao: string | null
+          ementa: string | null
+          id: string
+          link: string | null
+          numero: string
+          observacoes: string | null
+          orgao_sigla: string
+          principal: boolean
+          situacao: string
+          storage_path: string | null
+          tags: string[]
+          tipo: string
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          ambito?: string
+          ano?: number | null
+          aplicacao?: string[]
+          created_at?: string
+          data_publicacao?: string | null
+          ementa?: string | null
+          id?: string
+          link?: string | null
+          numero: string
+          observacoes?: string | null
+          orgao_sigla?: string
+          principal?: boolean
+          situacao?: string
+          storage_path?: string | null
+          tags?: string[]
+          tipo?: string
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          ambito?: string
+          ano?: number | null
+          aplicacao?: string[]
+          created_at?: string
+          data_publicacao?: string | null
+          ementa?: string | null
+          id?: string
+          link?: string | null
+          numero?: string
+          observacoes?: string | null
+          orgao_sigla?: string
+          principal?: boolean
+          situacao?: string
+          storage_path?: string | null
+          tags?: string[]
+          tipo?: string
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       notificacoes_vencimento: {
         Row: {
           destinatario: string
