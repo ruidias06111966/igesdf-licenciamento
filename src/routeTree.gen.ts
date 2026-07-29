@@ -16,6 +16,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedUnidadesRouteImport } from './routes/_authenticated/unidades'
 import { Route as AuthenticatedRelatoriosRouteImport } from './routes/_authenticated/relatorios'
 import { Route as AuthenticatedOrgaosRouteImport } from './routes/_authenticated/orgaos'
+import { Route as AuthenticatedNormativasRouteImport } from './routes/_authenticated/normativas'
 import { Route as AuthenticatedLicencasRouteImport } from './routes/_authenticated/licencas'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedCalendarioRouteImport } from './routes/_authenticated/calendario'
@@ -55,6 +56,11 @@ const AuthenticatedRelatoriosRoute = AuthenticatedRelatoriosRouteImport.update({
 const AuthenticatedOrgaosRoute = AuthenticatedOrgaosRouteImport.update({
   id: '/orgaos',
   path: '/orgaos',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedNormativasRoute = AuthenticatedNormativasRouteImport.update({
+  id: '/normativas',
+  path: '/normativas',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedLicencasRoute = AuthenticatedLicencasRouteImport.update({
@@ -97,6 +103,7 @@ export interface FileRoutesByFullPath {
   '/calendario': typeof AuthenticatedCalendarioRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/licencas': typeof AuthenticatedLicencasRoute
+  '/normativas': typeof AuthenticatedNormativasRoute
   '/orgaos': typeof AuthenticatedOrgaosRoute
   '/relatorios': typeof AuthenticatedRelatoriosRoute
   '/unidades': typeof AuthenticatedUnidadesRouteWithChildren
@@ -111,6 +118,7 @@ export interface FileRoutesByTo {
   '/calendario': typeof AuthenticatedCalendarioRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/licencas': typeof AuthenticatedLicencasRoute
+  '/normativas': typeof AuthenticatedNormativasRoute
   '/orgaos': typeof AuthenticatedOrgaosRoute
   '/relatorios': typeof AuthenticatedRelatoriosRoute
   '/unidades': typeof AuthenticatedUnidadesRouteWithChildren
@@ -127,6 +135,7 @@ export interface FileRoutesById {
   '/_authenticated/calendario': typeof AuthenticatedCalendarioRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/licencas': typeof AuthenticatedLicencasRoute
+  '/_authenticated/normativas': typeof AuthenticatedNormativasRoute
   '/_authenticated/orgaos': typeof AuthenticatedOrgaosRoute
   '/_authenticated/relatorios': typeof AuthenticatedRelatoriosRoute
   '/_authenticated/unidades': typeof AuthenticatedUnidadesRouteWithChildren
@@ -143,6 +152,7 @@ export interface FileRouteTypes {
     | '/calendario'
     | '/dashboard'
     | '/licencas'
+    | '/normativas'
     | '/orgaos'
     | '/relatorios'
     | '/unidades'
@@ -157,6 +167,7 @@ export interface FileRouteTypes {
     | '/calendario'
     | '/dashboard'
     | '/licencas'
+    | '/normativas'
     | '/orgaos'
     | '/relatorios'
     | '/unidades'
@@ -172,6 +183,7 @@ export interface FileRouteTypes {
     | '/_authenticated/calendario'
     | '/_authenticated/dashboard'
     | '/_authenticated/licencas'
+    | '/_authenticated/normativas'
     | '/_authenticated/orgaos'
     | '/_authenticated/relatorios'
     | '/_authenticated/unidades'
@@ -237,6 +249,13 @@ declare module '@tanstack/react-router' {
       path: '/orgaos'
       fullPath: '/orgaos'
       preLoaderRoute: typeof AuthenticatedOrgaosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/normativas': {
+      id: '/_authenticated/normativas'
+      path: '/normativas'
+      fullPath: '/normativas'
+      preLoaderRoute: typeof AuthenticatedNormativasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/licencas': {
@@ -315,6 +334,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCalendarioRoute: typeof AuthenticatedCalendarioRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedLicencasRoute: typeof AuthenticatedLicencasRoute
+  AuthenticatedNormativasRoute: typeof AuthenticatedNormativasRoute
   AuthenticatedOrgaosRoute: typeof AuthenticatedOrgaosRoute
   AuthenticatedRelatoriosRoute: typeof AuthenticatedRelatoriosRoute
   AuthenticatedUnidadesRoute: typeof AuthenticatedUnidadesRouteWithChildren
@@ -324,6 +344,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCalendarioRoute: AuthenticatedCalendarioRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedLicencasRoute: AuthenticatedLicencasRoute,
+  AuthenticatedNormativasRoute: AuthenticatedNormativasRoute,
   AuthenticatedOrgaosRoute: AuthenticatedOrgaosRoute,
   AuthenticatedRelatoriosRoute: AuthenticatedRelatoriosRoute,
   AuthenticatedUnidadesRoute: AuthenticatedUnidadesRouteWithChildren,
