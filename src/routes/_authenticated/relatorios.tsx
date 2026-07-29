@@ -97,7 +97,7 @@ function RelatoriosPage() {
             <SelectItem value="orgao">Agrupar por órgão</SelectItem>
           </SelectContent>
         </Select>
-        <Select value={tipoF} onValueChange={setTipoF}>
+        <Select value={tipoF} onValueChange={(v)=>{ setTipoF(v); setUnidadeF("todos"); }}>
           <SelectTrigger aria-label="Tipo de unidade"><SelectValue placeholder="Tipo" /></SelectTrigger>
           <SelectContent>
             <SelectItem value="todos">Todos os tipos</SelectItem>
