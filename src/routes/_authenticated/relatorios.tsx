@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ORGAOS, STATUS_LABEL, semaforoColor, formatDate, parseCnae } from "@/lib/domain";
+import { ORGAOS, STATUS_LABEL, semaforoColor, formatDate, parseCnae, TIPO_UNIDADE_LABEL, TipoUnidade } from "@/lib/domain";
 import { supabase } from "@/integrations/supabase/client";
 import { Upload, FileCheck2 } from "lucide-react";
 import { PrintModeToggle } from "@/components/print-mode-toggle";
@@ -42,14 +42,22 @@ function RelatoriosPage() {
   const [modo, setModo] = useState<Modo>("unidade");
   const [unidadeF, setUnidadeF] = useState<string>("todos");
   const [orgaoF, setOrgaoF] = useState<string>("todos");
+  const [tipoF, setTipoF] = useState<string>("todos");
   const [apenasPend, setApenasPend] = useState(false);
+
+  const tipoPorUnidade = useMemo(() => {
+    const m: Record<string, string> = {};
+    for (const u of unidades as any[]) m[u.id] = u.tipo;
+    return m;
+  }, [unidades]);
 
   const filtrados = useMemo(() => data.filter((d: any) => {
     if (unidadeF !== "todos" && d.unidade_id !== unidadeF) return false;
     if (orgaoF !== "todos" && d.orgao !== orgaoF) return false;
+    if (tipoF !== "todos" && tipoPorUnidade[d.unidade_id] !== tipoF) return false;
     if (apenasPend && ["vigente","dispensada"].includes(d.status)) return false;
     return true;
-  }), [data, unidadeF, orgaoF, apenasPend]);
+  }), [data, unidadeF, orgaoF, tipoF, apenasPend, tipoPorUnidade]);
 
   const grupos = useMemo(() => {
     const g: Record<string, any[]> = {};
@@ -81,7 +89,7 @@ function RelatoriosPage() {
         <PrintModeToggle defaultOrientation="landscape" />
       </header>
 
-      <div className="grid md:grid-cols-4 gap-3 no-print">
+      <div className="grid md:grid-cols-5 gap-3 no-print">
         <Select value={modo} onValueChange={(v)=>setModo(v as Modo)}>
           <SelectTrigger><SelectValue /></SelectTrigger>
           <SelectContent>
@@ -89,9 +97,16 @@ function RelatoriosPage() {
             <SelectItem value="orgao">Agrupar por órgão</SelectItem>
           </SelectContent>
         </Select>
+        <Select value={tipoF} onValueChange={setTipoF}>
+          <SelectTrigger aria-label="Tipo de unidade"><SelectValue placeholder="Tipo" /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="todos">Todos os tipos</SelectItem>
+            {Object.entries(TIPO_UNIDADE_LABEL).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+          </SelectContent>
+        </Select>
         <Select value={unidadeF} onValueChange={setUnidadeF}>
           <SelectTrigger><SelectValue placeholder="Unidade" /></SelectTrigger>
-          <SelectContent><SelectItem value="todos">Todas as unidades</SelectItem>{unidades.map((u:any)=><SelectItem key={u.id} value={u.id}>{u.nome}</SelectItem>)}</SelectContent>
+          <SelectContent><SelectItem value="todos">Todas as unidades</SelectItem>{(unidades as any[]).filter((u:any)=>tipoF==="todos"||u.tipo===tipoF).map((u:any)=><SelectItem key={u.id} value={u.id}>{u.nome}</SelectItem>)}</SelectContent>
         </Select>
         <Select value={orgaoF} onValueChange={setOrgaoF}>
           <SelectTrigger><SelectValue placeholder="Órgão" /></SelectTrigger>
@@ -106,6 +121,7 @@ function RelatoriosPage() {
         <h1 className="text-xl font-semibold">Relatório de conformidade — IGESDF</h1>
         <p className="text-xs">
           Agrupado por {modo === "unidade" ? "unidade" : "órgão"}
+          {tipoF !== "todos" && <> · Tipo: {TIPO_UNIDADE_LABEL[tipoF as TipoUnidade] ?? tipoF}</>}
           {unidadeF !== "todos" && <> · Unidade: {unidades.find((u:any)=>u.id===unidadeF)?.nome}</>}
           {orgaoF !== "todos" && <> · Órgão: {ORGAOS.find(o=>o.value===orgaoF)?.label}</>}
           {apenasPend && <> · Apenas pendências</>}
