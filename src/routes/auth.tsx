@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { getCurrentSession } from "@/lib/auth-session";
 import { lovable } from "@/integrations/lovable/index";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,9 +33,13 @@ function AuthPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: "/dashboard" });
+    let active = true;
+    getCurrentSession().then((session) => {
+      if (active && session) navigate({ to: "/dashboard" });
     });
+    return () => {
+      active = false;
+    };
   }, [navigate]);
 
   async function signIn(e: React.FormEvent) {
