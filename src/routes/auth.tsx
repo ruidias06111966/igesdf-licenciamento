@@ -1,120 +1,169 @@
-import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { supabase } from "@/integrations/supabase/client";
-import { getCurrentSession } from "@/lib/auth-session";
-import { lovable } from "@/integrations/lovable/index";
+import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { Eye, EyeOff, ShieldCheck, TriangleAlert } from "lucide-react";
+import { acessoConfigurado, entrar } from "@/lib/acesso.functions";
+import { mensagemErro } from "@/lib/errors";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { toast } from "sonner";
-import { ShieldCheck } from "lucide-react";
 
 export const Route = createFileRoute("/auth")({
-  ssr: false,
   component: AuthPage,
   head: () => ({
     meta: [
       { title: "Entrar — IGESDF Compliance" },
-      { name: "description", content: "Acesso ao painel de compliance regulatório do IGESDF: gestão de licenças, alvarás e prazos de renovação da rede hospitalar do Distrito Federal." },
+      {
+        name: "description",
+        content:
+          "Acesso ao painel de compliance regulatório do IGESDF: gestão de licenças, alvarás e prazos de renovação da rede hospitalar do Distrito Federal.",
+      },
       { property: "og:title", content: "Entrar — IGESDF Compliance" },
-      { property: "og:description", content: "Acesso ao painel de compliance regulatório do IGESDF." },
+      {
+        property: "og:description",
+        content: "Acesso ao painel de compliance regulatório do IGESDF.",
+      },
       { property: "og:url", content: "https://igesdf-licenciamento.qidominios.tech/auth" },
+      { name: "robots", content: "noindex" },
     ],
     links: [{ rel: "canonical", href: "https://igesdf-licenciamento.qidominios.tech/auth" }],
   }),
 });
 
 function AuthPage() {
-  const navigate = useNavigate();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [loading, setLoading] = useState(false);
+  const navegar = useNavigate();
+  const router = useRouter();
+  const [senha, setSenha] = useState("");
+  const [verSenha, setVerSenha] = useState(false);
+  const [ocupado, setOcupado] = useState(false);
+  const [erro, setErro] = useState<string | null>(null);
 
-  useEffect(() => {
-    let active = true;
-    getCurrentSession().then((session) => {
-      if (active && session) navigate({ to: "/dashboard" });
-    });
-    return () => {
-      active = false;
-    };
-  }, [navigate]);
+  const { data: config } = useQuery({
+    queryKey: ["acesso-configurado"],
+    queryFn: () => acessoConfigurado(),
+    staleTime: 60_000,
+  });
 
-  async function signIn(e: React.FormEvent) {
+  async function submeter(e: React.FormEvent) {
     e.preventDefault();
-    setLoading(true);
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    setLoading(false);
-    if (error) return toast.error(error.message);
-    toast.success("Autenticado");
-    navigate({ to: "/dashboard" });
-  }
-
-  async function signUp(e: React.FormEvent) {
-    e.preventDefault();
-    setLoading(true);
-    const { error } = await supabase.auth.signUp({
-      email, password,
-      options: { emailRedirectTo: `${window.location.origin}/dashboard` },
-    });
-    setLoading(false);
-    if (error) return toast.error(error.message);
-    toast.success("Conta criada. Verifique o email se necessário.");
-  }
-
-  async function google() {
-    const res = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
-    if (res.error) toast.error(res.error.message ?? "Falha no login com Google");
-    else if (!res.redirected) navigate({ to: "/dashboard" });
+    setOcupado(true);
+    setErro(null);
+    try {
+      const res = await entrar({ data: { senha } });
+      if (!res.ok) {
+        setErro(
+          res.motivo === "limite"
+            ? (res.mensagem ?? "Muitas tentativas. Aguarde alguns minutos.")
+            : "Senha incorreta.",
+        );
+        setSenha("");
+        return;
+      }
+      // O guarda de rota lê o cookie no servidor, por isso é preciso invalidar
+      // o que o router já tem em cache antes de navegar.
+      await router.invalidate();
+      await navegar({ to: "/dashboard" });
+    } catch (falha) {
+      setErro(mensagemErro(falha));
+    } finally {
+      setOcupado(false);
+    }
   }
 
   return (
-    <main className="min-h-screen grid lg:grid-cols-2">
-      <div className="hidden lg:flex flex-col justify-between p-12 bg-sidebar text-sidebar-foreground">
+    <main className="grid min-h-screen lg:grid-cols-2">
+      <div className="hidden flex-col justify-between bg-sidebar p-12 text-sidebar-foreground lg:flex">
         <div className="flex items-center gap-3">
-          <ShieldCheck className="size-8 text-sidebar-primary" />
+          <ShieldCheck className="size-8 text-sidebar-primary" aria-hidden="true" />
           <div>
             <div className="text-xl font-semibold">IGESDF Compliance</div>
             <div className="text-sm opacity-70">Gestão integrada de licenciamentos</div>
           </div>
         </div>
-        <div className="space-y-3 max-w-md">
-          <h1 className="text-3xl font-semibold leading-tight">Do CNPJ ao alvará, tudo controlado num só lugar.</h1>
-          <p className="text-sm opacity-80">Hospitais, UPAs e unidades administrativas — Vigilância Sanitária, CBMDF, IBRAM, CNES, Administração Regional. Datas, documentos e responsáveis técnicos numa matriz de compliance.</p>
+        <div className="max-w-md space-y-3">
+          <h1 className="text-3xl leading-tight font-semibold">
+            Do CNPJ ao alvará, tudo controlado em um só lugar.
+          </h1>
+          <p className="text-sm opacity-80">
+            Hospitais, UPAs e unidades administrativas — Vigilância Sanitária, CBMDF, IBRAM, CNES e
+            Administração Regional. Datas, documentos e responsáveis técnicos em uma matriz de
+            compliance.
+          </p>
         </div>
-        <div className="text-xs opacity-60">Instituto de Gestão Estratégica de Saúde do Distrito Federal</div>
+        <div className="text-xs opacity-60">
+          Instituto de Gestão Estratégica de Saúde do Distrito Federal
+        </div>
       </div>
+
       <div className="flex items-center justify-center p-6">
         <Card className="w-full max-w-md">
           <CardHeader>
-            <CardTitle>Entrar</CardTitle>
-            <CardDescription>Aceda ao painel de compliance regulatório.</CardDescription>
+            <div className="mb-2 flex items-center gap-2 lg:hidden">
+              <ShieldCheck className="size-6 text-primary" aria-hidden="true" />
+              <span className="font-semibold">IGESDF Compliance</span>
+            </div>
+            <CardTitle>Senha de acesso</CardTitle>
+            <CardDescription>
+              Senha única da equipe. Não há cadastro nem contas individuais — informe uma vez e o
+              acesso fica guardado neste navegador por 30 dias.
+            </CardDescription>
           </CardHeader>
           <CardContent>
-            <Button variant="outline" className="w-full mb-4" onClick={google}>Continuar com Google</Button>
-            <div className="text-center text-xs text-muted-foreground mb-4">ou com email</div>
-            <Tabs defaultValue="login">
-              <TabsList className="grid grid-cols-2 w-full">
-                <TabsTrigger value="login">Entrar</TabsTrigger>
-                <TabsTrigger value="signup">Criar conta</TabsTrigger>
-              </TabsList>
-              <TabsContent value="login">
-                <form onSubmit={signIn} className="space-y-3 mt-4">
-                  <div><Label htmlFor="e1">Email</Label><Input id="e1" type="email" required value={email} onChange={(e)=>setEmail(e.target.value)} /></div>
-                  <div><Label htmlFor="p1">Senha</Label><Input id="p1" type="password" required value={password} onChange={(e)=>setPassword(e.target.value)} /></div>
-                  <Button disabled={loading} type="submit" className="w-full">{loading ? "A entrar…" : "Entrar"}</Button>
-                </form>
-              </TabsContent>
-              <TabsContent value="signup">
-                <form onSubmit={signUp} className="space-y-3 mt-4">
-                  <div><Label htmlFor="e2">Email</Label><Input id="e2" type="email" required value={email} onChange={(e)=>setEmail(e.target.value)} /></div>
-                  <div><Label htmlFor="p2">Senha</Label><Input id="p2" type="password" required minLength={6} value={password} onChange={(e)=>setPassword(e.target.value)} /></div>
-                  <Button disabled={loading} type="submit" className="w-full">{loading ? "A criar…" : "Criar conta"}</Button>
-                </form>
-              </TabsContent>
-            </Tabs>
+            {config && !config.configurado ? (
+              <div className="flex items-start gap-2 rounded-md border border-warning/50 bg-warning/10 p-3 text-sm">
+                <TriangleAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+                <div>
+                  <p className="font-medium">Senha de acesso não configurada</p>
+                  <p className="mt-1 text-xs">
+                    Defina a variável de ambiente <code className="font-mono">ACESSO_SENHA</code>{" "}
+                    nas configurações do projeto e recarregue esta página.
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <form onSubmit={submeter} className="space-y-4">
+                <div className="space-y-1.5">
+                  <Label htmlFor="senha">Senha</Label>
+                  <div className="relative">
+                    <Input
+                      id="senha"
+                      type={verSenha ? "text" : "password"}
+                      autoComplete="current-password"
+                      autoFocus
+                      required
+                      className="pr-10"
+                      value={senha}
+                      onChange={(e) => setSenha(e.target.value)}
+                      aria-invalid={Boolean(erro)}
+                      aria-describedby={erro ? "senha-erro" : undefined}
+                    />
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="absolute top-1/2 right-1 size-8 -translate-y-1/2"
+                      aria-label={verSenha ? "Ocultar senha" : "Mostrar senha"}
+                      onClick={() => setVerSenha((v) => !v)}
+                    >
+                      {verSenha ? (
+                        <EyeOff className="size-4" aria-hidden="true" />
+                      ) : (
+                        <Eye className="size-4" aria-hidden="true" />
+                      )}
+                    </Button>
+                  </div>
+                  {erro && (
+                    <p id="senha-erro" role="alert" className="text-xs text-destructive">
+                      {erro}
+                    </p>
+                  )}
+                </div>
+                <Button type="submit" className="w-full" disabled={ocupado || senha.length === 0}>
+                  {ocupado ? "Entrando…" : "Entrar"}
+                </Button>
+              </form>
+            )}
           </CardContent>
         </Card>
       </div>

@@ -65,7 +65,7 @@
   --color-warning-foreground: var(--warning-foreground);
   --color-info: var(--info);
   --color-info-foreground: var(--info-foreground);
-  --font-sans: 'Inter', system-ui, sans-serif;
+  --font-sans: "Inter", system-ui, sans-serif;
 }
 
 :root {
@@ -165,31 +165,84 @@
  * ignores named @page rules. The named @page below is a static fallback for
  * the initial paint before JS runs.
  */
-@page { size: A4 landscape; margin: 8mm; }
-@page portrait { size: A4 portrait; margin: 10mm; }
-@page landscape { size: A4 landscape; margin: 8mm; }
+@page {
+  size: A4 landscape;
+  margin: 8mm;
+}
+@page portrait {
+  size: A4 portrait;
+  margin: 10mm;
+}
+@page landscape {
+  size: A4 landscape;
+  margin: 8mm;
+}
 @media print {
-  body.print-portrait { page: portrait; }
-  body.print-landscape { page: landscape; }
-  html, body { background: white !important; color: black !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-  * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; }
-  .no-print, nav, aside, [data-sidebar], header.app-header { display: none !important; }
-  .print-only { display: block !important; }
-  .print-only-cell { display: table-cell !important; }
-  .print-only-row { display: table-row !important; }
-  main, .print-area { padding: 0 !important; margin: 0 !important; overflow: visible !important; }
+  body.print-portrait {
+    page: portrait;
+  }
+  body.print-landscape {
+    page: landscape;
+  }
+  html,
+  body {
+    background: white !important;
+    color: black !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  .no-print,
+  nav,
+  aside,
+  [data-sidebar],
+  header.app-header {
+    display: none !important;
+  }
+  .print-only {
+    display: block !important;
+  }
+  .print-only-cell {
+    display: table-cell !important;
+  }
+  .print-only-row {
+    display: table-row !important;
+  }
+  main,
+  .print-area {
+    padding: 0 !important;
+    margin: 0 !important;
+    overflow: visible !important;
+  }
   /* Force single-column layout on the print root so the sidebar space is reclaimed */
-  body, body > div, #root, main, .min-h-screen, [class*="grid-cols-"] {
+  body,
+  body > div,
+  #root,
+  main,
+  .min-h-screen,
+  [class*="grid-cols-"] {
     display: block !important;
     grid-template-columns: none !important;
     width: 100% !important;
     min-height: 0 !important;
   }
-  a { color: inherit !important; text-decoration: none !important; }
+  a {
+    color: inherit !important;
+    text-decoration: none !important;
+  }
 
   /* Tables: allow wrapping, keep rows intact, avoid truncation */
-  .print-area table { font-size: 8.5px; width: 100% !important; table-layout: auto; border-collapse: collapse; }
-  .print-area th, .print-area td {
+  .print-area table {
+    font-size: 8.5px;
+    width: 100% !important;
+    table-layout: auto;
+    border-collapse: collapse;
+  }
+  .print-area th,
+  .print-area td {
     padding: 2px 4px !important;
     white-space: normal !important;
     word-break: break-word;
@@ -198,19 +251,44 @@
     max-width: none !important;
     vertical-align: top;
   }
-  .print-area .truncate { overflow: visible !important; text-overflow: clip !important; white-space: normal !important; }
+  .print-area .truncate {
+    overflow: visible !important;
+    text-overflow: clip !important;
+    white-space: normal !important;
+  }
 
   /* Avoid breaking data mid-record */
-  .print-area tr, .print-area .print-row { page-break-inside: avoid; break-inside: avoid; }
-  .print-area .card, .print-area [class*="rounded"] { page-break-inside: avoid; break-inside: avoid; }
-  .print-area .grid { display: grid !important; }
+  .print-area tr,
+  .print-area .print-row {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  .print-area .card,
+  .print-area [class*="rounded"] {
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  .print-area .grid {
+    display: grid !important;
+  }
 
   /* User-controlled zoom for the entire print surface. */
-  .print-area { zoom: var(--print-scale, 1); }
+  .print-area {
+    zoom: var(--print-scale, 1);
+  }
 
   /* Badges: keep their fill visible when printed */
-  .print-area .badge, .print-area [class*="Badge"] { border: 1px solid #999 !important; }
+  .print-area .badge,
+  .print-area [class*="Badge"] {
+    border: 1px solid #999 !important;
+  }
 }
-.print-only { display: none; }
-.print-only-cell { display: none; }
-.print-only-row { display: none; }
+.print-only {
+  display: none;
+}
+.print-only-cell {
+  display: none;
+}
+.print-only-row {
+  display: none;
+}

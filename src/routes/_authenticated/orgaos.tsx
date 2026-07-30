@@ -1,152 +1,357 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useSuspenseQuery, queryOptions, useMutation, useQueryClient } from "@tanstack/react-query";
-import { listOrgaos, upsertOrgao, deleteOrgao } from "@/lib/orgaos.functions";
+import { queryOptions, useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { useMemo, useState, type ReactNode } from "react";
+import { ExternalLink, Landmark, Mail, MapPin, Pencil, Phone, Plus, Search } from "lucide-react";
+import { toast } from "sonner";
+import { PageHeader } from "@/components/page-header";
+import { CardGridSkeleton, EmptyState, ErrorState } from "@/components/states";
+import { ConfirmDelete } from "@/components/confirm-delete";
+import { Field, FieldRow, FormSheet } from "@/components/form-sheet";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
-import { Card, CardContent } from "@/components/ui/card";
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { Plus, Pencil, Trash2, ExternalLink } from "lucide-react";
-import { useState } from "react";
-import { toast } from "sonner";
-
-const opts = queryOptions({ queryKey: ["orgaos"], queryFn: () => listOrgaos() });
+import { deleteOrgao, upsertOrgao } from "@/lib/orgaos.functions";
+import { invalidarDados, orgaosQuery } from "@/lib/queries";
+import { mensagemErro } from "@/lib/errors";
+import type { Orgao_ } from "@/lib/rows";
 
 export const Route = createFileRoute("/_authenticated/orgaos")({
-  loader: ({ context }) => context.queryClient.ensureQueryData(opts),
+  loader: ({ context }) => context.queryClient.ensureQueryData(orgaosQuery),
   component: OrgaosPage,
+  pendingComponent: () => <CardGridSkeleton itens={6} />,
   head: () => ({
     meta: [
       { title: "Órgãos — IGESDF Compliance" },
-      { name: "description", content: "Cadastro dos órgãos licenciadores utilizados pelo IGESDF: DF LEGAL, SUSDEC, CBMDF, IBRAM, VISADF, PCDF, SEAGRI e SEEDF." },
-      { property: "og:title", content: "Órgãos Licenciadores — IGESDF" },
-      { property: "og:description", content: "Órgãos oficiais envolvidos no licenciamento das unidades do IGESDF." },
+      {
+        name: "description",
+        content:
+          "Cadastro dos órgãos licenciadores utilizados pelo IGESDF: DF LEGAL, SUSDEC, CBMDF, IBRAM, VISADF, PCDF, SEAGRI e SEEDF.",
+      },
+      { property: "og:title", content: "Órgãos licenciadores — IGESDF" },
+      {
+        property: "og:description",
+        content: "Órgãos oficiais envolvidos no licenciamento das unidades do IGESDF.",
+      },
       { property: "og:url", content: "https://igesdf-licenciamento.qidominios.tech/orgaos" },
     ],
     links: [{ rel: "canonical", href: "https://igesdf-licenciamento.qidominios.tech/orgaos" }],
   }),
-  errorComponent: ({ error }) => <div className="p-8 text-destructive">{error.message}</div>,
-  notFoundComponent: () => <div className="p-8">Sem órgãos.</div>,
+  errorComponent: ({ error, reset }) => <ErrorState error={error} onRetry={reset} />,
 });
 
 function OrgaosPage() {
-  const { data } = useSuspenseQuery(opts);
-  const [q, setQ] = useState("");
-  const filtered = data.filter((o: any) =>
-    !q || (o.sigla + " " + o.nome + " " + (o.categoria ?? "")).toLowerCase().includes(q.toLowerCase())
-  );
+  const { data } = useSuspenseQuery(orgaosQuery);
+  const [busca, setBusca] = useState("");
+
+  const filtrados = useMemo(() => {
+    const termo = busca.trim().toLowerCase();
+    if (!termo) return data;
+    return data.filter((o) =>
+      [o.sigla, o.nome, o.categoria].filter(Boolean).join(" ").toLowerCase().includes(termo),
+    );
+  }, [data, busca]);
 
   return (
-    <div className="p-8 space-y-4">
-      <header className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">Órgãos reguladores</h1>
-          <p className="text-sm text-muted-foreground">{filtered.length} de {data.length} órgãos cadastrados.</p>
-        </div>
-        <OrgaoForm trigger={<Button><Plus className="size-4 mr-1" /> Incluir órgão</Button>} />
-      </header>
-      <Input placeholder="Procurar por sigla, nome ou categoria…" value={q} onChange={(e)=>setQ(e.target.value)} className="max-w-md" />
-      <div className="grid gap-3 md:grid-cols-2">
-        {filtered.map((o: any) => (
-          <Card key={o.id}>
-            <CardContent className="p-4 space-y-2">
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <Badge variant="secondary" className="font-mono text-xs">{o.sigla}</Badge>
-                    {o.ativo === false && <Badge variant="outline" className="text-muted-foreground">Inativo</Badge>}
-                  </div>
-                  <div className="font-medium mt-1 leading-tight">{o.nome}</div>
-                  {o.categoria && <div className="text-xs text-muted-foreground mt-0.5">{o.categoria}</div>}
-                </div>
-                <div className="flex gap-1 shrink-0">
-                  <OrgaoForm orgao={o} trigger={<Button size="icon" variant="ghost"><Pencil className="size-4" /></Button>} />
-                  <OrgaoDelete id={o.id} sigla={o.sigla} />
-                </div>
-              </div>
-              <div className="text-xs text-muted-foreground space-y-0.5">
-                {o.site && (
-                  <div className="flex items-center gap-1">
-                    <ExternalLink className="size-3" />
-                    <a href={o.site.startsWith("http") ? o.site : `https://${o.site}`} target="_blank" rel="noreferrer" className="underline truncate">{o.site}</a>
-                  </div>
-                )}
-                {o.telefone && <div>Tel: {o.telefone}</div>}
-                {o.email && <div>Email: {o.email}</div>}
-                {o.endereco && <div>End.: {o.endereco}</div>}
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+    <div className="space-y-5 p-4 sm:p-6 lg:p-8">
+      <PageHeader
+        titulo="Órgãos reguladores"
+        descricao={
+          busca
+            ? `${filtrados.length} de ${data.length} órgãos.`
+            : `${data.length} órgãos cadastrados.`
+        }
+        acoes={
+          <OrgaoForm
+            trigger={
+              <Button>
+                <Plus className="mr-1 size-4" aria-hidden="true" /> Novo órgão
+              </Button>
+            }
+          />
+        }
+      />
+
+      <div className="relative max-w-md">
+        <Search
+          className="absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground"
+          aria-hidden="true"
+        />
+        <Input
+          className="pl-9"
+          placeholder="Buscar por sigla, nome ou categoria…"
+          aria-label="Buscar órgãos"
+          value={busca}
+          onChange={(e) => setBusca(e.target.value)}
+        />
       </div>
+
+      {filtrados.length === 0 ? (
+        <Card>
+          <CardContent className="p-0">
+            <EmptyState
+              icone={<Landmark className="size-5" aria-hidden="true" />}
+              titulo={data.length === 0 ? "Nenhum órgão cadastrado" : "Nenhum órgão encontrado"}
+              descricao={
+                data.length === 0
+                  ? "Cadastre os órgãos licenciadores com contatos e sites para consulta rápida."
+                  : "Tente outra sigla ou nome."
+              }
+              acao={
+                data.length === 0 ? (
+                  <OrgaoForm
+                    trigger={
+                      <Button size="sm">
+                        <Plus className="mr-1 size-4" aria-hidden="true" /> Novo órgão
+                      </Button>
+                    }
+                  />
+                ) : (
+                  <Button size="sm" variant="outline" onClick={() => setBusca("")}>
+                    Limpar busca
+                  </Button>
+                )
+              }
+            />
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+          {filtrados.map((o) => (
+            <OrgaoCard key={o.id} orgao={o} />
+          ))}
+        </div>
+      )}
     </div>
   );
 }
 
-function OrgaoForm({ orgao, trigger }: { orgao?: any; trigger: React.ReactNode }) {
+function OrgaoCard({ orgao }: { orgao: Orgao_ }) {
   const qc = useQueryClient();
-  const [open, setOpen] = useState(false);
-  const [form, setForm] = useState<any>(() => orgao ?? { sigla: "", nome: "", categoria: "", site: "", telefone: "", email: "", endereco: "", observacoes: "", ativo: true });
-  const m = useMutation({
-    mutationFn: (payload: any) => upsertOrgao({ data: payload }),
-    onSuccess: () => { toast.success(orgao ? "Órgão atualizado" : "Órgão criado"); qc.invalidateQueries({ queryKey: ["orgaos"] }); setOpen(false); },
-    onError: (e: any) => toast.error(e.message ?? "Erro"),
-  });
+  const site = orgao.site?.startsWith("http")
+    ? orgao.site
+    : orgao.site
+      ? `https://${orgao.site}`
+      : null;
+
   return (
-    <Sheet open={open} onOpenChange={setOpen}>
-      <SheetTrigger asChild>{trigger}</SheetTrigger>
-      <SheetContent className="w-[420px] sm:max-w-md overflow-y-auto">
-        <SheetHeader><SheetTitle>{orgao ? "Alterar órgão" : "Incluir órgão"}</SheetTitle></SheetHeader>
-        <form className="space-y-3 mt-4" onSubmit={(e)=>{ e.preventDefault(); m.mutate({ ...form, id: orgao?.id }); }}>
-          <div className="grid grid-cols-3 gap-2">
-            <div className="col-span-1"><Label>Sigla *</Label><Input required maxLength={30} value={form.sigla} onChange={(e)=>setForm({...form, sigla: e.target.value.toUpperCase()})} /></div>
-            <div className="col-span-2"><Label>Categoria</Label><Input value={form.categoria ?? ""} onChange={(e)=>setForm({...form, categoria: e.target.value})} /></div>
+    <Card className="flex h-full flex-col">
+      <CardContent className="flex flex-1 flex-col gap-2 p-4">
+        <div className="flex items-start justify-between gap-2">
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant="secondary" className="font-mono text-xs">
+                {orgao.sigla}
+              </Badge>
+              {orgao.ativo === false && (
+                <Badge variant="outline" className="text-muted-foreground">
+                  Inativo
+                </Badge>
+              )}
+            </div>
+            <div className="mt-1 leading-tight font-medium">{orgao.nome}</div>
+            {orgao.categoria && (
+              <div className="mt-0.5 text-xs text-muted-foreground">{orgao.categoria}</div>
+            )}
           </div>
-          <div><Label>Nome oficial *</Label><Input required value={form.nome} onChange={(e)=>setForm({...form, nome: e.target.value})} /></div>
-          <div><Label>Site</Label><Input value={form.site ?? ""} onChange={(e)=>setForm({...form, site: e.target.value})} placeholder="https://…" /></div>
-          <div className="grid grid-cols-2 gap-2">
-            <div><Label>Telefone</Label><Input value={form.telefone ?? ""} onChange={(e)=>setForm({...form, telefone: e.target.value})} /></div>
-            <div><Label>Email</Label><Input value={form.email ?? ""} onChange={(e)=>setForm({...form, email: e.target.value})} /></div>
+          <div className="flex shrink-0 gap-1">
+            <OrgaoForm
+              orgao={orgao}
+              trigger={
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  aria-label={`Editar ${orgao.sigla}`}
+                  title="Editar"
+                >
+                  <Pencil className="size-4" aria-hidden="true" />
+                </Button>
+              }
+            />
+            <ConfirmDelete
+              titulo={`Excluir ${orgao.sigla}?`}
+              descricao="Esta ação é permanente. Só é possível se não houver licenças associadas a este órgão."
+              mensagemSucesso="Órgão excluído"
+              onConfirm={() => deleteOrgao({ data: { id: orgao.id } })}
+              onDone={() => invalidarDados(qc)}
+            />
           </div>
-          <div><Label>Endereço</Label><Input value={form.endereco ?? ""} onChange={(e)=>setForm({...form, endereco: e.target.value})} /></div>
-          <div><Label>Observações</Label><Textarea rows={3} value={form.observacoes ?? ""} onChange={(e)=>setForm({...form, observacoes: e.target.value})} /></div>
-          <label className="flex items-center gap-2 text-sm">
-            <input type="checkbox" checked={form.ativo !== false} onChange={(e)=>setForm({...form, ativo: e.target.checked})} />
-            Ativo
-          </label>
-          <div className="flex justify-end gap-2 pt-2">
-            <Button type="button" variant="ghost" onClick={()=>setOpen(false)}>Cancelar</Button>
-            <Button type="submit" disabled={m.isPending}>{m.isPending ? "A guardar…" : "Guardar"}</Button>
-          </div>
-        </form>
-      </SheetContent>
-    </Sheet>
+        </div>
+
+        <div className="flex-1 space-y-1 text-xs text-muted-foreground">
+          {site && (
+            <div className="flex items-center gap-1.5">
+              <ExternalLink className="size-3 shrink-0" aria-hidden="true" />
+              <a href={site} target="_blank" rel="noreferrer" className="truncate underline">
+                {orgao.site}
+              </a>
+            </div>
+          )}
+          {orgao.telefone && (
+            <div className="flex items-center gap-1.5">
+              <Phone className="size-3 shrink-0" aria-hidden="true" />
+              <span>{orgao.telefone}</span>
+            </div>
+          )}
+          {orgao.email && (
+            <div className="flex items-center gap-1.5">
+              <Mail className="size-3 shrink-0" aria-hidden="true" />
+              <a href={`mailto:${orgao.email}`} className="truncate underline">
+                {orgao.email}
+              </a>
+            </div>
+          )}
+          {orgao.endereco && (
+            <div className="flex items-start gap-1.5">
+              <MapPin className="mt-0.5 size-3 shrink-0" aria-hidden="true" />
+              <span>{orgao.endereco}</span>
+            </div>
+          )}
+        </div>
+
+        {orgao.observacoes && (
+          <p className="border-t pt-2 text-xs text-muted-foreground italic">{orgao.observacoes}</p>
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
-function OrgaoDelete({ id, sigla }: { id: string; sigla: string }) {
+type ValoresOrgao = {
+  id?: string;
+  sigla: string;
+  nome: string;
+  categoria: string;
+  site: string;
+  telefone: string;
+  email: string;
+  endereco: string;
+  observacoes: string;
+  ativo: boolean;
+};
+
+function OrgaoForm({ orgao, trigger }: { orgao?: Orgao_; trigger: ReactNode }) {
   const qc = useQueryClient();
-  const m = useMutation({
-    mutationFn: () => deleteOrgao({ data: { id } }),
-    onSuccess: () => { toast.success("Órgão excluído"); qc.invalidateQueries({ queryKey: ["orgaos"] }); },
-    onError: (e: any) => toast.error(e.message ?? "Erro ao excluir"),
+  const salvar = useMutation({
+    mutationFn: (valores: ValoresOrgao) => upsertOrgao({ data: valores }),
+    onSuccess: () => {
+      toast.success(orgao ? "Órgão atualizado" : "Órgão cadastrado");
+      invalidarDados(qc);
+    },
+    onError: (erro) => toast.error(mensagemErro(erro)),
   });
+
   return (
-    <AlertDialog>
-      <AlertDialogTrigger asChild><Button size="icon" variant="ghost"><Trash2 className="size-4 text-destructive" /></Button></AlertDialogTrigger>
-      <AlertDialogContent>
-        <AlertDialogHeader>
-          <AlertDialogTitle>Excluir {sigla}?</AlertDialogTitle>
-          <AlertDialogDescription>Esta ação é permanente. Só é permitida se não houver licenças associadas.</AlertDialogDescription>
-        </AlertDialogHeader>
-        <AlertDialogFooter>
-          <AlertDialogCancel>Cancelar</AlertDialogCancel>
-          <AlertDialogAction onClick={()=>m.mutate()}>Excluir</AlertDialogAction>
-        </AlertDialogFooter>
-      </AlertDialogContent>
-    </AlertDialog>
+    <FormSheet<ValoresOrgao>
+      titulo={orgao ? "Editar órgão" : "Novo órgão"}
+      descricao="Contatos e site oficial para abrir e acompanhar processos."
+      trigger={trigger}
+      valorInicial={() => ({
+        id: orgao?.id,
+        sigla: orgao?.sigla ?? "",
+        nome: orgao?.nome ?? "",
+        categoria: orgao?.categoria ?? "",
+        site: orgao?.site ?? "",
+        telefone: orgao?.telefone ?? "",
+        email: orgao?.email ?? "",
+        endereco: orgao?.endereco ?? "",
+        observacoes: orgao?.observacoes ?? "",
+        ativo: orgao?.ativo ?? true,
+      })}
+      podeSalvar={(v) => v.sigla.trim().length >= 2 && v.nome.trim().length >= 2}
+      onSubmit={(v) => salvar.mutateAsync(v)}
+    >
+      {(v, definir) => (
+        <>
+          <FieldRow>
+            <Field label="Sigla" obrigatorio htmlFor="org-sigla">
+              <Input
+                id="org-sigla"
+                required
+                maxLength={30}
+                value={v.sigla}
+                onChange={(e) => definir("sigla", e.target.value.toUpperCase())}
+              />
+            </Field>
+            <Field label="Categoria" htmlFor="org-categoria">
+              <Input
+                id="org-categoria"
+                value={v.categoria}
+                onChange={(e) => definir("categoria", e.target.value)}
+                placeholder="Ex.: Vigilância sanitária"
+              />
+            </Field>
+          </FieldRow>
+
+          <Field label="Nome oficial" obrigatorio htmlFor="org-nome">
+            <Input
+              id="org-nome"
+              required
+              value={v.nome}
+              onChange={(e) => definir("nome", e.target.value)}
+            />
+          </Field>
+
+          <Field label="Site" htmlFor="org-site">
+            <Input
+              id="org-site"
+              value={v.site}
+              onChange={(e) => definir("site", e.target.value)}
+              placeholder="https://…"
+            />
+          </Field>
+
+          <FieldRow>
+            <Field label="Telefone" htmlFor="org-telefone">
+              <Input
+                id="org-telefone"
+                inputMode="tel"
+                value={v.telefone}
+                onChange={(e) => definir("telefone", e.target.value)}
+              />
+            </Field>
+            <Field label="E-mail" htmlFor="org-email">
+              <Input
+                id="org-email"
+                type="email"
+                value={v.email}
+                onChange={(e) => definir("email", e.target.value)}
+              />
+            </Field>
+          </FieldRow>
+
+          <Field label="Endereço" htmlFor="org-endereco">
+            <Input
+              id="org-endereco"
+              value={v.endereco}
+              onChange={(e) => definir("endereco", e.target.value)}
+            />
+          </Field>
+
+          <Field label="Observações" htmlFor="org-obs">
+            <Textarea
+              id="org-obs"
+              rows={3}
+              value={v.observacoes}
+              onChange={(e) => definir("observacoes", e.target.value)}
+            />
+          </Field>
+
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id="org-ativo"
+              checked={v.ativo}
+              onCheckedChange={(marcado) => definir("ativo", marcado === true)}
+            />
+            <Label htmlFor="org-ativo" className="text-sm font-normal">
+              Órgão ativo
+            </Label>
+          </div>
+        </>
+      )}
+    </FormSheet>
   );
 }

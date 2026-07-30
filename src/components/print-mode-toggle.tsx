@@ -24,7 +24,9 @@ export function PrintModeToggle({ defaultOrientation }: Props = {}) {
       </PopoverTrigger>
       <PopoverContent align="end" className="w-72 space-y-4">
         <div className="space-y-2">
-          <Label className="text-xs uppercase tracking-wide text-muted-foreground">Orientação</Label>
+          <Label className="text-xs uppercase tracking-wide text-muted-foreground">
+            Orientação
+          </Label>
           <RadioGroup
             value={orientation}
             onValueChange={(v) => update({ orientation: v as "portrait" | "landscape" })}
@@ -41,7 +43,8 @@ export function PrintModeToggle({ defaultOrientation }: Props = {}) {
           </RadioGroup>
           {defaultOrientation && orientation !== defaultOrientation && (
             <p className="text-[11px] text-muted-foreground">
-              Sugerido para esta página: <strong>{defaultOrientation === "portrait" ? "Retrato" : "Paisagem"}</strong>.
+              Sugerido para esta página:{" "}
+              <strong>{defaultOrientation === "portrait" ? "Retrato" : "Paisagem"}</strong>.
             </p>
           )}
         </div>
@@ -61,7 +64,9 @@ export function PrintModeToggle({ defaultOrientation }: Props = {}) {
               </Button>
             ))}
           </div>
-          <p className="text-[11px] text-muted-foreground">Reduza a escala se dados grandes cortarem entre páginas.</p>
+          <p className="text-[11px] text-muted-foreground">
+            Reduza a escala se dados grandes cortarem entre páginas.
+          </p>
         </div>
 
         <div className="flex flex-col gap-2 pt-1">

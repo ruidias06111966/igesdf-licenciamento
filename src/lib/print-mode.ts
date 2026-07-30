@@ -11,7 +11,9 @@ export function getSavedPrintMode(): { orientation: PrintOrientation; scale: Pri
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (raw) return JSON.parse(raw);
-  } catch {}
+  } catch {
+    // localStorage indisponível (modo privado, quota cheia) — usa o padrão.
+  }
   return { orientation: "landscape", scale: 100 };
 }
 
@@ -37,7 +39,9 @@ export function applyPrintMode(orientation: PrintOrientation, scale: PrintScale)
 
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify({ orientation, scale }));
-  } catch {}
+  } catch {
+    // Preferência não persistida; a impressão desta sessão continua correta.
+  }
 }
 
 export function usePrintMode() {
