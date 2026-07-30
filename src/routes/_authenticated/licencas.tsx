@@ -129,7 +129,7 @@ function LicencasPage() {
   const unidadeF = filtros.unidade ?? "todos";
   const cnaeF = filtros.cnae ?? "todos";
   const busca = filtros.q ?? "";
-  const grupo = filtros.grupo;
+  const grupo: GrupoRisco | undefined = filtros.grupo;
 
   const definir = (patch: Partial<Filtros>) =>
     void navegar({
