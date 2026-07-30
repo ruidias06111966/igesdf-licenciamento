@@ -6,3 +6,20 @@ pnpm-lock.yaml
 package-lock.json
 bun.lock
 routeTree.gen.ts
+
+# Arquivos gerados pela integração Supabase do Lovable ("This file is
+# automatically generated. Do not edit it directly."). Reformatá-los só cria
+# ruído no diff, porque são regravados a cada regeneração de tipos.
+src/integrations/supabase/types.ts
+src/integrations/supabase/client.ts
+src/integrations/supabase/client.server.ts
+src/integrations/supabase/auth-middleware.ts
+src/integrations/supabase/auth-attacher.ts
+
+# Conteúdo do utilizador; formatar reflow das tabelas e listas só gera ruído no diff.
+README.md
+AGENTS.md
+.lovable
+src/routes/README.md
+
+OPERACAO.md

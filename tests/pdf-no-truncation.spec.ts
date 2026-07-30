@@ -25,10 +25,10 @@ const OUT = "/tmp/pdf-out";
 type Case = { path: string; orientation: "portrait" | "landscape"; label: string };
 
 const CASES: Case[] = [
-  { path: "/dashboard",    orientation: "landscape", label: "dashboard" },
-  { path: "/licencas",     orientation: "landscape", label: "licencas" },
-  { path: "/calendario",   orientation: "landscape", label: "calendario" },
-  { path: "/relatorios",   orientation: "landscape", label: "relatorios" },
+  { path: "/dashboard", orientation: "landscape", label: "dashboard" },
+  { path: "/licencas", orientation: "landscape", label: "licencas" },
+  { path: "/calendario", orientation: "landscape", label: "calendario" },
+  { path: "/relatorios", orientation: "landscape", label: "relatorios" },
 ];
 
 async function restoreSession(page: Page) {
@@ -36,7 +36,10 @@ async function restoreSession(page: Page) {
   const session = process.env.LOVABLE_BROWSER_SUPABASE_SESSION_JSON;
   const cookies = process.env.LOVABLE_BROWSER_SUPABASE_COOKIES_JSON;
   if (cookies) {
-    const parsed = JSON.parse(cookies).map((c: any) => ({ ...c, url: BASE }));
+    const parsed = (JSON.parse(cookies) as Record<string, unknown>[]).map((c) => ({
+      ...c,
+      url: BASE,
+    }));
     await page.context().addCookies(parsed);
   }
   await page.goto(BASE, { waitUntil: "domcontentloaded" });
@@ -68,8 +71,7 @@ async function collectTruncated(page: Page) {
         const cs = getComputedStyle(e as Element);
         const overflowsX = (e as HTMLElement).scrollWidth - (e as HTMLElement).clientWidth > 1;
         const clipped =
-          cs.textOverflow === "ellipsis" &&
-          (cs.overflowX === "hidden" || cs.overflow === "hidden");
+          cs.textOverflow === "ellipsis" && (cs.overflowX === "hidden" || cs.overflow === "hidden");
         return overflowsX || clipped;
       })
       .slice(0, 10)
@@ -98,9 +100,10 @@ for (const c of CASES) {
       format: "A4",
       landscape: c.orientation === "landscape",
       printBackground: true,
-      margin: c.orientation === "portrait"
-        ? { top: "10mm", right: "10mm", bottom: "10mm", left: "10mm" }
-        : { top: "8mm",  right: "8mm",  bottom: "8mm",  left: "8mm"  },
+      margin:
+        c.orientation === "portrait"
+          ? { top: "10mm", right: "10mm", bottom: "10mm", left: "10mm" }
+          : { top: "8mm", right: "8mm", bottom: "8mm", left: "8mm" },
     });
 
     expect(truncated, `truncated nodes: ${truncated.join(", ")}`).toEqual([]);

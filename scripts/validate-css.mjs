@@ -33,7 +33,9 @@ const errors = [];
     else if (m[0] === "}") depth = Math.max(0, depth - 1);
     else if (depth > 0) {
       const line = stripped.slice(0, m.index).split("\n").length;
-      errors.push(`@page nested inside another block at line ${line}. @page must be top-level; use body.print-portrait { page: portrait } instead.`);
+      errors.push(
+        `@page nested inside another block at line ${line}. @page must be top-level; use body.print-portrait { page: portrait } instead.`,
+      );
     }
   }
 }

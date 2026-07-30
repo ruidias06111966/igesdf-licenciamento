@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
-import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { requireAcesso } from "@/lib/acesso-middleware";
 import { z } from "zod";
+import { vaziosParaNulo } from "@/lib/sanitize";
 
 const orgaoSchema = z.object({
   id: z.string().uuid().optional(),
@@ -16,7 +17,7 @@ const orgaoSchema = z.object({
 });
 
 export const listOrgaos = createServerFn({ method: "GET" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAcesso])
   .handler(async ({ context }) => {
     const { data, error } = await context.supabase
       .from("orgaos")
@@ -27,25 +28,26 @@ export const listOrgaos = createServerFn({ method: "GET" })
   });
 
 export const upsertOrgao = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAcesso])
   .inputValidator((input: unknown) => orgaoSchema.parse(input))
   .handler(async ({ data, context }) => {
-    const clean: any = { ...data };
-    (["categoria","site","telefone","email","endereco","observacoes"] as const).forEach(k => {
-      if (clean[k] === "") clean[k] = null;
-    });
+    const clean = vaziosParaNulo(data);
     if (data.id) {
       const { error } = await context.supabase.from("orgaos").update(clean).eq("id", data.id);
       if (error) throw error;
       return { id: data.id };
     }
-    const { data: ins, error } = await context.supabase.from("orgaos").insert(clean).select("id").single();
+    const { data: ins, error } = await context.supabase
+      .from("orgaos")
+      .insert(clean)
+      .select("id")
+      .single();
     if (error) throw error;
     return { id: ins.id };
   });
 
 export const deleteOrgao = createServerFn({ method: "POST" })
-  .middleware([requireSupabaseAuth])
+  .middleware([requireAcesso])
   .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase.from("orgaos").delete().eq("id", data.id);

@@ -1,0 +1,26 @@
+import { createMiddleware } from "@tanstack/react-start";
+
+/**
+ * Exige o cookie de acesso e entrega o cliente Supabase com service role.
+ *
+ * Substitui o antigo `requireSupabaseAuth`, que exigia um JWT de utilizador do
+ * Supabase. Como o sistema deixou de ter contas individuais, não existe JWT: a
+ * autorização passou a ser o cookie de senha partilhada, e o acesso ao banco é
+ * feito com a service role no servidor.
+ *
+ * A service role ignora RLS. Isso é intencional e é o que mantém a senha com
+ * significado: as políticas RLS continuam fechadas ao papel `anon`, portanto a
+ * chave publicável que viaja no navegador não consegue ler nem escrever nada
+ * diretamente na API REST do Supabase. Todo o acesso a dados passa por aqui.
+ *
+ * A chave nunca chega ao cliente: `client.server.ts` é importado dinamicamente
+ * dentro do handler, que só corre no servidor.
+ */
+export const requireAcesso = createMiddleware({ type: "function" }).server(async ({ next }) => {
+  const { temAcesso } = await import("@/lib/acesso.server");
+  if (!temAcesso()) {
+    throw new Error("Unauthorized: acesso não autorizado");
+  }
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  return next({ context: { supabase: supabaseAdmin } });
+});
