@@ -196,7 +196,7 @@ function Dossie() {
           <CardContent className="p-3">
             <ul className="text-xs space-y-1">
               {responsaveis.map((r: any) => (
-                <li key={r.id} className="border-b last:border-0 pb-1"><b>{r.nome}</b> — {r.conselho} {r.numero_registro} · {r.cargo ?? "—"} {r.email && <>· {r.email}</>}</li>
+                <li key={r.id} className="border-b last:border-0 pb-1"><b>{r.nome}</b> — {r.conselho} {r.numero_registro} · {r.cargo ?? "—"} {r.email && <span>· {r.email}</span>}</li>
               ))}
             </ul>
           </CardContent>

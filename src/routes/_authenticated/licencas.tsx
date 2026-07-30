@@ -66,9 +66,9 @@ function LicencasPage() {
       <div className="print-only mb-4">
         <h1 className="text-xl font-semibold">Licenças — IGESDF</h1>
         <p className="text-xs">
-          {unidadeF !== "todos" && <>Unidade: {unidades.find((u:any)=>u.id===unidadeF)?.nome} · </>}
-          {orgao !== "todos" && <>Órgão: {ORGAOS.find(o=>o.value===orgao)?.label} · </>}
-          {cnaeF !== "todos" && <>CNAE: {cnaeF} · </>}
+          {unidadeF !== "todos" && <span>Unidade: {unidades.find((u:any)=>u.id===unidadeF)?.nome} · </span>}
+          {orgao !== "todos" && <span>Órgão: {ORGAOS.find(o=>o.value===orgao)?.label} · </span>}
+          {cnaeF !== "todos" && <span>CNAE: {cnaeF} · </span>}
           Total: {filtered.length} · Emitido {new Date().toLocaleDateString("pt-PT")}
         </p>
       </div>

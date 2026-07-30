@@ -77,9 +77,9 @@ function Dashboard() {
       <div className="print-only mb-4">
         <h2 className="text-xl font-semibold">Painel de Compliance — IGESDF</h2>
         <p className="text-xs">
-          {orgao !== "todos" && <>Órgão: {ORGAOS.find(o=>o.value===orgao)?.label} · </>}
-          {de && <>De: {formatDate(de)} · </>}
-          {ate && <>Até: {formatDate(ate)} · </>}
+          {orgao !== "todos" && <span>Órgão: {ORGAOS.find(o=>o.value===orgao)?.label} · </span>}
+          {de && <span>De: {formatDate(de)} · </span>}
+          {ate && <span>Até: {formatDate(ate)} · </span>}
           Emitido {new Date().toLocaleDateString("pt-PT")}
         </p>
       </div>
