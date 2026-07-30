@@ -1,14 +1,15 @@
 import { createFileRoute, Link, Outlet, redirect, useRouter } from "@tanstack/react-router";
 import { supabase } from "@/integrations/supabase/client";
+import { getCurrentSession } from "@/lib/auth-session";
 import { Building2, LayoutDashboard, FileCheck2, CalendarClock, LogOut, ShieldCheck, Landmark, FileBarChart2, BookText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
   beforeLoad: async () => {
-    const { data, error } = await supabase.auth.getUser();
-    if (error || !data.user) throw redirect({ to: "/auth" });
-    return { user: data.user };
+    const session = await getCurrentSession();
+    if (!session?.user) throw redirect({ to: "/auth" });
+    return { user: session.user };
   },
   component: AuthedLayout,
 });
