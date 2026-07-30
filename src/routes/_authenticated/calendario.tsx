@@ -71,9 +71,9 @@ function Cal() {
       <div className="print-only mb-4">
         <h1 className="text-xl font-semibold">Calendário de vencimentos — IGESDF</h1>
         <p className="text-xs">
-          {unidadeF !== "todos" && <>Unidade: {unidades.find((u:any)=>u.id===unidadeF)?.nome} · </>}
-          {orgaoF !== "todos" && <>Órgão: {ORGAOS.find(o=>o.value===orgaoF)?.label} · </>}
-          {cnaeF !== "todos" && <>CNAE: {cnaeF} · </>}
+          {unidadeF !== "todos" && <span>Unidade: {unidades.find((u:any)=>u.id===unidadeF)?.nome} · </span>}
+          {orgaoF !== "todos" && <span>Órgão: {ORGAOS.find(o=>o.value===orgaoF)?.label} · </span>}
+          {cnaeF !== "todos" && <span>CNAE: {cnaeF} · </span>}
           Emitido {new Date().toLocaleDateString("pt-PT")}
         </p>
       </div>
@@ -105,14 +105,14 @@ function Cal() {
                     <div className="text-sm font-medium">{d.unidade_nome}</div>
                     <div className="text-xs text-muted-foreground">
                       {org?.label ?? d.orgao}
-                      {cn.codigo && <> • <span className="font-mono">CNAE {cn.codigo}</span></>}
-                      {cn.label && <> — {cn.label}</>}
+                      {cn.codigo && <span> • <span className="font-mono">CNAE {cn.codigo}</span></span>}
+                      {cn.label && <span> — {cn.label}</span>}
                     </div>
                     <div className="text-xs text-muted-foreground">Vence em {formatDate(d.data_vencimento)}</div>
                     <div className="text-xs text-muted-foreground print-only">
                       Estado: {STATUS_LABEL[d.status as keyof typeof STATUS_LABEL] ?? d.status}
-                      {d.numero && <> · Nº {d.numero}</>}
-                      {d.processo_sei && <> · SEI {d.processo_sei}</>}
+                      {d.numero && <span> · Nº {d.numero}</span>}
+                      {d.processo_sei && <span> · SEI {d.processo_sei}</span>}
                     </div>
                     {d.observacoes && <div className="text-xs italic text-muted-foreground print-only">Obs.: {d.observacoes}</div>}
                   </div>

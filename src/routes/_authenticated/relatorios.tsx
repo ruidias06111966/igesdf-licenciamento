@@ -121,10 +121,10 @@ function RelatoriosPage() {
         <h1 className="text-xl font-semibold">Relatório de conformidade — IGESDF</h1>
         <p className="text-xs">
           Agrupado por {modo === "unidade" ? "unidade" : "órgão"}
-          {tipoF !== "todos" && <> · Tipo: {TIPO_UNIDADE_LABEL[tipoF as TipoUnidade] ?? tipoF}</>}
-          {unidadeF !== "todos" && <> · Unidade: {unidades.find((u:any)=>u.id===unidadeF)?.nome}</>}
-          {orgaoF !== "todos" && <> · Órgão: {ORGAOS.find(o=>o.value===orgaoF)?.label}</>}
-          {apenasPend && <> · Apenas pendências</>}
+          {tipoF !== "todos" && <span> · Tipo: {TIPO_UNIDADE_LABEL[tipoF as TipoUnidade] ?? tipoF}</span>}
+          {unidadeF !== "todos" && <span> · Unidade: {unidades.find((u:any)=>u.id===unidadeF)?.nome}</span>}
+          {orgaoF !== "todos" && <span> · Órgão: {ORGAOS.find(o=>o.value===orgaoF)?.label}</span>}
+          {apenasPend && <span> · Apenas pendências</span>}
           {" "}· Emitido {new Date().toLocaleDateString("pt-PT")}
         </p>
         <p className="text-xs mt-1">
