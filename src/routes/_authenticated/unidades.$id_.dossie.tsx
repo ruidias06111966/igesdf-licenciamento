@@ -26,7 +26,7 @@ import { applyPrintMode, getSavedPrintMode } from "@/lib/print-mode";
 import type { ChecklistItemDossie, Licenca } from "@/lib/rows";
 import { cn } from "@/lib/utils";
 
-export const Route = createFileRoute("/_authenticated/unidades/$id/dossie")({
+export const Route = createFileRoute("/_authenticated/unidades/$id_/dossie")({
   loader: ({ context, params }) => context.queryClient.ensureQueryData(dossieQuery(params.id)),
   component: Dossie,
   pendingComponent: () => <PageSkeleton cartoes={6} colunas={7} />,
