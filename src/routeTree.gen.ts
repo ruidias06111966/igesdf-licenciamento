@@ -22,7 +22,7 @@ import { Route as AuthenticatedCalendarioRouteImport } from './routes/_authentic
 import { Route as AuthenticatedUnidadesIndexRouteImport } from './routes/_authenticated/unidades.index'
 import { Route as AuthenticatedUnidadesIdRouteImport } from './routes/_authenticated/unidades.$id'
 import { Route as ApiPublicHooksEnviarAlertasRouteImport } from './routes/api/public/hooks/enviar-alertas'
-import { Route as AuthenticatedUnidadesIdDossieRouteImport } from './routes/_authenticated/unidades.$id.dossie'
+import { Route as AuthenticatedUnidadesIdDossieRouteImport } from './routes/_authenticated/unidades.$id_.dossie'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
@@ -92,9 +92,9 @@ const ApiPublicHooksEnviarAlertasRoute =
   } as any)
 const AuthenticatedUnidadesIdDossieRoute =
   AuthenticatedUnidadesIdDossieRouteImport.update({
-    id: '/dossie',
-    path: '/dossie',
-    getParentRoute: () => AuthenticatedUnidadesIdRoute,
+    id: '/unidades/$id_/dossie',
+    path: '/unidades/$id/dossie',
+    getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
 
 export interface FileRoutesByFullPath {
@@ -107,7 +107,7 @@ export interface FileRoutesByFullPath {
   '/normativas': typeof AuthenticatedNormativasRoute
   '/orgaos': typeof AuthenticatedOrgaosRoute
   '/relatorios': typeof AuthenticatedRelatoriosRoute
-  '/unidades/$id': typeof AuthenticatedUnidadesIdRouteWithChildren
+  '/unidades/$id': typeof AuthenticatedUnidadesIdRoute
   '/unidades/': typeof AuthenticatedUnidadesIndexRoute
   '/unidades/$id/dossie': typeof AuthenticatedUnidadesIdDossieRoute
   '/api/public/hooks/enviar-alertas': typeof ApiPublicHooksEnviarAlertasRoute
@@ -122,7 +122,7 @@ export interface FileRoutesByTo {
   '/normativas': typeof AuthenticatedNormativasRoute
   '/orgaos': typeof AuthenticatedOrgaosRoute
   '/relatorios': typeof AuthenticatedRelatoriosRoute
-  '/unidades/$id': typeof AuthenticatedUnidadesIdRouteWithChildren
+  '/unidades/$id': typeof AuthenticatedUnidadesIdRoute
   '/unidades': typeof AuthenticatedUnidadesIndexRoute
   '/unidades/$id/dossie': typeof AuthenticatedUnidadesIdDossieRoute
   '/api/public/hooks/enviar-alertas': typeof ApiPublicHooksEnviarAlertasRoute
@@ -139,9 +139,9 @@ export interface FileRoutesById {
   '/_authenticated/normativas': typeof AuthenticatedNormativasRoute
   '/_authenticated/orgaos': typeof AuthenticatedOrgaosRoute
   '/_authenticated/relatorios': typeof AuthenticatedRelatoriosRoute
-  '/_authenticated/unidades/$id': typeof AuthenticatedUnidadesIdRouteWithChildren
+  '/_authenticated/unidades/$id': typeof AuthenticatedUnidadesIdRoute
   '/_authenticated/unidades/': typeof AuthenticatedUnidadesIndexRoute
-  '/_authenticated/unidades/$id/dossie': typeof AuthenticatedUnidadesIdDossieRoute
+  '/_authenticated/unidades/$id_/dossie': typeof AuthenticatedUnidadesIdDossieRoute
   '/api/public/hooks/enviar-alertas': typeof ApiPublicHooksEnviarAlertasRoute
 }
 export interface FileRouteTypes {
@@ -189,7 +189,7 @@ export interface FileRouteTypes {
     | '/_authenticated/relatorios'
     | '/_authenticated/unidades/$id'
     | '/_authenticated/unidades/'
-    | '/_authenticated/unidades/$id/dossie'
+    | '/_authenticated/unidades/$id_/dossie'
     | '/api/public/hooks/enviar-alertas'
   fileRoutesById: FileRoutesById
 }
@@ -294,29 +294,15 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiPublicHooksEnviarAlertasRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/_authenticated/unidades/$id/dossie': {
-      id: '/_authenticated/unidades/$id/dossie'
-      path: '/dossie'
+    '/_authenticated/unidades/$id_/dossie': {
+      id: '/_authenticated/unidades/$id_/dossie'
+      path: '/unidades/$id/dossie'
       fullPath: '/unidades/$id/dossie'
       preLoaderRoute: typeof AuthenticatedUnidadesIdDossieRouteImport
-      parentRoute: typeof AuthenticatedUnidadesIdRoute
+      parentRoute: typeof AuthenticatedRouteRoute
     }
   }
 }
-
-interface AuthenticatedUnidadesIdRouteChildren {
-  AuthenticatedUnidadesIdDossieRoute: typeof AuthenticatedUnidadesIdDossieRoute
-}
-
-const AuthenticatedUnidadesIdRouteChildren: AuthenticatedUnidadesIdRouteChildren =
-  {
-    AuthenticatedUnidadesIdDossieRoute: AuthenticatedUnidadesIdDossieRoute,
-  }
-
-const AuthenticatedUnidadesIdRouteWithChildren =
-  AuthenticatedUnidadesIdRoute._addFileChildren(
-    AuthenticatedUnidadesIdRouteChildren,
-  )
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedCalendarioRoute: typeof AuthenticatedCalendarioRoute
@@ -325,8 +311,9 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedNormativasRoute: typeof AuthenticatedNormativasRoute
   AuthenticatedOrgaosRoute: typeof AuthenticatedOrgaosRoute
   AuthenticatedRelatoriosRoute: typeof AuthenticatedRelatoriosRoute
-  AuthenticatedUnidadesIdRoute: typeof AuthenticatedUnidadesIdRouteWithChildren
+  AuthenticatedUnidadesIdRoute: typeof AuthenticatedUnidadesIdRoute
   AuthenticatedUnidadesIndexRoute: typeof AuthenticatedUnidadesIndexRoute
+  AuthenticatedUnidadesIdDossieRoute: typeof AuthenticatedUnidadesIdDossieRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -336,8 +323,9 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedNormativasRoute: AuthenticatedNormativasRoute,
   AuthenticatedOrgaosRoute: AuthenticatedOrgaosRoute,
   AuthenticatedRelatoriosRoute: AuthenticatedRelatoriosRoute,
-  AuthenticatedUnidadesIdRoute: AuthenticatedUnidadesIdRouteWithChildren,
+  AuthenticatedUnidadesIdRoute: AuthenticatedUnidadesIdRoute,
   AuthenticatedUnidadesIndexRoute: AuthenticatedUnidadesIndexRoute,
+  AuthenticatedUnidadesIdDossieRoute: AuthenticatedUnidadesIdDossieRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =
