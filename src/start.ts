@@ -1,6 +1,7 @@
 import { createStart, createMiddleware } from "@tanstack/react-start";
 
 import { renderErrorPage } from "./lib/error-page";
+import { attachSupabaseAuth } from "@/integrations/supabase/auth-attacher";
 
 const errorMiddleware = createMiddleware().server(async ({ next }) => {
   try {
@@ -18,6 +19,7 @@ const errorMiddleware = createMiddleware().server(async ({ next }) => {
 });
 
 export const startInstance = createStart(() => ({
+  functionMiddleware: [attachSupabaseAuth],
   // `attachSupabaseAuth` foi retirado: anexava o Bearer token da sessão Supabase
   // a cada chamada de função de servidor. Sem contas individuais não existe
   // token, e a autorização viaja no cookie de acesso, que o navegador envia
