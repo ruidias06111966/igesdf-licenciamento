@@ -22,7 +22,7 @@ import { invalidarDados, unidadesQuery } from "@/lib/queries";
 import { TIPO_UNIDADE_LABEL, situacaoEdificacaoLabel, tipoUnidadeLabel } from "@/lib/domain";
 import type { Unidade } from "@/lib/rows";
 
-export const Route = createFileRoute("/_authenticated/unidades")({
+export const Route = createFileRoute("/_authenticated/unidades/")({
   loader: ({ context }) => context.queryClient.ensureQueryData(unidadesQuery),
   component: UnidadesPage,
   pendingComponent: () => <CardGridSkeleton itens={6} />,
