@@ -79,7 +79,7 @@ function UnidadeDetalhe() {
         acoes={
           <>
             <Button asChild variant="outline">
-              <Link to="/unidades/$id_/dossie" params={{ id }}>
+              <Link to="/unidades/$id/dossie" params={{ id }}>
                 <FileBarChart2 className="mr-1 size-4" aria-hidden="true" /> Dossiê / PDF
               </Link>
             </Button>

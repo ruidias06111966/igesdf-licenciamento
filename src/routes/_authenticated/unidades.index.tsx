@@ -202,7 +202,7 @@ function UnidadeCard({ unidade }: { unidade: Unidade }) {
 
         <div className="flex flex-wrap justify-end gap-1 border-t pt-2">
           <Button asChild size="sm" variant="ghost">
-            <Link to="/unidades/$id_/dossie" params={{ id: unidade.id }} search={{ print: 1 }}>
+            <Link to="/unidades/$id/dossie" params={{ id: unidade.id }} search={{ print: 1 }}>
               <FileDown className="mr-1 size-3.5" aria-hidden="true" /> Dossiê PDF
             </Link>
           </Button>
