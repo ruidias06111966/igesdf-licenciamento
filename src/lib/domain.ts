@@ -86,6 +86,49 @@ export function checklistStatusLabel(status: string | null | undefined): string 
   return CHECKLIST_STATUS_LABEL[status as StatusChecklist] ?? status;
 }
 
+/** Situação de um processo SEI. */
+export const SITUACOES_PROCESSO = [
+  { value: "em_andamento", label: "Em andamento" },
+  { value: "aguardando_orgao", label: "Aguardando órgão" },
+  { value: "exigencia", label: "Com exigência" },
+  { value: "concluido", label: "Concluído" },
+  { value: "arquivado", label: "Arquivado" },
+] as const;
+
+export function situacaoProcessoLabel(v: string | null | undefined): string {
+  if (!v) return "—";
+  return SITUACOES_PROCESSO.find((s) => s.value === v)?.label ?? v;
+}
+
+export const TIPOS_PROCESSO = [
+  { value: "licenciamento", label: "Licenciamento" },
+  { value: "renovacao", label: "Renovação" },
+  { value: "cnpj", label: "CNPJ / inscrição" },
+  { value: "obra", label: "Obra / edificação" },
+  { value: "recurso", label: "Recurso / defesa" },
+  { value: "outro", label: "Outro" },
+] as const;
+
+export function tipoProcessoLabel(v: string | null | undefined): string {
+  if (!v) return "—";
+  return TIPOS_PROCESSO.find((t) => t.value === v)?.label ?? v;
+}
+
+/** Situação de cada documento exigido no checklist do processo. */
+export type SituacaoItemProcesso = "pendente" | "em_curso" | "entregue" | "dispensado";
+
+export const SITUACAO_ITEM_LABEL: Record<SituacaoItemProcesso, string> = {
+  pendente: "Pendente",
+  em_curso: "Em curso",
+  entregue: "Entregue",
+  dispensado: "Dispensado",
+};
+
+export function situacaoItemLabel(v: string | null | undefined): string {
+  if (!v) return "—";
+  return SITUACAO_ITEM_LABEL[v as SituacaoItemProcesso] ?? v;
+}
+
 export const STATUS_LABEL: Record<StatusLicenca, string> = {
   nao_iniciado: "Não iniciado",
   em_analise: "Em análise",

@@ -433,6 +433,8 @@ export const registrarDocumento = createServerFn({ method: "POST" })
       .object({
         unidade_id: z.string().uuid().nullable().optional(),
         licenca_id: z.string().uuid().nullable().optional(),
+        processo_id: z.string().uuid().nullable().optional(),
+        processo_item_id: z.string().uuid().nullable().optional(),
         categoria: z.string().max(50),
         nome: z.string().max(200),
         storage_path: z.string().max(400),

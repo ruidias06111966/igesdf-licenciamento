@@ -8,6 +8,7 @@ import {
 } from "@/lib/licencas.functions";
 import { listNormativas } from "@/lib/normativas.functions";
 import { listOrgaos } from "@/lib/orgaos.functions";
+import { getProcesso, listProcessos } from "@/lib/processos.functions";
 
 /**
  * Fonte única das consultas e das chaves de cache.
@@ -39,6 +40,8 @@ export const chaves = {
   versoes: (documentoId: string) => ["versoes", documentoId] as const,
   orgaos: ["orgaos"] as const,
   normativas: ["normativas"] as const,
+  processos: ["processos"] as const,
+  processo: (id: string) => ["processo", id] as const,
 };
 
 export const unidadesQuery = queryOptions({
@@ -65,6 +68,18 @@ export const normativasQuery = queryOptions({
   queryKey: chaves.normativas,
   queryFn: () => listNormativas(),
 });
+
+export const processosQuery = queryOptions({
+  queryKey: chaves.processos,
+  queryFn: () => listProcessos(),
+});
+
+export function processoQuery(id: string) {
+  return queryOptions({
+    queryKey: chaves.processo(id),
+    queryFn: () => getProcesso({ data: { id } }),
+  });
+}
 
 export function unidadeQuery(id: string) {
   return queryOptions({
