@@ -22,6 +22,7 @@ import { Route as AuthenticatedCalendarioRouteImport } from './routes/_authentic
 import { Route as AuthenticatedUnidadesIndexRouteImport } from './routes/_authenticated/unidades.index'
 import { Route as AuthenticatedProcessosIndexRouteImport } from './routes/_authenticated/processos.index'
 import { Route as AuthenticatedUnidadesIdRouteImport } from './routes/_authenticated/unidades.$id'
+import { Route as AuthenticatedProcessosIdRouteImport } from './routes/_authenticated/processos.$id'
 import { Route as ApiPublicHooksEnviarAlertasRouteImport } from './routes/api/public/hooks/enviar-alertas'
 import { Route as AuthenticatedUnidadesIdDossieRouteImport } from './routes/_authenticated/unidades.$id_.dossie'
 
@@ -91,6 +92,12 @@ const AuthenticatedUnidadesIdRoute = AuthenticatedUnidadesIdRouteImport.update({
   path: '/unidades/$id',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedProcessosIdRoute =
+  AuthenticatedProcessosIdRouteImport.update({
+    id: '/processos/$id',
+    path: '/processos/$id',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const ApiPublicHooksEnviarAlertasRoute =
   ApiPublicHooksEnviarAlertasRouteImport.update({
     id: '/api/public/hooks/enviar-alertas',
@@ -114,6 +121,7 @@ export interface FileRoutesByFullPath {
   '/normativas': typeof AuthenticatedNormativasRoute
   '/orgaos': typeof AuthenticatedOrgaosRoute
   '/relatorios': typeof AuthenticatedRelatoriosRoute
+  '/processos/$id': typeof AuthenticatedProcessosIdRoute
   '/unidades/$id': typeof AuthenticatedUnidadesIdRoute
   '/processos/': typeof AuthenticatedProcessosIndexRoute
   '/unidades/': typeof AuthenticatedUnidadesIndexRoute
@@ -130,6 +138,7 @@ export interface FileRoutesByTo {
   '/normativas': typeof AuthenticatedNormativasRoute
   '/orgaos': typeof AuthenticatedOrgaosRoute
   '/relatorios': typeof AuthenticatedRelatoriosRoute
+  '/processos/$id': typeof AuthenticatedProcessosIdRoute
   '/unidades/$id': typeof AuthenticatedUnidadesIdRoute
   '/processos': typeof AuthenticatedProcessosIndexRoute
   '/unidades': typeof AuthenticatedUnidadesIndexRoute
@@ -148,6 +157,7 @@ export interface FileRoutesById {
   '/_authenticated/normativas': typeof AuthenticatedNormativasRoute
   '/_authenticated/orgaos': typeof AuthenticatedOrgaosRoute
   '/_authenticated/relatorios': typeof AuthenticatedRelatoriosRoute
+  '/_authenticated/processos/$id': typeof AuthenticatedProcessosIdRoute
   '/_authenticated/unidades/$id': typeof AuthenticatedUnidadesIdRoute
   '/_authenticated/processos/': typeof AuthenticatedProcessosIndexRoute
   '/_authenticated/unidades/': typeof AuthenticatedUnidadesIndexRoute
@@ -166,6 +176,7 @@ export interface FileRouteTypes {
     | '/normativas'
     | '/orgaos'
     | '/relatorios'
+    | '/processos/$id'
     | '/unidades/$id'
     | '/processos/'
     | '/unidades/'
@@ -182,6 +193,7 @@ export interface FileRouteTypes {
     | '/normativas'
     | '/orgaos'
     | '/relatorios'
+    | '/processos/$id'
     | '/unidades/$id'
     | '/processos'
     | '/unidades'
@@ -199,6 +211,7 @@ export interface FileRouteTypes {
     | '/_authenticated/normativas'
     | '/_authenticated/orgaos'
     | '/_authenticated/relatorios'
+    | '/_authenticated/processos/$id'
     | '/_authenticated/unidades/$id'
     | '/_authenticated/processos/'
     | '/_authenticated/unidades/'
@@ -307,6 +320,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedUnidadesIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/processos/$id': {
+      id: '/_authenticated/processos/$id'
+      path: '/processos/$id'
+      fullPath: '/processos/$id'
+      preLoaderRoute: typeof AuthenticatedProcessosIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/api/public/hooks/enviar-alertas': {
       id: '/api/public/hooks/enviar-alertas'
       path: '/api/public/hooks/enviar-alertas'
@@ -331,6 +351,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedNormativasRoute: typeof AuthenticatedNormativasRoute
   AuthenticatedOrgaosRoute: typeof AuthenticatedOrgaosRoute
   AuthenticatedRelatoriosRoute: typeof AuthenticatedRelatoriosRoute
+  AuthenticatedProcessosIdRoute: typeof AuthenticatedProcessosIdRoute
   AuthenticatedUnidadesIdRoute: typeof AuthenticatedUnidadesIdRoute
   AuthenticatedProcessosIndexRoute: typeof AuthenticatedProcessosIndexRoute
   AuthenticatedUnidadesIndexRoute: typeof AuthenticatedUnidadesIndexRoute
@@ -344,6 +365,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedNormativasRoute: AuthenticatedNormativasRoute,
   AuthenticatedOrgaosRoute: AuthenticatedOrgaosRoute,
   AuthenticatedRelatoriosRoute: AuthenticatedRelatoriosRoute,
+  AuthenticatedProcessosIdRoute: AuthenticatedProcessosIdRoute,
   AuthenticatedUnidadesIdRoute: AuthenticatedUnidadesIdRoute,
   AuthenticatedProcessosIndexRoute: AuthenticatedProcessosIndexRoute,
   AuthenticatedUnidadesIndexRoute: AuthenticatedUnidadesIndexRoute,

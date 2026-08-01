@@ -1,4 +1,4 @@
-import { queryOptions as _qo, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { ExternalLink, FolderOpen, Pencil, Plus, Search } from "lucide-react";
 import { useMemo, useState } from "react";
