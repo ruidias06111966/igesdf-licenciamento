@@ -46,10 +46,14 @@ async function abrirDocumento(caminho: string) {
 export function UploadDoc({
   unidadeId,
   licencaId,
+  processoId,
+  processoItemId,
   rotulo = "Anexar",
 }: {
   unidadeId: string;
   licencaId?: string;
+  processoId?: string;
+  processoItemId?: string;
   rotulo?: string;
 }) {
   const qc = useQueryClient();
@@ -58,13 +62,18 @@ export function UploadDoc({
   async function enviar(arquivo: File) {
     setOcupado(true);
     try {
-      const enviado = await subir(arquivo, `${unidadeId}/${licencaId ?? "geral"}`);
+      const prefixo = processoId
+        ? `${unidadeId}/processos/${processoId}`
+        : `${unidadeId}/${licencaId ?? "geral"}`;
+      const enviado = await subir(arquivo, prefixo);
       await registrarDocumento({
         data: {
           ...enviado,
           unidade_id: unidadeId,
           licenca_id: licencaId ?? null,
-          categoria: licencaId ? "licenca" : "unidade",
+          processo_id: processoId ?? null,
+          processo_item_id: processoItemId ?? null,
+          categoria: processoId ? "processo" : licencaId ? "licenca" : "unidade",
         },
       });
       toast.success("Documento anexado");
