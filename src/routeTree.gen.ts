@@ -20,6 +20,7 @@ import { Route as AuthenticatedLicencasRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedCalendarioRouteImport } from './routes/_authenticated/calendario'
 import { Route as AuthenticatedUnidadesIndexRouteImport } from './routes/_authenticated/unidades.index'
+import { Route as AuthenticatedProcessosIndexRouteImport } from './routes/_authenticated/processos.index'
 import { Route as AuthenticatedUnidadesIdRouteImport } from './routes/_authenticated/unidades.$id'
 import { Route as ApiPublicHooksEnviarAlertasRouteImport } from './routes/api/public/hooks/enviar-alertas'
 import { Route as AuthenticatedUnidadesIdDossieRouteImport } from './routes/_authenticated/unidades.$id_.dossie'
@@ -79,6 +80,12 @@ const AuthenticatedUnidadesIndexRoute =
     path: '/unidades/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedProcessosIndexRoute =
+  AuthenticatedProcessosIndexRouteImport.update({
+    id: '/processos/',
+    path: '/processos/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedUnidadesIdRoute = AuthenticatedUnidadesIdRouteImport.update({
   id: '/unidades/$id',
   path: '/unidades/$id',
@@ -108,6 +115,7 @@ export interface FileRoutesByFullPath {
   '/orgaos': typeof AuthenticatedOrgaosRoute
   '/relatorios': typeof AuthenticatedRelatoriosRoute
   '/unidades/$id': typeof AuthenticatedUnidadesIdRoute
+  '/processos/': typeof AuthenticatedProcessosIndexRoute
   '/unidades/': typeof AuthenticatedUnidadesIndexRoute
   '/unidades/$id/dossie': typeof AuthenticatedUnidadesIdDossieRoute
   '/api/public/hooks/enviar-alertas': typeof ApiPublicHooksEnviarAlertasRoute
@@ -123,6 +131,7 @@ export interface FileRoutesByTo {
   '/orgaos': typeof AuthenticatedOrgaosRoute
   '/relatorios': typeof AuthenticatedRelatoriosRoute
   '/unidades/$id': typeof AuthenticatedUnidadesIdRoute
+  '/processos': typeof AuthenticatedProcessosIndexRoute
   '/unidades': typeof AuthenticatedUnidadesIndexRoute
   '/unidades/$id/dossie': typeof AuthenticatedUnidadesIdDossieRoute
   '/api/public/hooks/enviar-alertas': typeof ApiPublicHooksEnviarAlertasRoute
@@ -140,6 +149,7 @@ export interface FileRoutesById {
   '/_authenticated/orgaos': typeof AuthenticatedOrgaosRoute
   '/_authenticated/relatorios': typeof AuthenticatedRelatoriosRoute
   '/_authenticated/unidades/$id': typeof AuthenticatedUnidadesIdRoute
+  '/_authenticated/processos/': typeof AuthenticatedProcessosIndexRoute
   '/_authenticated/unidades/': typeof AuthenticatedUnidadesIndexRoute
   '/_authenticated/unidades/$id_/dossie': typeof AuthenticatedUnidadesIdDossieRoute
   '/api/public/hooks/enviar-alertas': typeof ApiPublicHooksEnviarAlertasRoute
@@ -157,6 +167,7 @@ export interface FileRouteTypes {
     | '/orgaos'
     | '/relatorios'
     | '/unidades/$id'
+    | '/processos/'
     | '/unidades/'
     | '/unidades/$id/dossie'
     | '/api/public/hooks/enviar-alertas'
@@ -172,6 +183,7 @@ export interface FileRouteTypes {
     | '/orgaos'
     | '/relatorios'
     | '/unidades/$id'
+    | '/processos'
     | '/unidades'
     | '/unidades/$id/dossie'
     | '/api/public/hooks/enviar-alertas'
@@ -188,6 +200,7 @@ export interface FileRouteTypes {
     | '/_authenticated/orgaos'
     | '/_authenticated/relatorios'
     | '/_authenticated/unidades/$id'
+    | '/_authenticated/processos/'
     | '/_authenticated/unidades/'
     | '/_authenticated/unidades/$id_/dossie'
     | '/api/public/hooks/enviar-alertas'
@@ -280,6 +293,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedUnidadesIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/processos/': {
+      id: '/_authenticated/processos/'
+      path: '/processos'
+      fullPath: '/processos/'
+      preLoaderRoute: typeof AuthenticatedProcessosIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/unidades/$id': {
       id: '/_authenticated/unidades/$id'
       path: '/unidades/$id'
@@ -312,6 +332,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedOrgaosRoute: typeof AuthenticatedOrgaosRoute
   AuthenticatedRelatoriosRoute: typeof AuthenticatedRelatoriosRoute
   AuthenticatedUnidadesIdRoute: typeof AuthenticatedUnidadesIdRoute
+  AuthenticatedProcessosIndexRoute: typeof AuthenticatedProcessosIndexRoute
   AuthenticatedUnidadesIndexRoute: typeof AuthenticatedUnidadesIndexRoute
   AuthenticatedUnidadesIdDossieRoute: typeof AuthenticatedUnidadesIdDossieRoute
 }
@@ -324,6 +345,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedOrgaosRoute: AuthenticatedOrgaosRoute,
   AuthenticatedRelatoriosRoute: AuthenticatedRelatoriosRoute,
   AuthenticatedUnidadesIdRoute: AuthenticatedUnidadesIdRoute,
+  AuthenticatedProcessosIndexRoute: AuthenticatedProcessosIndexRoute,
   AuthenticatedUnidadesIndexRoute: AuthenticatedUnidadesIndexRoute,
   AuthenticatedUnidadesIdDossieRoute: AuthenticatedUnidadesIdDossieRoute,
 }
