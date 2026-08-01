@@ -47,6 +47,26 @@ function iguais(a: string, b: string): boolean {
   return timingSafeEqual(ba, bb);
 }
 
+/**
+ * O sistema é aberto dentro de um iframe (pré-visualização do editor e alguns
+ * portais internos). Nesse contexto o pedido é "cross-site" para o navegador,
+ * e um cookie `SameSite=Lax` simplesmente não é reenviado — a senha era aceite
+ * mas o guarda de rota continuava a ver a sessão como fechada, devolvendo o
+ * utilizador ao ecrã de acesso. Em HTTPS usamos `SameSite=None; Secure`, que é
+ * a única combinação que o navegador aceita em iframe; em HTTP local mantemos
+ * `Lax`, porque `None` sem `Secure` é rejeitado.
+ */
+function ligacaoSegura(): boolean {
+  try {
+    const req = getRequest();
+    if (req?.headers.get("x-forwarded-proto")?.split(",")[0]?.trim() === "https") return true;
+    if (req?.url?.startsWith("https://")) return true;
+  } catch {
+    /* fora de um pedido */
+  }
+  return false;
+}
+
 /** Emite o cookie de acesso após uma senha correta. */
 export function abrirSessao(): void {
   const senha = senhaConfigurada();
@@ -54,17 +74,19 @@ export function abrirSessao(): void {
   // O identificador aleatório só serve para os cookies não serem todos iguais.
   const payload = `${expiraEm}.${randomUUID()}`;
   const valor = `${payload}.${assinar(payload, senha)}`;
+  const seguro = ligacaoSegura();
   setCookie(COOKIE, valor, {
     httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
+    sameSite: seguro ? "none" : "lax",
+    secure: seguro,
     path: "/",
     maxAge: VALIDADE_DIAS * 86_400,
   });
 }
 
 export function fecharSessao(): void {
-  deleteCookie(COOKIE, { path: "/" });
+  const seguro = ligacaoSegura();
+  deleteCookie(COOKIE, { path: "/", sameSite: seguro ? "none" : "lax", secure: seguro });
 }
 
 /**
