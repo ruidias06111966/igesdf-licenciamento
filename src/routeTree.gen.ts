@@ -20,7 +20,9 @@ import { Route as AuthenticatedLicencasRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedCalendarioRouteImport } from './routes/_authenticated/calendario'
 import { Route as AuthenticatedUnidadesIndexRouteImport } from './routes/_authenticated/unidades.index'
+import { Route as AuthenticatedProcessosIndexRouteImport } from './routes/_authenticated/processos.index'
 import { Route as AuthenticatedUnidadesIdRouteImport } from './routes/_authenticated/unidades.$id'
+import { Route as AuthenticatedProcessosIdRouteImport } from './routes/_authenticated/processos.$id'
 import { Route as ApiPublicHooksEnviarAlertasRouteImport } from './routes/api/public/hooks/enviar-alertas'
 import { Route as AuthenticatedUnidadesIdDossieRouteImport } from './routes/_authenticated/unidades.$id_.dossie'
 
@@ -79,11 +81,23 @@ const AuthenticatedUnidadesIndexRoute =
     path: '/unidades/',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedProcessosIndexRoute =
+  AuthenticatedProcessosIndexRouteImport.update({
+    id: '/processos/',
+    path: '/processos/',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedUnidadesIdRoute = AuthenticatedUnidadesIdRouteImport.update({
   id: '/unidades/$id',
   path: '/unidades/$id',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedProcessosIdRoute =
+  AuthenticatedProcessosIdRouteImport.update({
+    id: '/processos/$id',
+    path: '/processos/$id',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const ApiPublicHooksEnviarAlertasRoute =
   ApiPublicHooksEnviarAlertasRouteImport.update({
     id: '/api/public/hooks/enviar-alertas',
@@ -107,7 +121,9 @@ export interface FileRoutesByFullPath {
   '/normativas': typeof AuthenticatedNormativasRoute
   '/orgaos': typeof AuthenticatedOrgaosRoute
   '/relatorios': typeof AuthenticatedRelatoriosRoute
+  '/processos/$id': typeof AuthenticatedProcessosIdRoute
   '/unidades/$id': typeof AuthenticatedUnidadesIdRoute
+  '/processos/': typeof AuthenticatedProcessosIndexRoute
   '/unidades/': typeof AuthenticatedUnidadesIndexRoute
   '/unidades/$id/dossie': typeof AuthenticatedUnidadesIdDossieRoute
   '/api/public/hooks/enviar-alertas': typeof ApiPublicHooksEnviarAlertasRoute
@@ -122,7 +138,9 @@ export interface FileRoutesByTo {
   '/normativas': typeof AuthenticatedNormativasRoute
   '/orgaos': typeof AuthenticatedOrgaosRoute
   '/relatorios': typeof AuthenticatedRelatoriosRoute
+  '/processos/$id': typeof AuthenticatedProcessosIdRoute
   '/unidades/$id': typeof AuthenticatedUnidadesIdRoute
+  '/processos': typeof AuthenticatedProcessosIndexRoute
   '/unidades': typeof AuthenticatedUnidadesIndexRoute
   '/unidades/$id/dossie': typeof AuthenticatedUnidadesIdDossieRoute
   '/api/public/hooks/enviar-alertas': typeof ApiPublicHooksEnviarAlertasRoute
@@ -139,7 +157,9 @@ export interface FileRoutesById {
   '/_authenticated/normativas': typeof AuthenticatedNormativasRoute
   '/_authenticated/orgaos': typeof AuthenticatedOrgaosRoute
   '/_authenticated/relatorios': typeof AuthenticatedRelatoriosRoute
+  '/_authenticated/processos/$id': typeof AuthenticatedProcessosIdRoute
   '/_authenticated/unidades/$id': typeof AuthenticatedUnidadesIdRoute
+  '/_authenticated/processos/': typeof AuthenticatedProcessosIndexRoute
   '/_authenticated/unidades/': typeof AuthenticatedUnidadesIndexRoute
   '/_authenticated/unidades/$id_/dossie': typeof AuthenticatedUnidadesIdDossieRoute
   '/api/public/hooks/enviar-alertas': typeof ApiPublicHooksEnviarAlertasRoute
@@ -156,7 +176,9 @@ export interface FileRouteTypes {
     | '/normativas'
     | '/orgaos'
     | '/relatorios'
+    | '/processos/$id'
     | '/unidades/$id'
+    | '/processos/'
     | '/unidades/'
     | '/unidades/$id/dossie'
     | '/api/public/hooks/enviar-alertas'
@@ -171,7 +193,9 @@ export interface FileRouteTypes {
     | '/normativas'
     | '/orgaos'
     | '/relatorios'
+    | '/processos/$id'
     | '/unidades/$id'
+    | '/processos'
     | '/unidades'
     | '/unidades/$id/dossie'
     | '/api/public/hooks/enviar-alertas'
@@ -187,7 +211,9 @@ export interface FileRouteTypes {
     | '/_authenticated/normativas'
     | '/_authenticated/orgaos'
     | '/_authenticated/relatorios'
+    | '/_authenticated/processos/$id'
     | '/_authenticated/unidades/$id'
+    | '/_authenticated/processos/'
     | '/_authenticated/unidades/'
     | '/_authenticated/unidades/$id_/dossie'
     | '/api/public/hooks/enviar-alertas'
@@ -280,11 +306,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedUnidadesIndexRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/processos/': {
+      id: '/_authenticated/processos/'
+      path: '/processos'
+      fullPath: '/processos/'
+      preLoaderRoute: typeof AuthenticatedProcessosIndexRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/unidades/$id': {
       id: '/_authenticated/unidades/$id'
       path: '/unidades/$id'
       fullPath: '/unidades/$id'
       preLoaderRoute: typeof AuthenticatedUnidadesIdRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/processos/$id': {
+      id: '/_authenticated/processos/$id'
+      path: '/processos/$id'
+      fullPath: '/processos/$id'
+      preLoaderRoute: typeof AuthenticatedProcessosIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/api/public/hooks/enviar-alertas': {
@@ -311,7 +351,9 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedNormativasRoute: typeof AuthenticatedNormativasRoute
   AuthenticatedOrgaosRoute: typeof AuthenticatedOrgaosRoute
   AuthenticatedRelatoriosRoute: typeof AuthenticatedRelatoriosRoute
+  AuthenticatedProcessosIdRoute: typeof AuthenticatedProcessosIdRoute
   AuthenticatedUnidadesIdRoute: typeof AuthenticatedUnidadesIdRoute
+  AuthenticatedProcessosIndexRoute: typeof AuthenticatedProcessosIndexRoute
   AuthenticatedUnidadesIndexRoute: typeof AuthenticatedUnidadesIndexRoute
   AuthenticatedUnidadesIdDossieRoute: typeof AuthenticatedUnidadesIdDossieRoute
 }
@@ -323,7 +365,9 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedNormativasRoute: AuthenticatedNormativasRoute,
   AuthenticatedOrgaosRoute: AuthenticatedOrgaosRoute,
   AuthenticatedRelatoriosRoute: AuthenticatedRelatoriosRoute,
+  AuthenticatedProcessosIdRoute: AuthenticatedProcessosIdRoute,
   AuthenticatedUnidadesIdRoute: AuthenticatedUnidadesIdRoute,
+  AuthenticatedProcessosIndexRoute: AuthenticatedProcessosIndexRoute,
   AuthenticatedUnidadesIndexRoute: AuthenticatedUnidadesIndexRoute,
   AuthenticatedUnidadesIdDossieRoute: AuthenticatedUnidadesIdDossieRoute,
 }
@@ -341,13 +385,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

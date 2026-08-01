@@ -15,6 +15,14 @@ export type CnaeUnidade = Tables["cnaes_unidade"]["Row"];
 export type ChecklistItem = Tables["checklist_itens"]["Row"];
 export type Orgao_ = Tables["orgaos"]["Row"];
 export type Normativa = Tables["normativas"]["Row"];
+export type ProcessoSei = Tables["processos_sei"]["Row"];
+export type ProcessoItem = Tables["processo_itens"]["Row"];
+
+/** Processo com a unidade aninhada e o resumo do checklist (listProcessos). */
+export type ProcessoLista = ProcessoSei & {
+  unidades: { id: string; nome: string; tipo: Unidade["tipo"] } | null;
+  resumo: { total: number; concluidos: number; pendentes: number };
+};
 
 /** Linha da view do painel: licença + dados da unidade + semáforo calculado. */
 export type LicencaDashboard = Views["v_licencas_dashboard"]["Row"];

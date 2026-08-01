@@ -213,6 +213,8 @@ export type Database = {
           licenca_id: string | null
           mime_type: string | null
           nome: string
+          processo_id: string | null
+          processo_item_id: string | null
           storage_path: string
           tamanho_bytes: number | null
           unidade_id: string | null
@@ -231,6 +233,8 @@ export type Database = {
           licenca_id?: string | null
           mime_type?: string | null
           nome: string
+          processo_id?: string | null
+          processo_item_id?: string | null
           storage_path: string
           tamanho_bytes?: number | null
           unidade_id?: string | null
@@ -249,6 +253,8 @@ export type Database = {
           licenca_id?: string | null
           mime_type?: string | null
           nome?: string
+          processo_id?: string | null
+          processo_item_id?: string | null
           storage_path?: string
           tamanho_bytes?: number | null
           unidade_id?: string | null
@@ -275,6 +281,20 @@ export type Database = {
             columns: ["licenca_id"]
             isOneToOne: false
             referencedRelation: "v_licencas_dashboard"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documentos_processo_id_fkey"
+            columns: ["processo_id"]
+            isOneToOne: false
+            referencedRelation: "processos_sei"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "documentos_processo_item_id_fkey"
+            columns: ["processo_item_id"]
+            isOneToOne: false
+            referencedRelation: "processo_itens"
             referencedColumns: ["id"]
           },
           {
@@ -488,6 +508,187 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      processo_checklist_templates: {
+        Row: {
+          created_at: string
+          descricao: string | null
+          id: string
+          obrigatorio: boolean
+          ordem: number
+          orgao: Database["public"]["Enums"]["orgao_licenciador"]
+          responsavel_padrao: string | null
+          titulo: string
+        }
+        Insert: {
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          obrigatorio?: boolean
+          ordem: number
+          orgao: Database["public"]["Enums"]["orgao_licenciador"]
+          responsavel_padrao?: string | null
+          titulo: string
+        }
+        Update: {
+          created_at?: string
+          descricao?: string | null
+          id?: string
+          obrigatorio?: boolean
+          ordem?: number
+          orgao?: Database["public"]["Enums"]["orgao_licenciador"]
+          responsavel_padrao?: string | null
+          titulo?: string
+        }
+        Relationships: []
+      }
+      processo_itens: {
+        Row: {
+          created_at: string
+          data_entrega: string | null
+          descricao: string | null
+          id: string
+          obrigatorio: boolean
+          observacoes: string | null
+          ordem: number
+          orgao: Database["public"]["Enums"]["orgao_licenciador"] | null
+          prazo: string | null
+          processo_id: string
+          responsavel: string | null
+          situacao: string
+          template_id: string | null
+          titulo: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          data_entrega?: string | null
+          descricao?: string | null
+          id?: string
+          obrigatorio?: boolean
+          observacoes?: string | null
+          ordem?: number
+          orgao?: Database["public"]["Enums"]["orgao_licenciador"] | null
+          prazo?: string | null
+          processo_id: string
+          responsavel?: string | null
+          situacao?: string
+          template_id?: string | null
+          titulo: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          data_entrega?: string | null
+          descricao?: string | null
+          id?: string
+          obrigatorio?: boolean
+          observacoes?: string | null
+          ordem?: number
+          orgao?: Database["public"]["Enums"]["orgao_licenciador"] | null
+          prazo?: string | null
+          processo_id?: string
+          responsavel?: string | null
+          situacao?: string
+          template_id?: string | null
+          titulo?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "processo_itens_processo_id_fkey"
+            columns: ["processo_id"]
+            isOneToOne: false
+            referencedRelation: "processos_sei"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "processo_itens_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "processo_checklist_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      processos_sei: {
+        Row: {
+          assunto: string | null
+          ativo: boolean
+          created_at: string
+          data_abertura: string | null
+          data_conclusao: string | null
+          id: string
+          licenca_id: string | null
+          link: string | null
+          numero: string
+          observacoes: string | null
+          orgao: Database["public"]["Enums"]["orgao_licenciador"] | null
+          responsavel: string | null
+          situacao: string
+          tipo: string
+          unidade_id: string
+          updated_at: string
+        }
+        Insert: {
+          assunto?: string | null
+          ativo?: boolean
+          created_at?: string
+          data_abertura?: string | null
+          data_conclusao?: string | null
+          id?: string
+          licenca_id?: string | null
+          link?: string | null
+          numero: string
+          observacoes?: string | null
+          orgao?: Database["public"]["Enums"]["orgao_licenciador"] | null
+          responsavel?: string | null
+          situacao?: string
+          tipo?: string
+          unidade_id: string
+          updated_at?: string
+        }
+        Update: {
+          assunto?: string | null
+          ativo?: boolean
+          created_at?: string
+          data_abertura?: string | null
+          data_conclusao?: string | null
+          id?: string
+          licenca_id?: string | null
+          link?: string | null
+          numero?: string
+          observacoes?: string | null
+          orgao?: Database["public"]["Enums"]["orgao_licenciador"] | null
+          responsavel?: string | null
+          situacao?: string
+          tipo?: string
+          unidade_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "processos_sei_licenca_id_fkey"
+            columns: ["licenca_id"]
+            isOneToOne: false
+            referencedRelation: "licencas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "processos_sei_licenca_id_fkey"
+            columns: ["licenca_id"]
+            isOneToOne: false
+            referencedRelation: "v_licencas_dashboard"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "processos_sei_unidade_id_fkey"
+            columns: ["unidade_id"]
+            isOneToOne: false
+            referencedRelation: "unidades"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       responsaveis_tecnicos: {
         Row: {
