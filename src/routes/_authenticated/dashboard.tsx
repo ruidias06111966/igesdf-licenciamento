@@ -52,13 +52,13 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
   pendingComponent: () => <PageSkeleton cartoes={4} colunas={6} />,
   head: () => ({
     meta: [
-      { title: "Painel — IGESDF Compliance" },
+      { title: "Painel — IGESDF - Licenciamento" },
       {
         name: "description",
         content:
           "Painel consolidado de compliance da rede IGESDF: KPIs de licenças vigentes, vencidas, críticas e próximos passos por órgão.",
       },
-      { property: "og:title", content: "Painel de Compliance — IGESDF" },
+      { property: "og:title", content: "Painel — IGESDF - Licenciamento" },
       {
         property: "og:description",
         content:
@@ -169,7 +169,7 @@ function Dashboard() {
   return (
     <div className="print-area space-y-6 p-4 sm:p-6 lg:p-8">
       <PageHeader
-        titulo="Painel de compliance"
+        titulo="Painel de licenciamento"
         descricao={
           temFiltro
             ? `${filtrado.length} de ${data.length} licenças no filtro atual.`
@@ -179,7 +179,7 @@ function Dashboard() {
       />
 
       <div className="print-only mb-4">
-        <h2 className="text-xl font-semibold">Painel de compliance — IGESDF</h2>
+        <h2 className="text-xl font-semibold">Painel de licenciamento — IGESDF</h2>
         <p className="text-xs">
           {orgao !== "todos" && <span>Órgão: {orgaoLabel(orgao)} · </span>}
           {de && <span>Vence de: {formatDate(de)} · </span>}

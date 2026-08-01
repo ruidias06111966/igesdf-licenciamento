@@ -78,7 +78,7 @@ export const Route = createFileRoute("/_authenticated/normativas")({
   pendingComponent: () => <CardGridSkeleton itens={5} />,
   head: () => ({
     meta: [
-      { title: "Normativas e processos SEI — IGESDF Compliance" },
+      { title: "Normativas e processos SEI — IGESDF - Licenciamento" },
       {
         name: "description",
         content:

@@ -77,7 +77,7 @@ export const Route = createFileRoute("/api/public/hooks/enviar-alertas")({
             const unidade = l.unidades;
             const nomeUnidade = unidade?.nome ?? "—";
             const orgao = orgaoLabel(l.orgao);
-            const subject = `[IGESDF Compliance] Licença ${orgao} — ${nomeUnidade} vence em ${dias} dias`;
+            const subject = `[IGESDF - Licenciamento] Licença ${orgao} — ${nomeUnidade} vence em ${dias} dias`;
             // O nome da unidade vem do cadastro, então é escapado antes de entrar no HTML.
             const html = `<div style="font-family:Inter,Arial,sans-serif;color:#0f172a;max-width:600px">
               <h2 style="color:#0ea5b7">Alerta de vencimento</h2>
@@ -97,7 +97,7 @@ export const Route = createFileRoute("/api/public/hooks/enviar-alertas")({
               await send(
                 {
                   apiKey: process.env.LOVABLE_API_KEY!,
-                  from: "IGESDF Compliance <notify@lovable.app>",
+                  from: "IGESDF - Licenciamento <notify@lovable.app>",
                   to: destinatario,
                   subject,
                   html,

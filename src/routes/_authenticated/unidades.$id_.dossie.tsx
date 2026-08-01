@@ -34,7 +34,7 @@ export const Route = createFileRoute("/_authenticated/unidades/$id_/dossie")({
     ({ print: s.print ? 1 : undefined }) as { print?: 1 },
   head: ({ params }) => ({
     meta: [
-      { title: "Dossiê da unidade — IGESDF Compliance" },
+      { title: "Dossiê da unidade — IGESDF - Licenciamento" },
       {
         name: "description",
         content:
@@ -369,7 +369,7 @@ function Dossie() {
       )}
 
       <footer className="print-only border-t pt-2 text-xs text-muted-foreground">
-        Relatório gerado por IGESDF Compliance · {formatDateTime(new Date().toISOString())}
+        Relatório gerado por IGESDF - Licenciamento · {formatDateTime(new Date().toISOString())}
       </footer>
     </div>
   );

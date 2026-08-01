@@ -13,13 +13,13 @@ export const Route = createFileRoute("/auth")({
   component: AuthPage,
   head: () => ({
     meta: [
-      { title: "Entrar — IGESDF Compliance" },
+      { title: "Entrar — IGESDF - Licenciamento" },
       {
         name: "description",
         content:
           "Acesso ao painel de compliance regulatório do IGESDF: gestão de licenças, alvarás e prazos de renovação da rede hospitalar do Distrito Federal.",
       },
-      { property: "og:title", content: "Entrar — IGESDF Compliance" },
+      { property: "og:title", content: "Entrar — IGESDF - Licenciamento" },
       {
         property: "og:description",
         content: "Acesso ao painel de compliance regulatório do IGESDF.",
@@ -77,7 +77,7 @@ function AuthPage() {
         <div className="flex items-center gap-3">
           <ShieldCheck className="size-8 text-sidebar-primary" aria-hidden="true" />
           <div>
-            <div className="text-xl font-semibold">IGESDF Compliance</div>
+            <div className="text-xl font-semibold">IGESDF - Licenciamento</div>
             <div className="text-sm opacity-70">Gestão integrada de licenciamentos</div>
           </div>
         </div>
@@ -101,7 +101,7 @@ function AuthPage() {
           <CardHeader>
             <div className="mb-2 flex items-center gap-2 lg:hidden">
               <ShieldCheck className="size-6 text-primary" aria-hidden="true" />
-              <span className="font-semibold">IGESDF Compliance</span>
+              <span className="font-semibold">IGESDF - Licenciamento</span>
             </div>
             <CardTitle>Senha de acesso</CardTitle>
             <CardDescription>

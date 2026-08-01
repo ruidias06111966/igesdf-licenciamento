@@ -25,7 +25,7 @@ export const Route = createFileRoute("/_authenticated/orgaos")({
   pendingComponent: () => <CardGridSkeleton itens={6} />,
   head: () => ({
     meta: [
-      { title: "Órgãos — IGESDF Compliance" },
+      { title: "Órgãos — IGESDF - Licenciamento" },
       {
         name: "description",
         content:
