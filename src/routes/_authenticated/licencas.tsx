@@ -79,13 +79,13 @@ export const Route = createFileRoute("/_authenticated/licencas")({
   pendingComponent: () => <PageSkeleton colunas={7} linhas={8} />,
   head: () => ({
     meta: [
-      { title: "Licenças — IGESDF Compliance" },
+      { title: "Licenças — IGESDF - Licenciamento" },
       {
         name: "description",
         content:
           "Listagem global de licenças e alvarás por unidade, CNAE e órgão (VISADF, CBMDF, IBRAM, DF LEGAL) da rede IGESDF.",
       },
-      { property: "og:title", content: "Licenças — IGESDF Compliance" },
+      { property: "og:title", content: "Licenças — IGESDF - Licenciamento" },
       {
         property: "og:description",
         content: "Gestão global de licenças e alvarás da rede hospitalar do IGESDF.",

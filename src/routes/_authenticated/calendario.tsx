@@ -30,7 +30,7 @@ export const Route = createFileRoute("/_authenticated/calendario")({
   pendingComponent: () => <PageSkeleton linhas={8} colunas={3} />,
   head: () => ({
     meta: [
-      { title: "Vencimentos — IGESDF Compliance" },
+      { title: "Vencimentos — IGESDF - Licenciamento" },
       {
         name: "description",
         content:

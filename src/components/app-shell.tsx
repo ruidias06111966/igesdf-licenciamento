@@ -34,7 +34,7 @@ function Marca({ compacta }: { compacta?: boolean }) {
       <ShieldCheck className="size-6 shrink-0 text-sidebar-primary" aria-hidden="true" />
       <div className="min-w-0 leading-tight">
         <div className="text-sm font-semibold">IGESDF</div>
-        {!compacta && <div className="text-xs opacity-70">Compliance</div>}
+        {!compacta && <div className="text-xs opacity-70">Licenciamento</div>}
       </div>
     </div>
   );

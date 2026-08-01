@@ -28,13 +28,13 @@ export const Route = createFileRoute("/_authenticated/unidades/")({
   pendingComponent: () => <CardGridSkeleton itens={6} />,
   head: () => ({
     meta: [
-      { title: "Unidades — IGESDF Compliance" },
+      { title: "Unidades — IGESDF - Licenciamento" },
       {
         name: "description",
         content:
           "Cadastro das unidades hospitalares e UPAs do IGESDF, com CNPJ, CF/DF, processo SEI e situação de licenciamento por órgão.",
       },
-      { property: "og:title", content: "Unidades — IGESDF Compliance" },
+      { property: "og:title", content: "Unidades — IGESDF - Licenciamento" },
       {
         property: "og:description",
         content: "Hospitais e UPAs da rede IGESDF e o respectivo estado de licenciamento.",

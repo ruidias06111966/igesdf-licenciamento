@@ -48,7 +48,7 @@ export const Route = createFileRoute("/_authenticated/relatorios")({
   pendingComponent: () => <PageSkeleton cartoes={6} colunas={7} />,
   head: () => ({
     meta: [
-      { title: "Relatórios — IGESDF Compliance" },
+      { title: "Relatórios — IGESDF - Licenciamento" },
       {
         name: "description",
         content:

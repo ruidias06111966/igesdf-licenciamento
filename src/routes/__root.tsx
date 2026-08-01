@@ -80,23 +80,23 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { name: "google", content: "notranslate" },
-      { title: "IGESDF Compliance — Gestão de Licenciamentos" },
+      { title: "IGESDF - Licenciamento — Gestão de Licenciamentos" },
       {
         name: "description",
         content:
           "Sistema de gestão de licenciamentos, alvarás e compliance regulatório da rede hospitalar do IGESDF.",
       },
-      { name: "author", content: "IGESDF Compliance" },
-      { property: "og:title", content: "IGESDF Compliance — Gestão de Licenciamentos" },
+      { name: "author", content: "IGESDF - Licenciamento" },
+      { property: "og:title", content: "IGESDF - Licenciamento — Gestão de Licenciamentos" },
       {
         property: "og:description",
         content:
           "Sistema de gestão de licenciamentos, alvarás e compliance regulatório da rede hospitalar do IGESDF.",
       },
       { property: "og:type", content: "website" },
-      { property: "og:site_name", content: "IGESDF Compliance" },
+      { property: "og:site_name", content: "IGESDF - Licenciamento" },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:title", content: "IGESDF Compliance — Gestão de Licenciamentos" },
+      { name: "twitter:title", content: "IGESDF - Licenciamento — Gestão de Licenciamentos" },
       {
         name: "twitter:description",
         content:
@@ -131,7 +131,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
             },
             {
               "@type": "WebSite",
-              name: "IGESDF Compliance",
+              name: "IGESDF - Licenciamento",
               url: "https://igesdf-licenciamento.qidominios.tech",
               description:
                 "Sistema de gestão de licenciamentos, alvarás e compliance regulatório da rede hospitalar do IGESDF.",

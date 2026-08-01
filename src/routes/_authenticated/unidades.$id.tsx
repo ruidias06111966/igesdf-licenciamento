@@ -34,13 +34,13 @@ export const Route = createFileRoute("/_authenticated/unidades/$id")({
   pendingComponent: () => <PageSkeleton colunas={6} linhas={5} />,
   head: ({ params }) => ({
     meta: [
-      { title: "Unidade — IGESDF Compliance" },
+      { title: "Unidade — IGESDF - Licenciamento" },
       {
         name: "description",
         content:
           "Ficha detalhada da unidade: CNAEs, licenças por órgão, documentos versionados, checklists e responsáveis técnicos.",
       },
-      { property: "og:title", content: "Ficha da unidade — IGESDF Compliance" },
+      { property: "og:title", content: "Ficha da unidade — IGESDF - Licenciamento" },
       {
         property: "og:description",
         content: "Detalhe de licenciamento, documentos e checklists da unidade IGESDF.",
