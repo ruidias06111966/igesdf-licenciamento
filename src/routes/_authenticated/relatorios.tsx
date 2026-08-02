@@ -384,8 +384,6 @@ function RelatoriosPage() {
           </CardContent>
         </Card>
       )}
-
-      <UploadCertificados unidades={unidades} />
     </div>
   );
 }
