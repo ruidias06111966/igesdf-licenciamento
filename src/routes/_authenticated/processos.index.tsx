@@ -1,7 +1,8 @@
-import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { ExternalLink, FolderOpen, Pencil, Plus, Search } from "lucide-react";
+import { ExternalLink, FolderOpen, ListChecks, Pencil, Plus, Search } from "lucide-react";
 import { useMemo, useState } from "react";
+import { toast } from "sonner";
 import { ConfirmDelete } from "@/components/confirm-delete";
 import { PageHeader } from "@/components/page-header";
 import { ProcessoForm } from "@/components/forms/processo-form";
@@ -18,7 +19,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { formatDate, orgaoLabel, situacaoProcessoLabel, tipoProcessoLabel } from "@/lib/domain";
-import { deleteProcesso } from "@/lib/processos.functions";
+import { deleteProcesso, gerarChecklistProcesso } from "@/lib/processos.functions";
+import { mensagemErro } from "@/lib/errors";
 import { invalidarDados, processosQuery, unidadesQuery } from "@/lib/queries";
 import type { ProcessoLista } from "@/lib/rows";
 
@@ -180,6 +182,14 @@ function ProcessoCard({
   const qc = useQueryClient();
   const { total, concluidos } = processo.resumo;
   const percentagem = total ? Math.round((concluidos / total) * 100) : 0;
+  const gerar = useMutation({
+    mutationFn: () => gerarChecklistProcesso({ data: { processo_id: processo.id } }),
+    onSuccess: () => {
+      toast.success("Checklist gerado a partir do modelo do órgão");
+      invalidarDados(qc);
+    },
+    onError: (erro) => toast.error(mensagemErro(erro)),
+  });
 
   return (
     <Card className="flex h-full flex-col">
@@ -260,6 +270,17 @@ function ProcessoCard({
           <div className="h-1.5 overflow-hidden rounded-full bg-muted">
             <div className="h-full rounded-full bg-primary" style={{ width: `${percentagem}%` }} />
           </div>
+          {total === 0 && (
+            <Button
+              size="sm"
+              variant="secondary"
+              className="mt-1 w-full"
+              disabled={gerar.isPending}
+              onClick={() => gerar.mutate()}
+            >
+              <ListChecks className="mr-1 size-4" aria-hidden="true" /> Gerar checklist do órgão
+            </Button>
+          )}
           <Button asChild size="sm" variant="outline" className="mt-1 w-full">
             <Link to="/processos/$id" params={{ id: processo.id }}>
               Abrir processo

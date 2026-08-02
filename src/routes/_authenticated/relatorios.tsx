@@ -172,6 +172,8 @@ function RelatoriosPage() {
         }
       />
 
+      <UploadCertificados unidades={unidades} />
+
       <Card className="no-print">
         <CardContent className="grid gap-3 p-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
           <div className="space-y-1.5">
@@ -382,8 +384,6 @@ function RelatoriosPage() {
           </CardContent>
         </Card>
       )}
-
-      <UploadCertificados unidades={unidades} />
     </div>
   );
 }

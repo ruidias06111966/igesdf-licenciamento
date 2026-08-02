@@ -115,6 +115,31 @@ export const upsertProcesso = createServerFn({ method: "POST" })
       .select("id")
       .single();
     if (error) throw error;
+    // Ao abrir um processo novo com órgão definido, o checklist da documentação
+    // exigida por esse órgão é criado logo — evita processos sem checklist.
+    if (data.orgao) {
+      const { data: tpl } = await context.supabase
+        .from("processo_checklist_templates")
+        .select("*")
+        .eq("orgao", data.orgao)
+        .order("ordem");
+      if (tpl && tpl.length > 0) {
+        await context.supabase.from("processo_itens").upsert(
+          tpl.map((t) => ({
+            processo_id: ins.id,
+            template_id: t.id,
+            titulo: t.titulo,
+            descricao: t.descricao,
+            orgao: data.orgao,
+            obrigatorio: t.obrigatorio,
+            ordem: t.ordem,
+            responsavel: t.responsavel_padrao,
+            situacao: "pendente",
+          })),
+          { onConflict: "processo_id,template_id", ignoreDuplicates: true },
+        );
+      }
+    }
     return { id: ins.id };
   });
 
