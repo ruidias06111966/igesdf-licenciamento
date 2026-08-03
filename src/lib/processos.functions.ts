@@ -63,11 +63,7 @@ export const getProcesso = createServerFn({ method: "GET" })
         .select("*, unidades(id, nome, tipo)")
         .eq("id", data.id)
         .maybeSingle(),
-      context.supabase
-        .from("processo_itens")
-        .select("*")
-        .eq("processo_id", data.id)
-        .order("ordem"),
+      context.supabase.from("processo_itens").select("*").eq("processo_id", data.id).order("ordem"),
       context.supabase
         .from("documentos")
         .select("*")
@@ -192,16 +188,16 @@ export const gerarChecklistProcesso = createServerFn({ method: "POST" })
     const linhas = tpl
       .filter((t) => !jaCriados.has(t.id))
       .map((t) => ({
-      processo_id: data.processo_id,
-      template_id: t.id,
-      titulo: t.titulo,
-      descricao: t.descricao,
-      orgao,
-      obrigatorio: t.obrigatorio,
-      ordem: t.ordem,
-      responsavel: t.responsavel_padrao,
-      situacao: "pendente",
-    }));
+        processo_id: data.processo_id,
+        template_id: t.id,
+        titulo: t.titulo,
+        descricao: t.descricao,
+        orgao,
+        obrigatorio: t.obrigatorio,
+        ordem: t.ordem,
+        responsavel: t.responsavel_padrao,
+        situacao: "pendente",
+      }));
     if (linhas.length === 0) return { criados: 0 };
     const { error } = await context.supabase.from("processo_itens").insert(linhas);
     if (error) throw error;
