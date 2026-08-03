@@ -63,11 +63,7 @@ export const getProcesso = createServerFn({ method: "GET" })
         .select("*, unidades(id, nome, tipo)")
         .eq("id", data.id)
         .maybeSingle(),
-      context.supabase
-        .from("processo_itens")
-        .select("*")
-        .eq("processo_id", data.id)
-        .order("ordem"),
+      context.supabase.from("processo_itens").select("*").eq("processo_id", data.id).order("ordem"),
       context.supabase
         .from("documentos")
         .select("*")
@@ -124,7 +120,7 @@ export const upsertProcesso = createServerFn({ method: "POST" })
         .eq("orgao", data.orgao)
         .order("ordem");
       if (tpl && tpl.length > 0) {
-        await context.supabase.from("processo_itens").upsert(
+        await context.supabase.from("processo_itens").insert(
           tpl.map((t) => ({
             processo_id: ins.id,
             template_id: t.id,
@@ -136,7 +132,6 @@ export const upsertProcesso = createServerFn({ method: "POST" })
             responsavel: t.responsavel_padrao,
             situacao: "pendente",
           })),
-          { onConflict: "processo_id,template_id", ignoreDuplicates: true },
         );
       }
     }
@@ -181,20 +176,30 @@ export const gerarChecklistProcesso = createServerFn({ method: "POST" })
     if (!tpl || tpl.length === 0) {
       throw new Error("Ainda não há modelo de documentação para este órgão");
     }
-    const linhas = tpl.map((t) => ({
-      processo_id: data.processo_id,
-      template_id: t.id,
-      titulo: t.titulo,
-      descricao: t.descricao,
-      orgao,
-      obrigatorio: t.obrigatorio,
-      ordem: t.ordem,
-      responsavel: t.responsavel_padrao,
-      situacao: "pendente",
-    }));
-    const { error } = await context.supabase
+    // O índice único (processo_id, template_id) é parcial, logo o PostgREST não
+    // aceita "on_conflict"; filtramos os itens já existentes antes de inserir.
+    const { data: existentes, error: ee } = await context.supabase
       .from("processo_itens")
-      .upsert(linhas, { onConflict: "processo_id,template_id", ignoreDuplicates: true });
+      .select("template_id")
+      .eq("processo_id", data.processo_id)
+      .not("template_id", "is", null);
+    if (ee) throw ee;
+    const jaCriados = new Set((existentes ?? []).map((i) => i.template_id));
+    const linhas = tpl
+      .filter((t) => !jaCriados.has(t.id))
+      .map((t) => ({
+        processo_id: data.processo_id,
+        template_id: t.id,
+        titulo: t.titulo,
+        descricao: t.descricao,
+        orgao,
+        obrigatorio: t.obrigatorio,
+        ordem: t.ordem,
+        responsavel: t.responsavel_padrao,
+        situacao: "pendente",
+      }));
+    if (linhas.length === 0) return { criados: 0 };
+    const { error } = await context.supabase.from("processo_itens").insert(linhas);
     if (error) throw error;
     return { criados: linhas.length };
   });
