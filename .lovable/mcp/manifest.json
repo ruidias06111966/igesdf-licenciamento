@@ -1,0 +1,190 @@
+{
+  "version": 1,
+  "sdk_version": "0.26.1",
+  "path": "/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://mbpoevhioiywpyrnffez.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "igesdf-licenciamento",
+      "version": "0.1.0",
+      "title": "IGESDF - Licenciamento"
+    },
+    "tools": [
+      {
+        "name": "listar_unidades",
+        "title": "Listar unidades",
+        "description": "Lista as unidades do IGESDF (hospitais, UPAs e administrativos) com CNPJ, região administrativa e tipo.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "tipo": {
+              "type": "string",
+              "description": "Filtrar por tipo de unidade, ex.: hospital, upa."
+            },
+            "procura": {
+              "type": "string",
+              "description": "Texto a procurar no nome da unidade."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "detalhe_unidade",
+        "title": "Detalhe da unidade",
+        "description": "Devolve o dossiê de uma unidade: dados cadastrais, CNAEs, licenças por órgão e responsáveis técnicos.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "unidade_id": {
+              "type": "string",
+              "format": "uuid",
+              "description": "Identificador da unidade."
+            },
+            "nome": {
+              "type": "string",
+              "description": "Nome (ou parte) da unidade, se não souber o id."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "listar_licencas",
+        "title": "Listar licenças",
+        "description": "Lista licenças e alvarás com unidade, órgão licenciador, estado, prazo e dias restantes. Permite filtrar por órgão, estado e unidade.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "orgao": {
+              "type": "string",
+              "description": "Sigla do órgão, ex.: VISA, CBMDF, DF_LEGAL, IBRAM."
+            },
+            "status": {
+              "type": "string",
+              "description": "Estado da licença, ex.: vigente, dispensada."
+            },
+            "unidade": {
+              "type": "string",
+              "description": "Nome (ou parte) da unidade."
+            },
+            "limite": {
+              "type": "number",
+              "description": "Número máximo de registos (por omissão 100)."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "licencas_a_vencer",
+        "title": "Licenças a vencer",
+        "description": "Devolve as licenças já vencidas ou a vencer dentro de um número de dias, ordenadas pelo prazo mais próximo.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "dias": {
+              "type": "number",
+              "description": "Janela em dias a partir de hoje (por omissão 90)."
+            },
+            "incluir_vencidas": {
+              "type": "boolean",
+              "description": "Incluir licenças já vencidas (sim por omissão)."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "listar_processos_sei",
+        "title": "Listar processos SEI",
+        "description": "Lista os processos SEI de licenciamento, com órgão, situação e — opcionalmente — os itens do checklist de documentação.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "unidade": {
+              "type": "string",
+              "description": "Nome (ou parte) da unidade."
+            },
+            "numero": {
+              "type": "string",
+              "description": "Número do processo SEI."
+            },
+            "incluir_itens": {
+              "type": "boolean",
+              "description": "Incluir os itens de checklist de cada processo."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "listar_normativas",
+        "title": "Listar normativas",
+        "description": "Consulta as portarias, RDCs e normativas de licenciamento registadas, com órgão emissor, ementa e link oficial.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "procura": {
+              "type": "string",
+              "description": "Texto a procurar no título, número ou ementa."
+            },
+            "orgao": {
+              "type": "string",
+              "description": "Sigla do órgão emissor, ex.: ANVISA, VISADF."
+            }
+          },
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
