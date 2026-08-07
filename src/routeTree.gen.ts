@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as McpRouteImport } from './routes/mcp'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
@@ -19,16 +20,24 @@ import { Route as AuthenticatedNormativasRouteImport } from './routes/_authentic
 import { Route as AuthenticatedLicencasRouteImport } from './routes/_authenticated/licencas'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedCalendarioRouteImport } from './routes/_authenticated/calendario'
+import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
+import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as AuthenticatedUnidadesIndexRouteImport } from './routes/_authenticated/unidades.index'
 import { Route as AuthenticatedProcessosIndexRouteImport } from './routes/_authenticated/processos.index'
 import { Route as AuthenticatedUnidadesIdRouteImport } from './routes/_authenticated/unidades.$id'
 import { Route as AuthenticatedProcessosIdRouteImport } from './routes/_authenticated/processos.$id'
+import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as ApiPublicHooksEnviarAlertasRouteImport } from './routes/api/public/hooks/enviar-alertas'
 import { Route as AuthenticatedUnidadesIdDossieRouteImport } from './routes/_authenticated/unidades.$id_.dossie'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const McpRoute = McpRouteImport.update({
+  id: '/mcp',
+  path: '/mcp',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -75,6 +84,18 @@ const AuthenticatedCalendarioRoute = AuthenticatedCalendarioRouteImport.update({
   path: '/calendario',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const Char91DotwellKnownChar93OauthProtectedResourceRoute =
+  Char91DotwellKnownChar93OauthProtectedResourceRouteImport.update({
+    id: '/.well-known/oauth-protected-resource',
+    path: '/.well-known/oauth-protected-resource',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const Char91DotmcpChar93ListToolsRoute =
+  Char91DotmcpChar93ListToolsRouteImport.update({
+    id: '/.mcp/list-tools',
+    path: '/.mcp/list-tools',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AuthenticatedUnidadesIndexRoute =
   AuthenticatedUnidadesIndexRouteImport.update({
     id: '/unidades/',
@@ -98,6 +119,12 @@ const AuthenticatedProcessosIdRoute =
     path: '/processos/$id',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const Char91DotmcpChar93InvokeToolToolRoute =
+  Char91DotmcpChar93InvokeToolToolRouteImport.update({
+    id: '/.mcp/invoke-tool/$tool',
+    path: '/.mcp/invoke-tool/$tool',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const ApiPublicHooksEnviarAlertasRoute =
   ApiPublicHooksEnviarAlertasRouteImport.update({
     id: '/api/public/hooks/enviar-alertas',
@@ -114,13 +141,17 @@ const AuthenticatedUnidadesIdDossieRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/mcp': typeof McpRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/calendario': typeof AuthenticatedCalendarioRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/licencas': typeof AuthenticatedLicencasRoute
   '/normativas': typeof AuthenticatedNormativasRoute
   '/orgaos': typeof AuthenticatedOrgaosRoute
   '/relatorios': typeof AuthenticatedRelatoriosRoute
+  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/processos/$id': typeof AuthenticatedProcessosIdRoute
   '/unidades/$id': typeof AuthenticatedUnidadesIdRoute
   '/processos/': typeof AuthenticatedProcessosIndexRoute
@@ -131,13 +162,17 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/mcp': typeof McpRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/calendario': typeof AuthenticatedCalendarioRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/licencas': typeof AuthenticatedLicencasRoute
   '/normativas': typeof AuthenticatedNormativasRoute
   '/orgaos': typeof AuthenticatedOrgaosRoute
   '/relatorios': typeof AuthenticatedRelatoriosRoute
+  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/processos/$id': typeof AuthenticatedProcessosIdRoute
   '/unidades/$id': typeof AuthenticatedUnidadesIdRoute
   '/processos': typeof AuthenticatedProcessosIndexRoute
@@ -150,13 +185,17 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
+  '/mcp': typeof McpRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
+  '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
+  '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/_authenticated/calendario': typeof AuthenticatedCalendarioRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/licencas': typeof AuthenticatedLicencasRoute
   '/_authenticated/normativas': typeof AuthenticatedNormativasRoute
   '/_authenticated/orgaos': typeof AuthenticatedOrgaosRoute
   '/_authenticated/relatorios': typeof AuthenticatedRelatoriosRoute
+  '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/_authenticated/processos/$id': typeof AuthenticatedProcessosIdRoute
   '/_authenticated/unidades/$id': typeof AuthenticatedUnidadesIdRoute
   '/_authenticated/processos/': typeof AuthenticatedProcessosIndexRoute
@@ -169,13 +208,17 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/mcp'
     | '/sitemap.xml'
+    | '/.mcp/list-tools'
+    | '/.well-known/oauth-protected-resource'
     | '/calendario'
     | '/dashboard'
     | '/licencas'
     | '/normativas'
     | '/orgaos'
     | '/relatorios'
+    | '/.mcp/invoke-tool/$tool'
     | '/processos/$id'
     | '/unidades/$id'
     | '/processos/'
@@ -186,13 +229,17 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
+    | '/mcp'
     | '/sitemap.xml'
+    | '/.mcp/list-tools'
+    | '/.well-known/oauth-protected-resource'
     | '/calendario'
     | '/dashboard'
     | '/licencas'
     | '/normativas'
     | '/orgaos'
     | '/relatorios'
+    | '/.mcp/invoke-tool/$tool'
     | '/processos/$id'
     | '/unidades/$id'
     | '/processos'
@@ -204,13 +251,17 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/mcp'
     | '/sitemap.xml'
+    | '/.mcp/list-tools'
+    | '/.well-known/oauth-protected-resource'
     | '/_authenticated/calendario'
     | '/_authenticated/dashboard'
     | '/_authenticated/licencas'
     | '/_authenticated/normativas'
     | '/_authenticated/orgaos'
     | '/_authenticated/relatorios'
+    | '/.mcp/invoke-tool/$tool'
     | '/_authenticated/processos/$id'
     | '/_authenticated/unidades/$id'
     | '/_authenticated/processos/'
@@ -223,7 +274,11 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
+  McpRoute: typeof McpRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
+  Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
+  Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
   ApiPublicHooksEnviarAlertasRoute: typeof ApiPublicHooksEnviarAlertasRoute
 }
 
@@ -234,6 +289,13 @@ declare module '@tanstack/react-router' {
       path: '/sitemap.xml'
       fullPath: '/sitemap.xml'
       preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mcp': {
+      id: '/mcp'
+      path: '/mcp'
+      fullPath: '/mcp'
+      preLoaderRoute: typeof McpRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -299,6 +361,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedCalendarioRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/.well-known/oauth-protected-resource': {
+      id: '/.well-known/oauth-protected-resource'
+      path: '/.well-known/oauth-protected-resource'
+      fullPath: '/.well-known/oauth-protected-resource'
+      preLoaderRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/.mcp/list-tools': {
+      id: '/.mcp/list-tools'
+      path: '/.mcp/list-tools'
+      fullPath: '/.mcp/list-tools'
+      preLoaderRoute: typeof Char91DotmcpChar93ListToolsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/_authenticated/unidades/': {
       id: '/_authenticated/unidades/'
       path: '/unidades'
@@ -326,6 +402,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/processos/$id'
       preLoaderRoute: typeof AuthenticatedProcessosIdRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/.mcp/invoke-tool/$tool': {
+      id: '/.mcp/invoke-tool/$tool'
+      path: '/.mcp/invoke-tool/$tool'
+      fullPath: '/.mcp/invoke-tool/$tool'
+      preLoaderRoute: typeof Char91DotmcpChar93InvokeToolToolRouteImport
+      parentRoute: typeof rootRouteImport
     }
     '/api/public/hooks/enviar-alertas': {
       id: '/api/public/hooks/enviar-alertas'
@@ -379,7 +462,12 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
+  McpRoute: McpRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
+  Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
+  Char91DotwellKnownChar93OauthProtectedResourceRoute:
+    Char91DotwellKnownChar93OauthProtectedResourceRoute,
+  Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
   ApiPublicHooksEnviarAlertasRoute: ApiPublicHooksEnviarAlertasRoute,
 }
 export const routeTree = rootRouteImport
