@@ -80,12 +80,12 @@ function ligacaoSegura(): boolean {
   return false;
 }
 
-/** Emite o cookie de acesso após uma senha correta. */
-export function abrirSessao(): void {
+/** Emite o cookie de acesso após uma senha correta, gravando o perfil. */
+export function abrirSessao(perfil: Perfil = "edicao"): void {
   const senha = senhaConfigurada();
   const expiraEm = Date.now() + VALIDADE_DIAS * 86_400_000;
   // O identificador aleatório só serve para os cookies não serem todos iguais.
-  const payload = `${expiraEm}.${randomUUID()}`;
+  const payload = `${expiraEm}.${randomUUID()}.${perfil}`;
   const valor = `${payload}.${assinar(payload, senha)}`;
   const seguro = ligacaoSegura();
   setCookie(COOKIE, valor, {
