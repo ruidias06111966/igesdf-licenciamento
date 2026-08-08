@@ -14,6 +14,7 @@ import { Route as McpRouteImport } from './routes/mcp'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ApiIaRouteImport } from './routes/api/ia'
 import { Route as AuthenticatedRelatoriosRouteImport } from './routes/_authenticated/relatorios'
 import { Route as AuthenticatedOrgaosRouteImport } from './routes/_authenticated/orgaos'
 import { Route as AuthenticatedNormativasRouteImport } from './routes/_authenticated/normativas'
@@ -53,6 +54,11 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiIaRoute = ApiIaRouteImport.update({
+  id: '/api/ia',
+  path: '/api/ia',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthenticatedRelatoriosRoute = AuthenticatedRelatoriosRouteImport.update({
@@ -157,6 +163,7 @@ export interface FileRoutesByFullPath {
   '/normativas': typeof AuthenticatedNormativasRoute
   '/orgaos': typeof AuthenticatedOrgaosRoute
   '/relatorios': typeof AuthenticatedRelatoriosRoute
+  '/api/ia': typeof ApiIaRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/processos/$id': typeof AuthenticatedProcessosIdRoute
@@ -179,6 +186,7 @@ export interface FileRoutesByTo {
   '/normativas': typeof AuthenticatedNormativasRoute
   '/orgaos': typeof AuthenticatedOrgaosRoute
   '/relatorios': typeof AuthenticatedRelatoriosRoute
+  '/api/ia': typeof ApiIaRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/processos/$id': typeof AuthenticatedProcessosIdRoute
@@ -203,6 +211,7 @@ export interface FileRoutesById {
   '/_authenticated/normativas': typeof AuthenticatedNormativasRoute
   '/_authenticated/orgaos': typeof AuthenticatedOrgaosRoute
   '/_authenticated/relatorios': typeof AuthenticatedRelatoriosRoute
+  '/api/ia': typeof ApiIaRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
   '/_authenticated/processos/$id': typeof AuthenticatedProcessosIdRoute
@@ -227,6 +236,7 @@ export interface FileRouteTypes {
     | '/normativas'
     | '/orgaos'
     | '/relatorios'
+    | '/api/ia'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/processos/$id'
@@ -249,6 +259,7 @@ export interface FileRouteTypes {
     | '/normativas'
     | '/orgaos'
     | '/relatorios'
+    | '/api/ia'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/processos/$id'
@@ -272,6 +283,7 @@ export interface FileRouteTypes {
     | '/_authenticated/normativas'
     | '/_authenticated/orgaos'
     | '/_authenticated/relatorios'
+    | '/api/ia'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
     | '/_authenticated/processos/$id'
@@ -290,6 +302,7 @@ export interface RootRouteChildren {
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  ApiIaRoute: typeof ApiIaRoute
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
   ApiPublicHooksEnviarAlertasRoute: typeof ApiPublicHooksEnviarAlertasRoute
@@ -330,6 +343,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/ia': {
+      id: '/api/ia'
+      path: '/api/ia'
+      fullPath: '/api/ia'
+      preLoaderRoute: typeof ApiIaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/_authenticated/relatorios': {
@@ -487,6 +507,7 @@ const rootRouteChildren: RootRouteChildren = {
   Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
   Char91DotwellKnownChar93OauthProtectedResourceRoute:
     Char91DotwellKnownChar93OauthProtectedResourceRoute,
+  ApiIaRoute: ApiIaRoute,
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
   ApiPublicHooksEnviarAlertasRoute: ApiPublicHooksEnviarAlertasRoute,
