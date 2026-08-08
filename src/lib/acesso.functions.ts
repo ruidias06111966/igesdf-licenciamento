@@ -11,7 +11,7 @@ export const entrar = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => z.object({ senha: z.string().min(1).max(200) }).parse(input))
   .handler(async ({ data }) => {
     const { perfilDaSenha, abrirSessao, TentativasExcedidas } = await import("@/lib/acesso.server");
-    let perfil: "edicao" | "leitura" | null;
+    let perfil: "edicao" | "leitura" | "master" | null;
     try {
       perfil = perfilDaSenha(data.senha);
     } catch (erro) {

@@ -36,7 +36,7 @@ export const requireEdicao = createMiddleware({ type: "function" }).server(async
   if (perfil === null) {
     throw new Error("Unauthorized: acesso não autorizado");
   }
-  if (perfil !== "edicao") {
+  if (perfil !== "edicao" && perfil !== "master") {
     throw new Error(
       "Este acesso é apenas para consulta e impressão. Para alterar dados, entre com a senha de edição.",
     );

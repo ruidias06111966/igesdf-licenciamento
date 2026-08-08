@@ -23,8 +23,11 @@ import { getCookie, setCookie, deleteCookie, getRequest } from "@tanstack/react-
 const COOKIE = "igesdf_acesso";
 const VALIDADE_DIAS = 30;
 
-/** Perfis de acesso: quem pode alterar dados e quem só consulta/imprime. */
-export type Perfil = "edicao" | "leitura";
+/**
+ * Perfis de acesso: quem pode alterar dados, quem só consulta/imprime e o
+ * perfil master (edição + assistente de IA).
+ */
+export type Perfil = "edicao" | "leitura" | "master";
 
 function senhaConfigurada(): string {
   const senha = process.env.ACESSO_SENHA;
@@ -43,6 +46,13 @@ function senhaConfigurada(): string {
  */
 function senhaLeitura(): string | null {
   const senha = process.env.ACESSO_SENHA_LEITURA;
+  if (!senha || senha.trim().length < 4) return null;
+  return senha;
+}
+
+/** Senha do utilizador master (opcional). Dá acesso ao assistente de IA. */
+function senhaMaster(): string | null {
+  const senha = process.env.ACESSO_SENHA_MASTER;
   if (!senha || senha.trim().length < 4) return null;
   return senha;
 }
@@ -171,7 +181,11 @@ export function perfilDaSenha(tentativa: string): Perfil | null {
     const s = senhaLeitura();
     return s ? iguais(tentativa, s) : false;
   })();
-  const perfil: Perfil | null = edicao ? "edicao" : leitura ? "leitura" : null;
+  const master = (() => {
+    const s = senhaMaster();
+    return s ? iguais(tentativa, s) : false;
+  })();
+  const perfil: Perfil | null = master ? "master" : edicao ? "edicao" : leitura ? "leitura" : null;
   if (perfil) tentativas.delete(origem());
   else registarFalha();
   return perfil;
@@ -190,7 +204,9 @@ export function perfilAtual(): Perfil | null {
   if (partes.length !== 3 && partes.length !== 4) return null;
   const assinatura = partes[partes.length - 1]!;
   const payload = partes.slice(0, -1).join(".");
-  const perfil: Perfil = partes.length === 4 && partes[2] === "leitura" ? "leitura" : "edicao";
+  const gravado = partes.length === 4 ? partes[2] : "edicao";
+  const perfil: Perfil =
+    gravado === "leitura" ? "leitura" : gravado === "master" ? "master" : "edicao";
 
   let senha: string;
   try {
@@ -212,5 +228,11 @@ export function temAcesso(): boolean {
 
 /** Verdadeiro quando a sessão pode criar, alterar e excluir dados. */
 export function podeEditar(): boolean {
-  return perfilAtual() === "edicao";
+  const p = perfilAtual();
+  return p === "edicao" || p === "master";
+}
+
+/** Verdadeiro apenas para o utilizador master (assistente de IA). */
+export function ehMaster(): boolean {
+  return perfilAtual() === "master";
 }

@@ -11,12 +11,13 @@ import {
   LogOut,
   Menu,
   ShieldCheck,
+  Sparkles,
 } from "lucide-react";
 import { useState, type ComponentType } from "react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
-import { usePodeEditar } from "@/lib/perfil";
+import { usePodeEditar, useEhMaster } from "@/lib/perfil";
 
 type ItemNav = { to: string; label: string; icon: ComponentType<{ className?: string }> };
 
@@ -31,6 +32,8 @@ const NAV: ItemNav[] = [
   { to: "/normativas", label: "Normativas", icon: BookText },
 ];
 
+const NAV_MASTER: ItemNav = { to: "/ia", label: "Assistente IA", icon: Sparkles };
+
 function Marca({ compacta }: { compacta?: boolean }) {
   return (
     <div className="flex items-center gap-2.5">
@@ -44,9 +47,11 @@ function Marca({ compacta }: { compacta?: boolean }) {
 }
 
 function ListaNav({ onNavigate }: { onNavigate?: () => void }) {
+  const ehMaster = useEhMaster();
+  const itens = ehMaster ? [...NAV, NAV_MASTER] : NAV;
   return (
     <nav aria-label="Navegação principal" className="flex-1 space-y-1 p-3">
-      {NAV.map(({ to, label, icon: Icone }) => (
+      {itens.map(({ to, label, icon: Icone }) => (
         <Link
           key={to}
           to={to}
