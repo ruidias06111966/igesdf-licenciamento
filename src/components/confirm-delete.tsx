@@ -61,6 +61,7 @@ export function ConfirmDelete({
       await onConfirm();
       toast.success(mensagemSucesso);
       setAberto(false);
+      setConfirmacao("");
       onDone?.();
     } catch (erro) {
       toast.error(mensagemErro(erro));
