@@ -23,6 +23,9 @@ import { getCookie, setCookie, deleteCookie, getRequest } from "@tanstack/react-
 const COOKIE = "igesdf_acesso";
 const VALIDADE_DIAS = 30;
 
+/** Perfis de acesso: quem pode alterar dados e quem só consulta/imprime. */
+export type Perfil = "edicao" | "leitura";
+
 function senhaConfigurada(): string {
   const senha = process.env.ACESSO_SENHA;
   if (!senha || senha.trim().length < 4) {
@@ -31,6 +34,16 @@ function senhaConfigurada(): string {
         "com pelo menos 4 caracteres nas variáveis de ambiente do projeto.",
     );
   }
+  return senha;
+}
+
+/**
+ * Senha de consulta (opcional). Quando não está definida, existe apenas o
+ * perfil de edição — o sistema continua a funcionar como antes.
+ */
+function senhaLeitura(): string | null {
+  const senha = process.env.ACESSO_SENHA_LEITURA;
+  if (!senha || senha.trim().length < 4) return null;
   return senha;
 }
 
