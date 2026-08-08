@@ -1,6 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { usePodeEditar } from "@/lib/perfil";
 import {
   Sheet,
   SheetContent,
@@ -51,6 +52,10 @@ export function FormSheet<T extends object>({
   const [aberto, setAberto] = useState(false);
   const [valores, setValores] = useState<T>(valorInicial);
   const [salvando, setSalvando] = useState(false);
+  const podeEditar = usePodeEditar();
+
+  // Acesso de consulta não vê formulários de criação/edição.
+  if (!podeEditar) return null;
 
   function abrirOuFechar(proximo: boolean) {
     if (proximo) setValores(valorInicial());
