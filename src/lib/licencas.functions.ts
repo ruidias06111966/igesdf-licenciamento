@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { requireAcesso } from "@/lib/acesso-middleware";
+import { requireAcesso, requireEdicao } from "@/lib/acesso-middleware";
 import { z } from "zod";
 import { vaziosParaNulo } from "@/lib/sanitize";
 
@@ -46,7 +46,7 @@ export const getUnidade = createServerFn({ method: "GET" })
   });
 
 export const deleteUnidade = createServerFn({ method: "POST" })
-  .middleware([requireAcesso])
+  .middleware([requireEdicao])
   .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase
@@ -81,7 +81,7 @@ const cnaeSchema = z.object({
 });
 
 export const upsertCnae = createServerFn({ method: "POST" })
-  .middleware([requireAcesso])
+  .middleware([requireEdicao])
   .inputValidator((input: unknown) => cnaeSchema.parse(input))
   .handler(async ({ data, context }) => {
     const clean = vaziosParaNulo(data);
@@ -103,7 +103,7 @@ export const upsertCnae = createServerFn({ method: "POST" })
   });
 
 export const deleteCnae = createServerFn({ method: "POST" })
-  .middleware([requireAcesso])
+  .middleware([requireEdicao])
   .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase.from("cnaes_unidade").delete().eq("id", data.id);
@@ -176,7 +176,7 @@ const checklistItemSchema = z.object({
 });
 
 export const updateChecklistItem = createServerFn({ method: "POST" })
-  .middleware([requireAcesso])
+  .middleware([requireEdicao])
   .inputValidator((input: unknown) => checklistItemSchema.parse(input))
   .handler(async ({ data, context }) => {
     const { id, ...campos } = data;
@@ -193,7 +193,7 @@ export const updateChecklistItem = createServerFn({ method: "POST" })
 
 // ============ Versionamento de documentos ============
 export const registrarNovaVersao = createServerFn({ method: "POST" })
-  .middleware([requireAcesso])
+  .middleware([requireEdicao])
   .inputValidator((input: unknown) =>
     z
       .object({
@@ -288,7 +288,7 @@ const unidadeSchema = z.object({
 });
 
 export const upsertUnidade = createServerFn({ method: "POST" })
-  .middleware([requireAcesso])
+  .middleware([requireEdicao])
   .inputValidator((input: unknown) => unidadeSchema.parse(input))
   .handler(async ({ data, context }) => {
     const clean = vaziosParaNulo(data);
@@ -352,7 +352,7 @@ const licencaSchema = z.object({
 });
 
 export const upsertLicenca = createServerFn({ method: "POST" })
-  .middleware([requireAcesso])
+  .middleware([requireEdicao])
   .inputValidator((input: unknown) => licencaSchema.parse(input))
   .handler(async ({ data, context }) => {
     const clean = vaziosParaNulo(data);
@@ -371,7 +371,7 @@ export const upsertLicenca = createServerFn({ method: "POST" })
   });
 
 export const deleteLicenca = createServerFn({ method: "POST" })
-  .middleware([requireAcesso])
+  .middleware([requireEdicao])
   .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase.from("licencas").delete().eq("id", data.id);
@@ -393,7 +393,7 @@ const rtSchema = z.object({
 });
 
 export const upsertRT = createServerFn({ method: "POST" })
-  .middleware([requireAcesso])
+  .middleware([requireEdicao])
   .inputValidator((input: unknown) => rtSchema.parse(input))
   .handler(async ({ data, context }) => {
     const clean = vaziosParaNulo(data);
@@ -415,7 +415,7 @@ export const upsertRT = createServerFn({ method: "POST" })
   });
 
 export const deleteRT = createServerFn({ method: "POST" })
-  .middleware([requireAcesso])
+  .middleware([requireEdicao])
   .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase
@@ -427,7 +427,7 @@ export const deleteRT = createServerFn({ method: "POST" })
   });
 
 export const registrarDocumento = createServerFn({ method: "POST" })
-  .middleware([requireAcesso])
+  .middleware([requireEdicao])
   .inputValidator((input: unknown) =>
     z
       .object({
@@ -457,7 +457,7 @@ export const registrarDocumento = createServerFn({ method: "POST" })
   });
 
 export const deleteDocumento = createServerFn({ method: "POST" })
-  .middleware([requireAcesso])
+  .middleware([requireEdicao])
   .inputValidator((input: unknown) =>
     z.object({ id: z.string().uuid(), storage_path: z.string() }).parse(input),
   )
@@ -481,7 +481,7 @@ export const signedDocUrl = createServerFn({ method: "POST" })
 
 // Marca uma versão específica como vigente (arquiva as demais do mesmo grupo)
 export const setVersaoVigente = createServerFn({ method: "POST" })
-  .middleware([requireAcesso])
+  .middleware([requireEdicao])
   .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase.rpc("set_versao_vigente", { _doc_id: data.id });
@@ -555,7 +555,7 @@ const PREFIXO_SEGURO = /^[A-Za-z0-9][A-Za-z0-9/_-]{0,200}$/;
  * storage. Passar por aqui mantém o bucket privado e a service role no servidor.
  */
 export const enviarArquivo = createServerFn({ method: "POST" })
-  .middleware([requireAcesso])
+  .middleware([requireEdicao])
   .inputValidator((input: unknown) => {
     if (!(input instanceof FormData)) throw new Error("Envio inválido: esperado FormData");
     const arquivo = input.get("arquivo");

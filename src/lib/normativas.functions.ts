@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { requireAcesso } from "@/lib/acesso-middleware";
+import { requireAcesso, requireEdicao } from "@/lib/acesso-middleware";
 import { z } from "zod";
 import { vaziosParaNulo } from "@/lib/sanitize";
 
@@ -46,7 +46,7 @@ export const listNormativas = createServerFn({ method: "GET" })
   });
 
 export const upsertNormativa = createServerFn({ method: "POST" })
-  .middleware([requireAcesso])
+  .middleware([requireEdicao])
   .inputValidator((input: unknown) => normativaSchema.parse(input))
   .handler(async ({ data, context }) => {
     const clean = vaziosParaNulo(data);
@@ -66,7 +66,7 @@ export const upsertNormativa = createServerFn({ method: "POST" })
   });
 
 export const deleteNormativa = createServerFn({ method: "POST" })
-  .middleware([requireAcesso])
+  .middleware([requireEdicao])
   .inputValidator((input: unknown) =>
     z
       .object({ id: z.string().uuid(), storage_path: z.string().nullable().optional() })

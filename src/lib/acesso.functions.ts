@@ -10,20 +10,22 @@ import { z } from "zod";
 export const entrar = createServerFn({ method: "POST" })
   .inputValidator((input: unknown) => z.object({ senha: z.string().min(1).max(200) }).parse(input))
   .handler(async ({ data }) => {
-    const { senhaCorreta, abrirSessao, TentativasExcedidas } = await import("@/lib/acesso.server");
+    const { perfilDaSenha, abrirSessao, TentativasExcedidas } = await import("@/lib/acesso.server");
+    let perfil: "edicao" | "leitura" | null;
     try {
-      if (!senhaCorreta(data.senha)) {
-        await new Promise((resolve) => setTimeout(resolve, 700));
-        return { ok: false as const, motivo: "senha" as const };
-      }
+      perfil = perfilDaSenha(data.senha);
     } catch (erro) {
       if (erro instanceof TentativasExcedidas) {
         return { ok: false as const, motivo: "limite" as const, mensagem: erro.message };
       }
       throw erro;
     }
-    abrirSessao();
-    return { ok: true as const };
+    if (!perfil) {
+      await new Promise((resolve) => setTimeout(resolve, 700));
+      return { ok: false as const, motivo: "senha" as const };
+    }
+    abrirSessao(perfil);
+    return { ok: true as const, perfil };
   });
 
 export const sair = createServerFn({ method: "POST" }).handler(async () => {
@@ -32,10 +34,11 @@ export const sair = createServerFn({ method: "POST" }).handler(async () => {
   return { ok: true };
 });
 
-/** Usada pelo guarda de rota para saber se já existe sessão aberta. */
+/** Usada pelo guarda de rota e pela interface para saber a sessão e o perfil. */
 export const verificarAcesso = createServerFn({ method: "GET" }).handler(async () => {
-  const { temAcesso } = await import("@/lib/acesso.server");
-  return { autorizado: temAcesso() };
+  const { perfilAtual } = await import("@/lib/acesso.server");
+  const perfil = perfilAtual();
+  return { autorizado: perfil !== null, perfil };
 });
 
 /**

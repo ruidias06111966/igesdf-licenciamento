@@ -105,8 +105,9 @@ function AuthPage() {
             </div>
             <CardTitle>Senha de acesso</CardTitle>
             <CardDescription>
-              Senha única da equipe. Não há cadastro nem contas individuais — informe uma vez e o
-              acesso fica guardado neste navegador por 30 dias.
+              Há duas senhas: uma de <strong>edição</strong> (cria, altera e exclui) e outra de{" "}
+              <strong>consulta</strong> (apenas ver e imprimir relatórios). Não há cadastro nem
+              contas individuais — o acesso fica guardado neste navegador por 30 dias.
             </CardDescription>
           </CardHeader>
           <CardContent>

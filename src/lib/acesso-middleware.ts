@@ -24,3 +24,23 @@ export const requireAcesso = createMiddleware({ type: "function" }).server(async
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   return next({ context: { supabase: supabaseAdmin } });
 });
+
+/**
+ * Exige, além do cookie, o perfil de edição. A senha de consulta abre o
+ * sistema em modo apenas-leitura: esconder os botões não chega, porque as
+ * funções de servidor são chamáveis diretamente — a barreira tem de estar aqui.
+ */
+export const requireEdicao = createMiddleware({ type: "function" }).server(async ({ next }) => {
+  const { perfilAtual } = await import("@/lib/acesso.server");
+  const perfil = perfilAtual();
+  if (perfil === null) {
+    throw new Error("Unauthorized: acesso não autorizado");
+  }
+  if (perfil !== "edicao") {
+    throw new Error(
+      "Este acesso é apenas para consulta e impressão. Para alterar dados, entre com a senha de edição.",
+    );
+  }
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  return next({ context: { supabase: supabaseAdmin } });
+});

@@ -16,6 +16,7 @@ import { useState, type ComponentType } from "react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
+import { usePodeEditar } from "@/lib/perfil";
 
 type ItemNav = { to: string; label: string; icon: ComponentType<{ className?: string }> };
 
@@ -65,8 +66,15 @@ function ListaNav({ onNavigate }: { onNavigate?: () => void }) {
 }
 
 function Rodape({ onLogout }: { onLogout: () => void }) {
+  const podeEditar = usePodeEditar();
   return (
     <div className="border-t border-sidebar-border p-3">
+      {!podeEditar && (
+        <p className="mb-2 rounded-md bg-sidebar-accent/60 px-3 py-2 text-xs">
+          Acesso de <span className="font-medium">consulta e impressão</span>. Alterações e
+          exclusões exigem a senha de edição.
+        </p>
+      )}
       <Button
         variant="ghost"
         size="sm"

@@ -23,6 +23,9 @@ import { getCookie, setCookie, deleteCookie, getRequest } from "@tanstack/react-
 const COOKIE = "igesdf_acesso";
 const VALIDADE_DIAS = 30;
 
+/** Perfis de acesso: quem pode alterar dados e quem só consulta/imprime. */
+export type Perfil = "edicao" | "leitura";
+
 function senhaConfigurada(): string {
   const senha = process.env.ACESSO_SENHA;
   if (!senha || senha.trim().length < 4) {
@@ -31,6 +34,16 @@ function senhaConfigurada(): string {
         "com pelo menos 4 caracteres nas variáveis de ambiente do projeto.",
     );
   }
+  return senha;
+}
+
+/**
+ * Senha de consulta (opcional). Quando não está definida, existe apenas o
+ * perfil de edição — o sistema continua a funcionar como antes.
+ */
+function senhaLeitura(): string | null {
+  const senha = process.env.ACESSO_SENHA_LEITURA;
+  if (!senha || senha.trim().length < 4) return null;
   return senha;
 }
 
@@ -67,12 +80,12 @@ function ligacaoSegura(): boolean {
   return false;
 }
 
-/** Emite o cookie de acesso após uma senha correta. */
-export function abrirSessao(): void {
+/** Emite o cookie de acesso após uma senha correta, gravando o perfil. */
+export function abrirSessao(perfil: Perfil = "edicao"): void {
   const senha = senhaConfigurada();
   const expiraEm = Date.now() + VALIDADE_DIAS * 86_400_000;
   // O identificador aleatório só serve para os cookies não serem todos iguais.
-  const payload = `${expiraEm}.${randomUUID()}`;
+  const payload = `${expiraEm}.${randomUUID()}.${perfil}`;
   const valor = `${payload}.${assinar(payload, senha)}`;
   const seguro = ligacaoSegura();
   setCookie(COOKIE, valor, {
@@ -147,36 +160,57 @@ function registarFalha(): void {
 }
 
 /**
- * Confere a senha recebida contra a configurada, em tempo constante, aplicando
- * o limite de tentativas. Um acerto limpa o contador da origem.
+ * Confere a senha recebida, em tempo constante, aplicando o limite de
+ * tentativas. Devolve o perfil correspondente ou `null` se não confere.
+ * As duas comparações correm sempre, para não distinguir os casos pelo tempo.
  */
-export function senhaCorreta(tentativa: string): boolean {
+export function perfilDaSenha(tentativa: string): Perfil | null {
   verificarLimite();
-  const senha = senhaConfigurada();
-  const certo = iguais(tentativa, senha);
-  if (certo) tentativas.delete(origem());
+  const edicao = iguais(tentativa, senhaConfigurada());
+  const leitura = (() => {
+    const s = senhaLeitura();
+    return s ? iguais(tentativa, s) : false;
+  })();
+  const perfil: Perfil | null = edicao ? "edicao" : leitura ? "leitura" : null;
+  if (perfil) tentativas.delete(origem());
   else registarFalha();
-  return certo;
+  return perfil;
 }
 
-/** Verdadeiro quando o pedido traz um cookie de acesso válido e não expirado. */
-export function temAcesso(): boolean {
+/**
+ * Perfil da sessão atual, ou `null` quando não há cookie válido.
+ *
+ * Cookies antigos (sem o segmento de perfil) continuam válidos e são tratados
+ * como perfil de edição, para não expulsar quem já estava dentro.
+ */
+export function perfilAtual(): Perfil | null {
   const bruto = getCookie(COOKIE);
-  if (!bruto) return false;
+  if (!bruto) return null;
   const partes = bruto.split(".");
-  if (partes.length !== 3) return false;
-  const [expiraEm, id, assinatura] = partes;
-  const payload = `${expiraEm}.${id}`;
+  if (partes.length !== 3 && partes.length !== 4) return null;
+  const assinatura = partes[partes.length - 1]!;
+  const payload = partes.slice(0, -1).join(".");
+  const perfil: Perfil = partes.length === 4 && partes[2] === "leitura" ? "leitura" : "edicao";
 
   let senha: string;
   try {
     senha = senhaConfigurada();
   } catch {
     // Sem senha configurada não há sessão válida possível.
-    return false;
+    return null;
   }
 
-  if (!iguais(assinatura, assinar(payload, senha))) return false;
-  const prazo = Number(expiraEm);
-  return Number.isFinite(prazo) && prazo > Date.now();
+  if (!iguais(assinatura, assinar(payload, senha))) return null;
+  const prazo = Number(partes[0]);
+  return Number.isFinite(prazo) && prazo > Date.now() ? perfil : null;
+}
+
+/** Verdadeiro quando o pedido traz um cookie de acesso válido e não expirado. */
+export function temAcesso(): boolean {
+  return perfilAtual() !== null;
+}
+
+/** Verdadeiro quando a sessão pode criar, alterar e excluir dados. */
+export function podeEditar(): boolean {
+  return perfilAtual() === "edicao";
 }
