@@ -1,5 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
-import { requireAcesso } from "@/lib/acesso-middleware";
+import { requireAcesso, requireEdicao } from "@/lib/acesso-middleware";
 import { z } from "zod";
 import { vaziosParaNulo } from "@/lib/sanitize";
 
@@ -28,7 +28,7 @@ export const listOrgaos = createServerFn({ method: "GET" })
   });
 
 export const upsertOrgao = createServerFn({ method: "POST" })
-  .middleware([requireAcesso])
+  .middleware([requireEdicao])
   .inputValidator((input: unknown) => orgaoSchema.parse(input))
   .handler(async ({ data, context }) => {
     const clean = vaziosParaNulo(data);
@@ -47,7 +47,7 @@ export const upsertOrgao = createServerFn({ method: "POST" })
   });
 
 export const deleteOrgao = createServerFn({ method: "POST" })
-  .middleware([requireAcesso])
+  .middleware([requireEdicao])
   .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase.from("orgaos").delete().eq("id", data.id);

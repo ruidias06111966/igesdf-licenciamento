@@ -1,6 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireAcesso } from "@/lib/acesso-middleware";
+import { requireAcesso, requireEdicao } from "@/lib/acesso-middleware";
 import { vaziosParaNulo } from "@/lib/sanitize";
 
 const ORGAO = z.enum([
@@ -93,7 +93,7 @@ const processoSchema = z.object({
 });
 
 export const upsertProcesso = createServerFn({ method: "POST" })
-  .middleware([requireAcesso])
+  .middleware([requireEdicao])
   .inputValidator((input: unknown) => processoSchema.parse(input))
   .handler(async ({ data, context }) => {
     const clean = vaziosParaNulo(data);
@@ -139,7 +139,7 @@ export const upsertProcesso = createServerFn({ method: "POST" })
   });
 
 export const deleteProcesso = createServerFn({ method: "POST" })
-  .middleware([requireAcesso])
+  .middleware([requireEdicao])
   .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase.from("processos_sei").delete().eq("id", data.id);
@@ -153,7 +153,7 @@ export const deleteProcesso = createServerFn({ method: "POST" })
  * é disparada duas vezes.
  */
 export const gerarChecklistProcesso = createServerFn({ method: "POST" })
-  .middleware([requireAcesso])
+  .middleware([requireEdicao])
   .inputValidator((input: unknown) =>
     z.object({ processo_id: z.string().uuid(), orgao: ORGAO.optional() }).parse(input),
   )
@@ -220,7 +220,7 @@ const itemSchema = z.object({
 });
 
 export const upsertProcessoItem = createServerFn({ method: "POST" })
-  .middleware([requireAcesso])
+  .middleware([requireEdicao])
   .inputValidator((input: unknown) => itemSchema.parse(input))
   .handler(async ({ data, context }) => {
     const clean = vaziosParaNulo(data);
@@ -243,7 +243,7 @@ export const upsertProcessoItem = createServerFn({ method: "POST" })
 
 /** Alteração rápida da situação de um item, direto na lista. */
 export const setSituacaoItem = createServerFn({ method: "POST" })
-  .middleware([requireAcesso])
+  .middleware([requireEdicao])
   .inputValidator((input: unknown) =>
     z
       .object({
@@ -261,7 +261,7 @@ export const setSituacaoItem = createServerFn({ method: "POST" })
   });
 
 export const deleteProcessoItem = createServerFn({ method: "POST" })
-  .middleware([requireAcesso])
+  .middleware([requireEdicao])
   .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase.from("processo_itens").delete().eq("id", data.id);
