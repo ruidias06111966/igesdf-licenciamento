@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { Bot, Loader2, Paperclip, Send, Sparkles, Trash2, User, X } from "lucide-react";
+import { Bot, Check, Copy, Loader2, Paperclip, Send, Sparkles, Trash2, User, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -43,6 +43,51 @@ const SUGESTOES = [
 
 const LIMITE_MB = 8;
 
+/** Ações estruturadas aceites pelo servidor (a lista real vive em ia.server.ts). */
+const ACOES = [
+  ["pergunta_livre", "Pergunta livre"],
+  ["resumo_unidade", "Resumo de unidade"],
+  ["priorizar_pendencias", "Priorizar pendências"],
+  ["explicar_exigencia", "Explicar exigência"],
+] as const;
+
+type Acao = (typeof ACOES)[number][0];
+
+/** Mensagens por código de erro, para o utilizador saber o que fazer. */
+function mensagemErro(status: number, texto: string): string {
+  if (status === 403) return "Acesso restrito ao utilizador master.";
+  if (status === 429)
+    return "Limite de consultas de IA atingido. Tente novamente em alguns minutos.";
+  if (status === 503) return "Serviço de IA temporariamente indisponível. Tente novamente.";
+  if (status === 413) return "Pedido demasiado grande. Reduza o texto ou os anexos.";
+  return texto || "Falha ao contactar o assistente.";
+}
+
+function BotaoCopiar({ texto }: { texto: string }) {
+  const [copiado, setCopiado] = useState(false);
+  return (
+    <Button
+      type="button"
+      variant="ghost"
+      size="sm"
+      className="mt-1 h-7 px-2 text-xs"
+      onClick={() => {
+        void navigator.clipboard.writeText(texto).then(() => {
+          setCopiado(true);
+          setTimeout(() => setCopiado(false), 2000);
+        });
+      }}
+    >
+      {copiado ? (
+        <Check className="mr-1 size-3" aria-hidden="true" />
+      ) : (
+        <Copy className="mr-1 size-3" aria-hidden="true" />
+      )}
+      {copiado ? "Copiado" : "Copiar resposta"}
+    </Button>
+  );
+}
+
 function lerFicheiro(f: File): Promise<Anexo> {
   return new Promise((resolve, reject) => {
     const leitor = new FileReader();
@@ -59,6 +104,7 @@ function PaginaIA() {
   const [texto, setTexto] = useState("");
   const [anexos, setAnexos] = useState<Anexo[]>([]);
   const [modelo, setModelo] = useState<"rapido" | "aprofundado">("rapido");
+  const [acao, setAcao] = useState<Acao>("pergunta_livre");
   const [ocupado, setOcupado] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const fimRef = useRef<HTMLDivElement>(null);
@@ -116,10 +162,10 @@ function PaginaIA() {
       const res = await fetch("/api/ia", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mensagens: historico, modelo }),
+        body: JSON.stringify({ mensagens: historico, modelo, acao }),
       });
       if (!res.ok || !res.body) {
-        throw new Error((await res.text()) || "Falha ao contactar o assistente.");
+        throw new Error(mensagemErro(res.status, await res.text().catch(() => "")));
       }
       const leitor = res.body.getReader();
       const decoder = new TextDecoder();
@@ -186,6 +232,21 @@ function PaginaIA() {
         ))}
       </div>
 
+      <div className="flex flex-wrap items-center gap-2 text-xs">
+        <span className="text-muted-foreground">Ação:</span>
+        {ACOES.map(([valor, rotulo]) => (
+          <Button
+            key={valor}
+            type="button"
+            size="sm"
+            variant={acao === valor ? "default" : "outline"}
+            onClick={() => setAcao(valor)}
+          >
+            {rotulo}
+          </Button>
+        ))}
+      </div>
+
       <Card className="flex h-[62vh] min-h-100 flex-col">
         <CardContent className="flex-1 space-y-4 overflow-y-auto p-4">
           {mensagens.length === 0 && (
@@ -235,9 +296,12 @@ function PaginaIA() {
                 )}
                 {m.role === "assistant" ? (
                   m.content ? (
-                    <div className="prose prose-sm dark:prose-invert max-w-none [&_table]:block [&_table]:overflow-x-auto">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.content}</ReactMarkdown>
-                    </div>
+                    <>
+                      <div className="prose prose-sm dark:prose-invert max-w-none [&_table]:block [&_table]:overflow-x-auto">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.content}</ReactMarkdown>
+                      </div>
+                      <BotaoCopiar texto={m.content} />
+                    </>
                   ) : (
                     <Loader2 className="size-4 animate-spin" aria-hidden="true" />
                   )
