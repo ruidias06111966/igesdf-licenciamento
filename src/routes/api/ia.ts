@@ -7,21 +7,14 @@ import { createFileRoute } from "@tanstack/react-router";
  * servidor com o mesmo cookie assinado do resto do sistema, porque esconder o
  * menu na interface não impediria uma chamada direta ao endpoint (e cada
  * chamada consome créditos).
+ *
+ * A chave `ANTHROPIC_API_KEY` é lida apenas dentro deste handler, que corre
+ * exclusivamente no servidor. Nunca é enviada ao navegador nem devolvida em
+ * mensagens de erro.
  */
 
 type Anexo = { nome: string; tipo: string; dados: string };
 type Mensagem = { role: "user" | "assistant"; content: string; anexos?: Anexo[] };
-
-const SISTEMA = `És o assistente de licenciamento do IGESDF (Instituto de Gestão Estratégica de Saúde do Distrito Federal).
-
-Ajudas o responsável pelo licenciamento a: redigir processos, despachos, ofícios e requerimentos administrativos; interpretar normativas (RDCs da ANVISA, normativas da VISADF, legislação do DF); planear e desbloquear licenciamentos junto de VISADF, DF LEGAL, CBMDF, IBRAM, SUSDEC, PCDF, SEAGRI e SEEDF; montar checklists de documentos por órgão; e analisar documentos enviados.
-
-Regras:
-- Responde sempre em português do Brasil, com linguagem administrativa correta.
-- Usa markdown (títulos, listas, tabelas) para respostas estruturadas.
-- Quando redigires um documento oficial, entrega-o pronto a copiar, com cabeçalho, corpo, fundamentação legal e fecho.
-- Cita a base legal quando a conheceres; se não tiveres certeza da vigência de uma norma, diz isso claramente em vez de inventar número ou data.
-- Sê objetivo: primeiro a resposta, depois os detalhes.`;
 
 /** Extrai o base64 puro de um data URL ("data:...;base64,XXXX"). */
 function base64(dados: string): string {
@@ -57,21 +50,84 @@ export const Route = createFileRoute("/api/ia")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const { ehMaster } = await import("@/lib/acesso.server");
+        const { ehMaster, perfilAtual } = await import("@/lib/acesso.server");
         if (!ehMaster()) {
           return new Response("Acesso restrito ao utilizador master.", { status: 403 });
         }
 
-        const chave = process.env['ANTHROPIC_API_KEY'];
-        if (!chave) return new Response("Assistente não configurado (falta a chave Anthropic).", { status: 500 });
+        const {
+          ACOES,
+          acaoValida,
+          sanitizarContexto,
+          CONTEXTO_DOMINIO,
+          LIMITE_CARACTERES,
+          limiteAtingido,
+          registarUso,
+        } = await import("@/lib/ia.server");
 
-        const body = (await request.json()) as { mensagens?: Mensagem[]; modelo?: string };
+        // Tamanho do pedido: um contexto gigante é rejeitado antes de gastar
+        // créditos ou memória a desserializar.
+        const bruto = await request.text();
+        if (bruto.length > LIMITE_CARACTERES && !bruto.includes("base64,")) {
+          return new Response("Pedido demasiado grande. Reduza o contexto enviado.", { status: 413 });
+        }
+
+        let body: {
+          mensagens?: Mensagem[];
+          modelo?: string;
+          acao?: string;
+          contexto?: unknown;
+          pergunta?: string;
+        };
+        try {
+          body = JSON.parse(bruto);
+        } catch {
+          return new Response("Corpo do pedido inválido.", { status: 400 });
+        }
+
+        const acao = body.acao ?? "pergunta_livre";
+        if (!acaoValida(acao)) {
+          return new Response("Ação não permitida.", { status: 400 });
+        }
+
         const mensagens = Array.isArray(body.mensagens) ? body.mensagens.slice(-30) : [];
-        if (mensagens.length === 0) return new Response("Sem mensagens.", { status: 400 });
+        if (mensagens.length === 0 && !body.pergunta) {
+          return new Response("Sem mensagens.", { status: 400 });
+        }
+
+        if (await limiteAtingido()) {
+          return new Response(
+            "Limite de consultas de IA atingido. Tente novamente em alguns minutos.",
+            { status: 429 },
+          );
+        }
+
+        const chave = process.env["ANTHROPIC_API_KEY"];
+        if (!chave) {
+          console.error("[ia] ANTHROPIC_API_KEY não configurada no ambiente do servidor.");
+          return new Response("Assistente indisponível no momento.", { status: 500 });
+        }
 
         const modelo = body.modelo === "aprofundado" ? "claude-opus-5" : "claude-sonnet-5";
 
-        const payload = mensagens.map((m) => {
+        // O contexto é limpo aqui, no servidor: dados de pessoas físicas nunca
+        // saem do sistema, mesmo que o navegador os tenha incluído.
+        const contextoLimpo =
+          body.contexto === undefined ? null : sanitizarContexto(body.contexto);
+
+        const sistema =
+          CONTEXTO_DOMINIO +
+          `\n\nAção solicitada: ${acao} — ${ACOES[acao]}` +
+          (contextoLimpo
+            ? `\n\nDados do sistema (únicos dados válidos para a resposta):\n${JSON.stringify(contextoLimpo).slice(0, 60_000)}`
+            : "");
+
+        const historico: Mensagem[] =
+          mensagens.length > 0
+            ? mensagens
+            : [{ role: "user", content: body.pergunta ?? "Analisa os dados do contexto." }];
+
+        const payload = historico.map((m) => {
           if (m.role === "user" && m.anexos && m.anexos.length > 0) {
             return {
               role: "user",
@@ -84,40 +140,71 @@ export const Route = createFileRoute("/api/ia")({
           return { role: m.role, content: m.content };
         });
 
-        const resposta = await fetch("https://api.anthropic.com/v1/messages", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            "x-api-key": chave,
-            "anthropic-version": "2023-06-01",
-          },
-          body: JSON.stringify({
-            model: modelo,
-            stream: true,
-            max_tokens: 8000,
-            system: SISTEMA,
-            messages: payload,
-          }),
-        });
+        // Timeout: um pedido pendurado bloquearia o utilizador sem resposta.
+        const controlo = new AbortController();
+        const relogio = setTimeout(() => controlo.abort(), 60_000);
+
+        let resposta: Response;
+        try {
+          resposta = await fetch("https://api.anthropic.com/v1/messages", {
+            method: "POST",
+            signal: controlo.signal,
+            headers: {
+              "Content-Type": "application/json",
+              "x-api-key": chave,
+              "anthropic-version": "2023-06-01",
+            },
+            body: JSON.stringify({
+              model: modelo,
+              stream: true,
+              max_tokens: body.acao ? 2000 : 8000,
+              system: sistema,
+              messages: payload,
+            }),
+          });
+        } catch (erro) {
+          clearTimeout(relogio);
+          console.error("[ia] falha na chamada à Anthropic:", erro);
+          return new Response(
+            "Serviço de IA temporariamente indisponível. Tente novamente.",
+            { status: 503 },
+          );
+        }
+        clearTimeout(relogio);
 
         if (!resposta.ok || !resposta.body) {
-          const texto = await resposta.text().catch(() => "");
-          const mensagem =
-            resposta.status === 429
-              ? "Limite de pedidos da conta Anthropic atingido. Tente novamente dentro de instantes."
-              : resposta.status === 401
-                ? "Chave Anthropic inválida ou revogada. Atualize a chave nas definições do projeto."
-                : resposta.status === 400 && texto.includes("credit")
-                  ? "Saldo esgotado na sua conta Anthropic. Adicione créditos em console.anthropic.com → Billing."
-                  : `Falha do assistente (${resposta.status}). ${texto.slice(0, 300)}`;
-          return new Response(mensagem, { status: resposta.status || 500 });
+          // O corpo do erro do provedor fica só no registo do servidor: pode
+          // conter detalhes da conta e nunca deve chegar ao navegador.
+          const detalhe = await resposta.text().catch(() => "");
+          console.error(`[ia] Anthropic respondeu ${resposta.status}:`, detalhe);
+          if (resposta.status === 401 || resposta.status === 403) {
+            return new Response("Assistente indisponível no momento.", { status: 500 });
+          }
+          if (resposta.status === 429 || resposta.status === 529 || resposta.status >= 500) {
+            return new Response(
+              "Serviço de IA temporariamente indisponível. Tente novamente.",
+              { status: 503 },
+            );
+          }
+          if (resposta.status === 400 && detalhe.includes("credit")) {
+            return new Response(
+              "Saldo esgotado na conta Anthropic. Adicione créditos em console.anthropic.com → Billing.",
+              { status: 402 },
+            );
+          }
+          return new Response("Não foi possível processar o pedido do assistente.", {
+            status: 400,
+          });
         }
 
-        // Converte o SSE do gateway em texto simples, que o navegador lê
-        // diretamente do corpo da resposta.
+        // Converte o SSE da Anthropic em texto simples, que o navegador lê
+        // diretamente do corpo da resposta, e regista o consumo no fim.
+        const perfil = perfilAtual() ?? "master";
         const decoder = new TextDecoder();
         const encoder = new TextEncoder();
         let resto = "";
+        let entrada = 0;
+        let saida = 0;
         const stream = new TransformStream<Uint8Array, Uint8Array>({
           transform(chunk, controller) {
             resto += decoder.decode(chunk, { stream: true });
@@ -131,7 +218,13 @@ export const Route = createFileRoute("/api/ia")({
                 const json = JSON.parse(dados) as {
                   type?: string;
                   delta?: { type?: string; text?: string };
+                  message?: { usage?: { input_tokens?: number; output_tokens?: number } };
+                  usage?: { input_tokens?: number; output_tokens?: number };
                 };
+                if (json.type === "message_start") {
+                  entrada = json.message?.usage?.input_tokens ?? 0;
+                }
+                if (json.usage?.output_tokens) saida = json.usage.output_tokens;
                 if (json.type === "content_block_delta" && json.delta?.type === "text_delta") {
                   const texto = json.delta.text;
                   if (texto) controller.enqueue(encoder.encode(texto));
@@ -140,6 +233,9 @@ export const Route = createFileRoute("/api/ia")({
                 /* fragmento incompleto: ignorado */
               }
             }
+          },
+          flush() {
+            void registarUso({ perfil, acao, tokensEntrada: entrada, tokensSaida: saida });
           },
         });
 
