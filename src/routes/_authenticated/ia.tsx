@@ -296,9 +296,12 @@ function PaginaIA() {
                 )}
                 {m.role === "assistant" ? (
                   m.content ? (
-                    <div className="prose prose-sm dark:prose-invert max-w-none [&_table]:block [&_table]:overflow-x-auto">
-                      <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.content}</ReactMarkdown>
-                    </div>
+                    <>
+                      <div className="prose prose-sm dark:prose-invert max-w-none [&_table]:block [&_table]:overflow-x-auto">
+                        <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.content}</ReactMarkdown>
+                      </div>
+                      <BotaoCopiar texto={m.content} />
+                    </>
                   ) : (
                     <Loader2 className="size-4 animate-spin" aria-hidden="true" />
                   )
