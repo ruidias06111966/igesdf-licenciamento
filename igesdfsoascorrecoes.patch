@@ -1,0 +1,3680 @@
+From 4e3bb4545932510d297728de7b8a7a2d04c667e0 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Sun, 9 Aug 2026 22:55:30 +0000
+Subject: [PATCH 1/2] =?UTF-8?q?Valida=C3=A7=C3=A3o=20do=20sistema:=20arqui?=
+ =?UTF-8?q?vamento=20de=20processos=20e=20corre=C3=A7=C3=B5es=20de=20forma?=
+ =?UTF-8?q?ta=C3=A7=C3=A3o?=
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Arquivar em vez de apagar processos SEI
+- `deleteProcesso` fazia DELETE definitivo. Como `documentos.processo_id` e
+  `processo_itens.processo_id` têm ON DELETE CASCADE, apagar um processo
+  destruía junto o checklist e os registos dos anexos — e os ficheiros ficavam
+  órfãos no bucket, porque nada os removia de lá. Num sistema cuja função é
+  guardar o histórico dos processos de licenciamento, a perda é irreversível.
+- Passa a remoção lógica (`ativo = false`), como já acontece com as unidades. A
+  coluna `ativo` já existia e `listProcessos` já filtrava por ela: era a
+  intenção original do esquema. O texto de confirmação passou a dizer
+  "arquivar" e a esclarecer que o histórico é preservado.
+
+Erro silenciado ao criar processo
+- Ao abrir um processo com órgão definido, a inserção do checklist não
+  verificava o resultado: se falhasse, o processo nascia sem checklist e nada
+  indicava o problema.
+
+Formatação
+- Os ficheiros novos (módulo de processos, assistente de IA e integração MCP)
+  entraram sem passar pelo Prettier e quebravam `npm run lint` com 32 erros.
+
+Remove a migração 20260730120000, duplicada de 20260730121730 (mesmo SQL,
+só os comentários diferiam); a aplicada foi a segunda.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01R7ySchKZ2rGxxbZHJZojvX
+---
+ package-lock.json                             | 1614 ++++++++++++++++-
+ src/integrations/lovable/index.ts             |    5 +-
+ src/lib/mcp/auth.ts                           |    2 +-
+ src/lib/mcp/db.ts                             |    2 +-
+ src/lib/mcp/index.ts                          |    4 +-
+ src/lib/mcp/tools/detalhe-unidade.ts          |    2 +-
+ src/lib/mcp/tools/licencas-a-vencer.ts        |    7 +-
+ src/lib/mcp/tools/listar-licencas.ts          |    2 +-
+ src/lib/mcp/tools/listar-normativas.ts        |    5 +-
+ src/lib/mcp/tools/listar-processos-sei.ts     |   11 +-
+ src/lib/mcp/tools/listar-unidades.ts          |    2 +-
+ src/lib/processos.functions.ts                |   22 +-
+ src/routes/[.]lovable.oauth.consent.tsx       |    2 +-
+ src/routes/_authenticated/ia.tsx              |   27 +-
+ src/routes/_authenticated/processos.index.tsx |    7 +-
+ src/routes/api/ia.ts                          |   21 +-
+ ...dashboard_view_somente_unidades_ativas.sql |   80 -
+ 17 files changed, 1611 insertions(+), 204 deletions(-)
+ delete mode 100644 supabase/migrations/20260730120000_dashboard_view_somente_unidades_ativas.sql
+
+diff --git a/package-lock.json b/package-lock.json
+index 8d919cd..6d9c4d0 100644
+--- a/package-lock.json
++++ b/package-lock.json
+@@ -53,8 +53,10 @@
+         "react-day-picker": "^9.14.0",
+         "react-dom": "^19.2.0",
+         "react-hook-form": "^7.71.2",
++        "react-markdown": "^10.1.0",
+         "react-resizable-panels": "^4.6.5",
+         "recharts": "^2.15.4",
++        "remark-gfm": "^4.0.1",
+         "sonner": "^2.0.7",
+         "tailwind-merge": "^3.5.0",
+         "tailwindcss": "^4.2.1",
+@@ -65,7 +67,7 @@
+       },
+       "devDependencies": {
+         "@eslint/js": "^9.32.0",
+-        "@lovable.dev/vite-tanstack-config": "2.9.0",
++        "@lovable.dev/vite-tanstack-config": "2.9.1",
+         "@playwright/test": "^1.62.0",
+         "@types/node": "^22.16.5",
+         "@types/react": "^19.2.0",
+@@ -603,7 +605,6 @@
+       "version": "1.11.2",
+       "resolved": "https://registry.npmjs.org/@emnapi/core/-/core-1.11.2.tgz",
+       "integrity": "sha512-TC8MkTuZUtcTSiFeuC0ksCh9QIJ5+F21MvZ4Wn4ORfYaFJ/0dsiudv5tVkejgwZlwQ39jL9WWDe2lz8x0WglOA==",
+-      "dev": true,
+       "license": "MIT",
+       "optional": true,
+       "dependencies": {
+@@ -615,7 +616,6 @@
+       "version": "1.11.2",
+       "resolved": "https://registry.npmjs.org/@emnapi/runtime/-/runtime-1.11.2.tgz",
+       "integrity": "sha512-kyOl3X0DuTiT1h2ft8r2fYO8JYtU9a9Xis/zBSiGArNaagCOWx90N1k2wxp18czFDH+OgcWGb5ZP/XMt3dcyPA==",
+-      "dev": true,
+       "license": "MIT",
+       "optional": true,
+       "dependencies": {
+@@ -626,7 +626,6 @@
+       "version": "1.2.2",
+       "resolved": "https://registry.npmjs.org/@emnapi/wasi-threads/-/wasi-threads-1.2.2.tgz",
+       "integrity": "sha512-c95qOXkHdydNKhscBTebqEC1CVAZpyqOfVfBzQ1qgzyl3gfeldUjIggDbIZgDKsHLgnsM+igH7TJ/eAasaVuMA==",
+-      "dev": true,
+       "license": "MIT",
+       "optional": true,
+       "dependencies": {
+@@ -1466,9 +1465,9 @@
+       }
+     },
+     "node_modules/@lovable.dev/vite-tanstack-config": {
+-      "version": "2.9.0",
+-      "resolved": "https://registry.npmjs.org/@lovable.dev/vite-tanstack-config/-/vite-tanstack-config-2.9.0.tgz",
+-      "integrity": "sha512-T2/1phBoN1g6JgYlCd/lfEP6KYqIFbulVa0ywnE+qJNnCo7a1T+8AjjmEFNuJ2ts/PWXwoXU4lx/dpZ+K7Ao7A==",
++      "version": "2.9.1",
++      "resolved": "https://registry.npmjs.org/@lovable.dev/vite-tanstack-config/-/vite-tanstack-config-2.9.1.tgz",
++      "integrity": "sha512-wyhU6bFEcvXIRatbXMusHNEL18kVSgZPL5O9SicG4i7e72FU18gTEAEgIdcKIStBCUUv5MhDF1qvRTFEPavuyw==",
+       "dev": true,
+       "license": "MIT",
+       "dependencies": {
+@@ -1563,7 +1562,6 @@
+       "version": "1.1.6",
+       "resolved": "https://registry.npmjs.org/@napi-rs/wasm-runtime/-/wasm-runtime-1.1.6.tgz",
+       "integrity": "sha512-ZLv/JdUfkvOy9eCnnBaGfiO+XimbjebAeO+MRQqD/B+FR1tnRN0tpKSJHRbE8sFfS6aqsXZ67TQjfwfsxULVbg==",
+-      "dev": true,
+       "license": "MIT",
+       "optional": true,
+       "dependencies": {
+@@ -4620,7 +4618,6 @@
+       "version": "0.10.3",
+       "resolved": "https://registry.npmjs.org/@tybys/wasm-util/-/wasm-util-0.10.3.tgz",
+       "integrity": "sha512-F3fo1MYrRJYL3zER0OUOmkutjr1Vp23m7OsSgp7nq4SP6OqX6C/56XFIPAl5bt3zaBRjmW7SGz3u/6LwFpYcOg==",
+-      "dev": true,
+       "license": "MIT",
+       "optional": true,
+       "dependencies": {
+@@ -4735,13 +4732,39 @@
+       "integrity": "sha512-Ps3T8E8dZDam6fUyNiMkekK3XUsaUEik+idO9/YjPtfj2qruF8tFBXS7XhtE4iIXBLxhmLjP3SXpLhVf21I9Lw==",
+       "license": "MIT"
+     },
++    "node_modules/@types/debug": {
++      "version": "4.1.13",
++      "resolved": "https://registry.npmjs.org/@types/debug/-/debug-4.1.13.tgz",
++      "integrity": "sha512-KSVgmQmzMwPlmtljOomayoR89W4FynCAi3E8PPs7vmDVPe84hT+vGPKkJfThkmXs0x0jAaa9U8uW8bbfyS2fWw==",
++      "license": "MIT",
++      "dependencies": {
++        "@types/ms": "*"
++      }
++    },
+     "node_modules/@types/estree": {
+       "version": "1.0.9",
+       "resolved": "https://registry.npmjs.org/@types/estree/-/estree-1.0.9.tgz",
+       "integrity": "sha512-GhdPgy1el4/ImP05X05Uw4cw2/M93BCUmnEvWZNStlCzEKME4Fkk+YpoA5OiHNQmoS7Cafb8Xa3Pya8m1Qrzeg==",
+-      "dev": true,
+       "license": "MIT"
+     },
++    "node_modules/@types/estree-jsx": {
++      "version": "1.0.5",
++      "resolved": "https://registry.npmjs.org/@types/estree-jsx/-/estree-jsx-1.0.5.tgz",
++      "integrity": "sha512-52CcUVNFyfb1A2ALocQw/Dd1BQFNmSdkuC3BkZ6iqhdMfQz7JWOFRuJFloOzjk+6WijU56m9oKXFAXc7o3Towg==",
++      "license": "MIT",
++      "dependencies": {
++        "@types/estree": "*"
++      }
++    },
++    "node_modules/@types/hast": {
++      "version": "3.0.5",
++      "resolved": "https://registry.npmjs.org/@types/hast/-/hast-3.0.5.tgz",
++      "integrity": "sha512-rp/ezSWaD1m44dPKICGhiskI13nVr7qTloFwDa/IYkhhf5nzwP+zIQcIJh3WIFSBOy/H1PzB40jPjMDksN4F+g==",
++      "license": "MIT",
++      "dependencies": {
++        "@types/unist": "*"
++      }
++    },
+     "node_modules/@types/json-schema": {
+       "version": "7.0.15",
+       "resolved": "https://registry.npmjs.org/@types/json-schema/-/json-schema-7.0.15.tgz",
+@@ -4749,11 +4772,26 @@
+       "dev": true,
+       "license": "MIT"
+     },
++    "node_modules/@types/mdast": {
++      "version": "4.0.4",
++      "resolved": "https://registry.npmjs.org/@types/mdast/-/mdast-4.0.4.tgz",
++      "integrity": "sha512-kGaNbPh1k7AFzgpud/gMdvIm5xuECykRR+JnWKQno9TAXVa6WIVCGTPvYGekIDL4uwCZQSYbUxNBSb1aUo79oA==",
++      "license": "MIT",
++      "dependencies": {
++        "@types/unist": "*"
++      }
++    },
++    "node_modules/@types/ms": {
++      "version": "2.1.0",
++      "resolved": "https://registry.npmjs.org/@types/ms/-/ms-2.1.0.tgz",
++      "integrity": "sha512-GsCCIZDE/p3i96vtEqx+7dBUGXrc7zeSK3wwPHIaRThS+9OhWIXRqzs4d6k1SVU8g91DrNRWxWUGhp5KXQb2VA==",
++      "license": "MIT"
++    },
+     "node_modules/@types/node": {
+       "version": "22.20.1",
+       "resolved": "https://registry.npmjs.org/@types/node/-/node-22.20.1.tgz",
+       "integrity": "sha512-EANqOCF9QFyra+4pfxUcX9STKJpCLjMbObVzljIJomAWSnuSIEAvyzEU53GaajbXJEgdh0iEcPL+DGvpUd4k1Q==",
+-      "dev": true,
++      "devOptional": true,
+       "license": "MIT",
+       "dependencies": {
+         "undici-types": "~6.21.0"
+@@ -4763,7 +4801,6 @@
+       "version": "19.2.17",
+       "resolved": "https://registry.npmjs.org/@types/react/-/react-19.2.17.tgz",
+       "integrity": "sha512-MXfmqaVPEVgkBT/aY0aGCkRWWtByiYQXo3xdQ8r5RzuFrPiRn8Gar2tQdXSUQ2GKV3bkXckek89V8wQBY2Q/Aw==",
+-      "dev": true,
+       "license": "MIT",
+       "dependencies": {
+         "csstype": "^3.2.2"
+@@ -4773,12 +4810,18 @@
+       "version": "19.2.3",
+       "resolved": "https://registry.npmjs.org/@types/react-dom/-/react-dom-19.2.3.tgz",
+       "integrity": "sha512-jp2L/eY6fn+KgVVQAOqYItbF0VY/YApe5Mz2F0aykSO8gx31bYCZyvSeYxCHKvzHG5eZjc+zyaS5BrBWya2+kQ==",
+-      "dev": true,
++      "devOptional": true,
+       "license": "MIT",
+       "peerDependencies": {
+         "@types/react": "^19.2.0"
+       }
+     },
++    "node_modules/@types/unist": {
++      "version": "3.0.3",
++      "resolved": "https://registry.npmjs.org/@types/unist/-/unist-3.0.3.tgz",
++      "integrity": "sha512-ko/gIFJRv177XgZsZcBwnqJN5x/Gien8qNOn0D5bQU/zAzVf9Zt3BlcUiLqhV9y4ARk0GbT3tnUiPNgnTXzc/Q==",
++      "license": "MIT"
++    },
+     "node_modules/@typescript-eslint/eslint-plugin": {
+       "version": "8.64.0",
+       "resolved": "https://registry.npmjs.org/@typescript-eslint/eslint-plugin/-/eslint-plugin-8.64.0.tgz",
+@@ -5074,6 +5117,12 @@
+         "url": "https://opencollective.com/eslint"
+       }
+     },
++    "node_modules/@ungap/structured-clone": {
++      "version": "1.3.3",
++      "resolved": "https://registry.npmjs.org/@ungap/structured-clone/-/structured-clone-1.3.3.tgz",
++      "integrity": "sha512-60YRaenCQcVjYEKOcG824+DRGGIQ3VKErcBoAEDJZz5bKIs2ZG+X/H9Nk+Q6EVkwJk5QNApxbrc5QtBSwtrXAg==",
++      "license": "ISC"
++    },
+     "node_modules/@vitejs/plugin-react": {
+       "version": "5.2.0",
+       "resolved": "https://registry.npmjs.org/@vitejs/plugin-react/-/plugin-react-5.2.0.tgz",
+@@ -5265,6 +5314,16 @@
+         "@babel/types": "^7.23.6"
+       }
+     },
++    "node_modules/bail": {
++      "version": "2.0.2",
++      "resolved": "https://registry.npmjs.org/bail/-/bail-2.0.2.tgz",
++      "integrity": "sha512-0xO6mYd7JB2YesxDKplafRpsiOzPt9V02ddPCLbY1xYGPOX24NTyN50qnUxgCPcSoYMhKpAuBTjQoRZCAkUDRw==",
++      "license": "MIT",
++      "funding": {
++        "type": "github",
++        "url": "https://github.com/sponsors/wooorm"
++      }
++    },
+     "node_modules/balanced-match": {
+       "version": "1.0.2",
+       "resolved": "https://registry.npmjs.org/balanced-match/-/balanced-match-1.0.2.tgz",
+@@ -5470,6 +5529,16 @@
+       ],
+       "license": "CC-BY-4.0"
+     },
++    "node_modules/ccount": {
++      "version": "2.0.1",
++      "resolved": "https://registry.npmjs.org/ccount/-/ccount-2.0.1.tgz",
++      "integrity": "sha512-eyrF0jiFpY+3drT6383f1qhkbGsLSifNAjA61IUjZjmLCWjItY6LB9ft9YhoDgwfmclB2zhu51Lc7+95b8NRAg==",
++      "license": "MIT",
++      "funding": {
++        "type": "github",
++        "url": "https://github.com/sponsors/wooorm"
++      }
++    },
+     "node_modules/chalk": {
+       "version": "5.6.2",
+       "resolved": "https://registry.npmjs.org/chalk/-/chalk-5.6.2.tgz",
+@@ -5483,6 +5552,46 @@
+         "url": "https://github.com/chalk/chalk?sponsor=1"
+       }
+     },
++    "node_modules/character-entities": {
++      "version": "2.0.2",
++      "resolved": "https://registry.npmjs.org/character-entities/-/character-entities-2.0.2.tgz",
++      "integrity": "sha512-shx7oQ0Awen/BRIdkjkvz54PnEEI/EjwXDSIZp86/KKdbafHh1Df/RYGBhn4hbe2+uKC9FnT5UCEdyPz3ai9hQ==",
++      "license": "MIT",
++      "funding": {
++        "type": "github",
++        "url": "https://github.com/sponsors/wooorm"
++      }
++    },
++    "node_modules/character-entities-html4": {
++      "version": "2.1.0",
++      "resolved": "https://registry.npmjs.org/character-entities-html4/-/character-entities-html4-2.1.0.tgz",
++      "integrity": "sha512-1v7fgQRj6hnSwFpq1Eu0ynr/CDEw0rXo2B61qXrLNdHZmPKgb7fqS1a2JwF0rISo9q77jDI8VMEHoApn8qDoZA==",
++      "license": "MIT",
++      "funding": {
++        "type": "github",
++        "url": "https://github.com/sponsors/wooorm"
++      }
++    },
++    "node_modules/character-entities-legacy": {
++      "version": "3.0.0",
++      "resolved": "https://registry.npmjs.org/character-entities-legacy/-/character-entities-legacy-3.0.0.tgz",
++      "integrity": "sha512-RpPp0asT/6ufRm//AJVwpViZbGM/MkjQFxJccQRHmISF/22NBtsHqAWmL+/pmkPWoIUJdWyeVleTl1wydHATVQ==",
++      "license": "MIT",
++      "funding": {
++        "type": "github",
++        "url": "https://github.com/sponsors/wooorm"
++      }
++    },
++    "node_modules/character-reference-invalid": {
++      "version": "2.0.1",
++      "resolved": "https://registry.npmjs.org/character-reference-invalid/-/character-reference-invalid-2.0.1.tgz",
++      "integrity": "sha512-iBZ4F4wRbyORVsu0jPV7gXkOsGYjGHPmAyv+HiHG8gi5PtC9KI2j1+v8/tlibRvjoWX027ypmG/n0HtO5t7unw==",
++      "license": "MIT",
++      "funding": {
++        "type": "github",
++        "url": "https://github.com/sponsors/wooorm"
++      }
++    },
+     "node_modules/chokidar": {
+       "version": "5.0.0",
+       "resolved": "https://registry.npmjs.org/chokidar/-/chokidar-5.0.0.tgz",
+@@ -5562,6 +5671,16 @@
+       "dev": true,
+       "license": "MIT"
+     },
++    "node_modules/comma-separated-tokens": {
++      "version": "2.0.3",
++      "resolved": "https://registry.npmjs.org/comma-separated-tokens/-/comma-separated-tokens-2.0.3.tgz",
++      "integrity": "sha512-Fu4hJdvzeylCfQPp9SGWidpzrMs7tTrlu6Vb8XGaRGck8QSNZJJp538Wrb60Lax4fPwR64ViY468OIUTbRlGZg==",
++      "license": "MIT",
++      "funding": {
++        "type": "github",
++        "url": "https://github.com/sponsors/wooorm"
++      }
++    },
+     "node_modules/concat-map": {
+       "version": "0.0.1",
+       "resolved": "https://registry.npmjs.org/concat-map/-/concat-map-0.0.1.tgz",
+@@ -5693,7 +5812,7 @@
+       "version": "0.4.10",
+       "resolved": "https://registry.npmjs.org/crossws/-/crossws-0.4.10.tgz",
+       "integrity": "sha512-pz3oubH/dt12KjqsUB0IuXW4nwRDQ583iDsP4555Cpdqx0NoU7pGlWBcayyFI8f/l/idRpgjMEfwuOxSWJYlIA==",
+-      "dev": true,
++      "devOptional": true,
+       "license": "MIT",
+       "peerDependencies": {
+         "srvx": ">=0.11.5"
+@@ -5942,6 +6061,19 @@
+       "integrity": "sha512-qIMFpTMZmny+MMIitAB6D7iVPEorVw6YQRWkvarTkT4tBeSLLiHzcwj6q0MmYSFCiVpiqPJTJEYIrpcPzVEIvg==",
+       "license": "MIT"
+     },
++    "node_modules/decode-named-character-reference": {
++      "version": "1.3.0",
++      "resolved": "https://registry.npmjs.org/decode-named-character-reference/-/decode-named-character-reference-1.3.0.tgz",
++      "integrity": "sha512-GtpQYB283KrPp6nRw50q3U9/VfOutZOe103qlN7BPP6Ad27xYnOIWv4lPzo8HCAL+mMZofJ9KEy30fq6MfaK6Q==",
++      "license": "MIT",
++      "dependencies": {
++        "character-entities": "^2.0.0"
++      },
++      "funding": {
++        "type": "github",
++        "url": "https://github.com/sponsors/wooorm"
++      }
++    },
+     "node_modules/deep-is": {
+       "version": "0.1.4",
+       "resolved": "https://registry.npmjs.org/deep-is/-/deep-is-0.1.4.tgz",
+@@ -5958,6 +6090,15 @@
+         "node": ">= 0.8"
+       }
+     },
++    "node_modules/dequal": {
++      "version": "2.0.3",
++      "resolved": "https://registry.npmjs.org/dequal/-/dequal-2.0.3.tgz",
++      "integrity": "sha512-0je+qPKHEMohvfRTCEo3CrPG6cAzAYgmzKyxRiYSSDkS6eGJdyVJm7WaYA5ECaAD9wLB2T4EEeymA5aFVcYXCA==",
++      "license": "MIT",
++      "engines": {
++        "node": ">=6"
++      }
++    },
+     "node_modules/detect-libc": {
+       "version": "2.1.2",
+       "resolved": "https://registry.npmjs.org/detect-libc/-/detect-libc-2.1.2.tgz",
+@@ -5973,6 +6114,19 @@
+       "integrity": "sha512-ypdmJU/TbBby2Dxibuv7ZLW3Bs1QEmM7nHjEANfohJLvE0XVujisn1qPJcZxg+qDucsr+bP6fLD1rPS3AhJ7EQ==",
+       "license": "MIT"
+     },
++    "node_modules/devlop": {
++      "version": "1.1.0",
++      "resolved": "https://registry.npmjs.org/devlop/-/devlop-1.1.0.tgz",
++      "integrity": "sha512-RWmIqhcFf1lRYBvNmr7qTNuyCt/7/ns2jbpp1+PalgE/rDQcBT0fioSMUpJ93irlUhC5hrg4cYqe6U+0ImW0rA==",
++      "license": "MIT",
++      "dependencies": {
++        "dequal": "^2.0.0"
++      },
++      "funding": {
++        "type": "github",
++        "url": "https://github.com/sponsors/wooorm"
++      }
++    },
+     "node_modules/diff": {
+       "version": "8.0.4",
+       "resolved": "https://registry.npmjs.org/diff/-/diff-8.0.4.tgz",
+@@ -6461,6 +6615,16 @@
+         "node": ">=4.0"
+       }
+     },
++    "node_modules/estree-util-is-identifier-name": {
++      "version": "3.0.0",
++      "resolved": "https://registry.npmjs.org/estree-util-is-identifier-name/-/estree-util-is-identifier-name-3.0.0.tgz",
++      "integrity": "sha512-hFtqIDZTIUZ9BXLb8y4pYGyk6+wekIivNVTcmvk8NoOh+VeRn5y6cEHzbURrWbfp1fIqdVipilzj+lfaadNZmg==",
++      "license": "MIT",
++      "funding": {
++        "type": "opencollective",
++        "url": "https://opencollective.com/unified"
++      }
++    },
+     "node_modules/esutils": {
+       "version": "2.0.3",
+       "resolved": "https://registry.npmjs.org/esutils/-/esutils-2.0.3.tgz",
+@@ -6575,6 +6739,12 @@
+       "integrity": "sha512-D+42+T12DdIlJM3uepa55qGiL3sYdLBOxIl2ifQCzCHz4c7eiolaHsi3BIqEr7JxBzxv2pYZQX9kw16ziMcEmw==",
+       "license": "MIT"
+     },
++    "node_modules/extend": {
++      "version": "3.0.2",
++      "resolved": "https://registry.npmjs.org/extend/-/extend-3.0.2.tgz",
++      "integrity": "sha512-fjquC59cD7CyW6urNXK0FBufkZcoiGG80wTuPujX590cB5Ttln20E2UB4S/WARVqhXffZl2LNgS+gQdPIIim/g==",
++      "license": "MIT"
++    },
+     "node_modules/fast-deep-equal": {
+       "version": "3.1.3",
+       "resolved": "https://registry.npmjs.org/fast-deep-equal/-/fast-deep-equal-3.1.3.tgz",
+@@ -6807,7 +6977,6 @@
+       "version": "2.3.3",
+       "resolved": "https://registry.npmjs.org/fsevents/-/fsevents-2.3.3.tgz",
+       "integrity": "sha512-5xoDfX+fL7faATnagmWPpbFtwh/R77WmMMqqHGS65C3vvB0YHrgF+B1YmZ3441tMj5n63k0212XNoJwzlhffQw==",
+-      "dev": true,
+       "hasInstallScript": true,
+       "license": "MIT",
+       "optional": true,
+@@ -7128,6 +7297,46 @@
+         "node": ">= 0.4"
+       }
+     },
++    "node_modules/hast-util-to-jsx-runtime": {
++      "version": "2.3.6",
++      "resolved": "https://registry.npmjs.org/hast-util-to-jsx-runtime/-/hast-util-to-jsx-runtime-2.3.6.tgz",
++      "integrity": "sha512-zl6s8LwNyo1P9uw+XJGvZtdFF1GdAkOg8ujOw+4Pyb76874fLps4ueHXDhXWdk6YHQ6OgUtinliG7RsYvCbbBg==",
++      "license": "MIT",
++      "dependencies": {
++        "@types/estree": "^1.0.0",
++        "@types/hast": "^3.0.0",
++        "@types/unist": "^3.0.0",
++        "comma-separated-tokens": "^2.0.0",
++        "devlop": "^1.0.0",
++        "estree-util-is-identifier-name": "^3.0.0",
++        "hast-util-whitespace": "^3.0.0",
++        "mdast-util-mdx-expression": "^2.0.0",
++        "mdast-util-mdx-jsx": "^3.0.0",
++        "mdast-util-mdxjs-esm": "^2.0.0",
++        "property-information": "^7.0.0",
++        "space-separated-tokens": "^2.0.0",
++        "style-to-js": "^1.0.0",
++        "unist-util-position": "^5.0.0",
++        "vfile-message": "^4.0.0"
++      },
++      "funding": {
++        "type": "opencollective",
++        "url": "https://opencollective.com/unified"
++      }
++    },
++    "node_modules/hast-util-whitespace": {
++      "version": "3.0.0",
++      "resolved": "https://registry.npmjs.org/hast-util-whitespace/-/hast-util-whitespace-3.0.0.tgz",
++      "integrity": "sha512-88JUN06ipLwsnv+dVn+OIYOvAuvBMy/Qoi6O7mQHxdPXpjy+Cd6xRkWwux7DKO+4sYILtLBRIKgsdpS2gQc7qw==",
++      "license": "MIT",
++      "dependencies": {
++        "@types/hast": "^3.0.0"
++      },
++      "funding": {
++        "type": "opencollective",
++        "url": "https://opencollective.com/unified"
++      }
++    },
+     "node_modules/hono": {
+       "version": "4.13.0",
+       "resolved": "https://registry.npmjs.org/hono/-/hono-4.13.0.tgz",
+@@ -7164,6 +7373,16 @@
+         "url": "https://github.com/sponsors/sindresorhus"
+       }
+     },
++    "node_modules/html-url-attributes": {
++      "version": "3.0.1",
++      "resolved": "https://registry.npmjs.org/html-url-attributes/-/html-url-attributes-3.0.1.tgz",
++      "integrity": "sha512-ol6UPyBWqsrO6EJySPz2O7ZSr856WDrEzM5zMqp+FJJLGMW35cLYmmZnl0vztAZxRUoNZJFTCohfjuIJ8I4QBQ==",
++      "license": "MIT",
++      "funding": {
++        "type": "opencollective",
++        "url": "https://opencollective.com/unified"
++      }
++    },
+     "node_modules/http-errors": {
+       "version": "2.0.1",
+       "resolved": "https://registry.npmjs.org/http-errors/-/http-errors-2.0.1.tgz",
+@@ -7277,6 +7496,12 @@
+       "dev": true,
+       "license": "ISC"
+     },
++    "node_modules/inline-style-parser": {
++      "version": "0.2.7",
++      "resolved": "https://registry.npmjs.org/inline-style-parser/-/inline-style-parser-0.2.7.tgz",
++      "integrity": "sha512-Nb2ctOyNR8DqQoR0OwRG95uNWIC0C1lCgf5Naz5H6Ji72KZ8OcFZLz2P5sNgwlyoJ8Yif11oMuYs5pBQa86csA==",
++      "license": "MIT"
++    },
+     "node_modules/input-otp": {
+       "version": "1.4.2",
+       "resolved": "https://registry.npmjs.org/input-otp/-/input-otp-1.4.2.tgz",
+@@ -7314,6 +7539,30 @@
+         "node": ">= 0.10"
+       }
+     },
++    "node_modules/is-alphabetical": {
++      "version": "2.0.1",
++      "resolved": "https://registry.npmjs.org/is-alphabetical/-/is-alphabetical-2.0.1.tgz",
++      "integrity": "sha512-FWyyY60MeTNyeSRpkM2Iry0G9hpr7/9kD40mD/cGQEuilcZYS4okz8SN2Q6rLCJ8gbCt6fN+rC+6tMGS99LaxQ==",
++      "license": "MIT",
++      "funding": {
++        "type": "github",
++        "url": "https://github.com/sponsors/wooorm"
++      }
++    },
++    "node_modules/is-alphanumerical": {
++      "version": "2.0.1",
++      "resolved": "https://registry.npmjs.org/is-alphanumerical/-/is-alphanumerical-2.0.1.tgz",
++      "integrity": "sha512-hmbYhX/9MUMF5uh7tOXyK/n0ZvWpad5caBA17GsC6vyuCqaWliRG5K1qS9inmUhEMaOBIW7/whAnSwveW/LtZw==",
++      "license": "MIT",
++      "dependencies": {
++        "is-alphabetical": "^2.0.0",
++        "is-decimal": "^2.0.0"
++      },
++      "funding": {
++        "type": "github",
++        "url": "https://github.com/sponsors/wooorm"
++      }
++    },
+     "node_modules/is-arrayish": {
+       "version": "0.2.1",
+       "resolved": "https://registry.npmjs.org/is-arrayish/-/is-arrayish-0.2.1.tgz",
+@@ -7321,6 +7570,16 @@
+       "dev": true,
+       "license": "MIT"
+     },
++    "node_modules/is-decimal": {
++      "version": "2.0.1",
++      "resolved": "https://registry.npmjs.org/is-decimal/-/is-decimal-2.0.1.tgz",
++      "integrity": "sha512-AAB9hiomQs5DXWcRB1rqsxGUstbRroFOPPVAomNk/3XHR5JyEZChOyTWe2oayKnsSsr/kcGqF+z6yuH6HHpN0A==",
++      "license": "MIT",
++      "funding": {
++        "type": "github",
++        "url": "https://github.com/sponsors/wooorm"
++      }
++    },
+     "node_modules/is-extglob": {
+       "version": "2.1.1",
+       "resolved": "https://registry.npmjs.org/is-extglob/-/is-extglob-2.1.1.tgz",
+@@ -7354,6 +7613,16 @@
+         "node": ">=0.10.0"
+       }
+     },
++    "node_modules/is-hexadecimal": {
++      "version": "2.0.1",
++      "resolved": "https://registry.npmjs.org/is-hexadecimal/-/is-hexadecimal-2.0.1.tgz",
++      "integrity": "sha512-DgZQp241c8oO6cA1SbTEWiXeoxV42vlcJxgH+B3hi1AiqqKruZR3ZGF8In3fj4+/y/7rHvlOZLZtgJ/4ttYGZg==",
++      "license": "MIT",
++      "funding": {
++        "type": "github",
++        "url": "https://github.com/sponsors/wooorm"
++      }
++    },
+     "node_modules/is-number": {
+       "version": "7.0.0",
+       "resolved": "https://registry.npmjs.org/is-number/-/is-number-7.0.0.tgz",
+@@ -7377,6 +7646,18 @@
+         "url": "https://github.com/sponsors/sindresorhus"
+       }
+     },
++    "node_modules/is-plain-obj": {
++      "version": "4.1.0",
++      "resolved": "https://registry.npmjs.org/is-plain-obj/-/is-plain-obj-4.1.0.tgz",
++      "integrity": "sha512-+Pgi+vMuUNkJyExiMBt5IlFoMyKnr5zhJ4Uspz58WOhBF5QoIZkFyNHIbBAtHwzVAgk5RtndVNsDRN61/mmDqg==",
++      "license": "MIT",
++      "engines": {
++        "node": ">=12"
++      },
++      "funding": {
++        "url": "https://github.com/sponsors/sindresorhus"
++      }
++    },
+     "node_modules/is-promise": {
+       "version": "4.0.0",
+       "resolved": "https://registry.npmjs.org/is-promise/-/is-promise-4.0.0.tgz",
+@@ -7839,6 +8120,16 @@
+       "dev": true,
+       "license": "MIT"
+     },
++    "node_modules/longest-streak": {
++      "version": "3.1.0",
++      "resolved": "https://registry.npmjs.org/longest-streak/-/longest-streak-3.1.0.tgz",
++      "integrity": "sha512-9Ri+o0JYgehTaVBBDoMqIl8GXtbWg711O3srftcHhZ0dqnETqLaoIK0x17fUw9rFSlK/0NlsKe0Ahhyl5pXE2g==",
++      "license": "MIT",
++      "funding": {
++        "type": "github",
++        "url": "https://github.com/sponsors/wooorm"
++      }
++    },
+     "node_modules/loose-envify": {
+       "version": "1.4.0",
+       "resolved": "https://registry.npmjs.org/loose-envify/-/loose-envify-1.4.0.tgz",
+@@ -7869,6 +8160,16 @@
+         "@jridgewell/sourcemap-codec": "^1.5.5"
+       }
+     },
++    "node_modules/markdown-table": {
++      "version": "3.0.4",
++      "resolved": "https://registry.npmjs.org/markdown-table/-/markdown-table-3.0.4.tgz",
++      "integrity": "sha512-wiYz4+JrLyb/DqW2hkFJxP7Vd7JuTDm77fvbM8VfEQdmSMqcImWeeRbHwZjBjIFki/VaMK2BhFi7oUUZeM5bqw==",
++      "license": "MIT",
++      "funding": {
++        "type": "github",
++        "url": "https://github.com/sponsors/wooorm"
++      }
++    },
+     "node_modules/math-intrinsics": {
+       "version": "1.1.0",
+       "resolved": "https://registry.npmjs.org/math-intrinsics/-/math-intrinsics-1.1.0.tgz",
+@@ -7889,77 +8190,922 @@
+         "url": "https://github.com/sponsors/wooorm"
+       }
+     },
+-    "node_modules/mdn-data": {
+-      "version": "2.27.1",
+-      "resolved": "https://registry.npmjs.org/mdn-data/-/mdn-data-2.27.1.tgz",
+-      "integrity": "sha512-9Yubnt3e8A0OKwxYSXyhLymGW4sCufcLG6VdiDdUGVkPhpqLxlvP5vl1983gQjJl3tqbrM731mjaZaP68AgosQ==",
+-      "dev": true,
+-      "license": "CC0-1.0"
+-    },
+-    "node_modules/media-typer": {
+-      "version": "1.1.1",
+-      "resolved": "https://registry.npmjs.org/media-typer/-/media-typer-1.1.1.tgz",
+-      "integrity": "sha512-yz3xRaG20c6/BOzvYoDaGtPmGscs7YivItZEEqe6GbwNfHuxu9YNmvnEkMzKldAGY4/80pRcQRZSEnhquk9XuQ==",
++    "node_modules/mdast-util-find-and-replace": {
++      "version": "3.0.2",
++      "resolved": "https://registry.npmjs.org/mdast-util-find-and-replace/-/mdast-util-find-and-replace-3.0.2.tgz",
++      "integrity": "sha512-Tmd1Vg/m3Xz43afeNxDIhWRtFZgM2VLyaf4vSTYwudTyeuTneoL3qtWMA5jeLyz/O1vDJmmV4QuScFCA2tBPwg==",
+       "license": "MIT",
+-      "engines": {
+-        "node": ">= 0.8"
++      "dependencies": {
++        "@types/mdast": "^4.0.0",
++        "escape-string-regexp": "^5.0.0",
++        "unist-util-is": "^6.0.0",
++        "unist-util-visit-parents": "^6.0.0"
+       },
+       "funding": {
+         "type": "opencollective",
+-        "url": "https://opencollective.com/express"
++        "url": "https://opencollective.com/unified"
+       }
+     },
+-    "node_modules/meow": {
+-      "version": "14.1.0",
+-      "resolved": "https://registry.npmjs.org/meow/-/meow-14.1.0.tgz",
+-      "integrity": "sha512-EDYo6VlmtnumlcBCbh1gLJ//9jvM/ndXHfVXIFrZVr6fGcwTUyCTFNTLCKuY3ffbK8L/+3Mzqnd58RojiZqHVw==",
+-      "dev": true,
++    "node_modules/mdast-util-find-and-replace/node_modules/escape-string-regexp": {
++      "version": "5.0.0",
++      "resolved": "https://registry.npmjs.org/escape-string-regexp/-/escape-string-regexp-5.0.0.tgz",
++      "integrity": "sha512-/veY75JbMK4j1yjvuUxuVsiS/hr/4iHs9FTT6cgTexxdE0Ly/glccBAkloH/DofkjRbZU3bnoj38mOmhkZ0lHw==",
+       "license": "MIT",
+       "engines": {
+-        "node": ">=20"
++        "node": ">=12"
+       },
+       "funding": {
+         "url": "https://github.com/sponsors/sindresorhus"
+       }
+     },
+-    "node_modules/merge-descriptors": {
+-      "version": "2.0.0",
+-      "resolved": "https://registry.npmjs.org/merge-descriptors/-/merge-descriptors-2.0.0.tgz",
+-      "integrity": "sha512-Snk314V5ayFLhp3fkUREub6WtjBfPdCPY1Ln8/8munuLuiYhsABgBVWsozAG+MWMbVEvcdcpbi9R7ww22l9Q3g==",
++    "node_modules/mdast-util-from-markdown": {
++      "version": "2.0.3",
++      "resolved": "https://registry.npmjs.org/mdast-util-from-markdown/-/mdast-util-from-markdown-2.0.3.tgz",
++      "integrity": "sha512-W4mAWTvSlKvf8L6J+VN9yLSqQ9AOAAvHuoDAmPkz4dHf553m5gVj2ejadHJhoJmcmxEnOv6Pa8XJhpxE93kb8Q==",
+       "license": "MIT",
+-      "engines": {
+-        "node": ">=18"
++      "dependencies": {
++        "@types/mdast": "^4.0.0",
++        "@types/unist": "^3.0.0",
++        "decode-named-character-reference": "^1.0.0",
++        "devlop": "^1.0.0",
++        "mdast-util-to-string": "^4.0.0",
++        "micromark": "^4.0.0",
++        "micromark-util-decode-numeric-character-reference": "^2.0.0",
++        "micromark-util-decode-string": "^2.0.0",
++        "micromark-util-normalize-identifier": "^2.0.0",
++        "micromark-util-symbol": "^2.0.0",
++        "micromark-util-types": "^2.0.0",
++        "unist-util-stringify-position": "^4.0.0"
+       },
+       "funding": {
+-        "url": "https://github.com/sponsors/sindresorhus"
++        "type": "opencollective",
++        "url": "https://opencollective.com/unified"
+       }
+     },
+-    "node_modules/merge2": {
+-      "version": "1.4.1",
+-      "resolved": "https://registry.npmjs.org/merge2/-/merge2-1.4.1.tgz",
+-      "integrity": "sha512-8q7VEgMJW4J8tcfVPy8g09NcQwZdbwFEqhe/WZkoIzjn/3TGDwtOCYtXGxA3O8tPzpczCCDgv+P2P5y00ZJOOg==",
+-      "dev": true,
++    "node_modules/mdast-util-gfm": {
++      "version": "3.1.0",
++      "resolved": "https://registry.npmjs.org/mdast-util-gfm/-/mdast-util-gfm-3.1.0.tgz",
++      "integrity": "sha512-0ulfdQOM3ysHhCJ1p06l0b0VKlhU0wuQs3thxZQagjcjPrlFRqY215uZGHHJan9GEAXd9MbfPjFJz+qMkVR6zQ==",
+       "license": "MIT",
+-      "engines": {
+-        "node": ">= 8"
++      "dependencies": {
++        "mdast-util-from-markdown": "^2.0.0",
++        "mdast-util-gfm-autolink-literal": "^2.0.0",
++        "mdast-util-gfm-footnote": "^2.0.0",
++        "mdast-util-gfm-strikethrough": "^2.0.0",
++        "mdast-util-gfm-table": "^2.0.0",
++        "mdast-util-gfm-task-list-item": "^2.0.0",
++        "mdast-util-to-markdown": "^2.0.0"
++      },
++      "funding": {
++        "type": "opencollective",
++        "url": "https://opencollective.com/unified"
+       }
+     },
+-    "node_modules/micromatch": {
+-      "version": "4.0.8",
+-      "resolved": "https://registry.npmjs.org/micromatch/-/micromatch-4.0.8.tgz",
+-      "integrity": "sha512-PXwfBhYu0hBCPw8Dn0E+WDYb7af3dSLVWKi3HGv84IdF4TyFoC0ysxFd0Goxw7nSv4T/PzEJQxsYsEiFCKo2BA==",
+-      "dev": true,
++    "node_modules/mdast-util-gfm-autolink-literal": {
++      "version": "2.0.1",
++      "resolved": "https://registry.npmjs.org/mdast-util-gfm-autolink-literal/-/mdast-util-gfm-autolink-literal-2.0.1.tgz",
++      "integrity": "sha512-5HVP2MKaP6L+G6YaxPNjuL0BPrq9orG3TsrZ9YXbA3vDw/ACI4MEsnoDpn6ZNm7GnZgtAcONJyPhOP8tNJQavQ==",
+       "license": "MIT",
+       "dependencies": {
+-        "braces": "^3.0.3",
+-        "picomatch": "^2.3.1"
++        "@types/mdast": "^4.0.0",
++        "ccount": "^2.0.0",
++        "devlop": "^1.0.0",
++        "mdast-util-find-and-replace": "^3.0.0",
++        "micromark-util-character": "^2.0.0"
+       },
+-      "engines": {
+-        "node": ">=8.6"
++      "funding": {
++        "type": "opencollective",
++        "url": "https://opencollective.com/unified"
+       }
+     },
+-    "node_modules/micromatch/node_modules/picomatch": {
+-      "version": "2.3.2",
++    "node_modules/mdast-util-gfm-footnote": {
++      "version": "2.1.0",
++      "resolved": "https://registry.npmjs.org/mdast-util-gfm-footnote/-/mdast-util-gfm-footnote-2.1.0.tgz",
++      "integrity": "sha512-sqpDWlsHn7Ac9GNZQMeUzPQSMzR6Wv0WKRNvQRg0KqHh02fpTz69Qc1QSseNX29bhz1ROIyNyxExfawVKTm1GQ==",
++      "license": "MIT",
++      "dependencies": {
++        "@types/mdast": "^4.0.0",
++        "devlop": "^1.1.0",
++        "mdast-util-from-markdown": "^2.0.0",
++        "mdast-util-to-markdown": "^2.0.0",
++        "micromark-util-normalize-identifier": "^2.0.0"
++      },
++      "funding": {
++        "type": "opencollective",
++        "url": "https://opencollective.com/unified"
++      }
++    },
++    "node_modules/mdast-util-gfm-strikethrough": {
++      "version": "2.0.0",
++      "resolved": "https://registry.npmjs.org/mdast-util-gfm-strikethrough/-/mdast-util-gfm-strikethrough-2.0.0.tgz",
++      "integrity": "sha512-mKKb915TF+OC5ptj5bJ7WFRPdYtuHv0yTRxK2tJvi+BDqbkiG7h7u/9SI89nRAYcmap2xHQL9D+QG/6wSrTtXg==",
++      "license": "MIT",
++      "dependencies": {
++        "@types/mdast": "^4.0.0",
++        "mdast-util-from-markdown": "^2.0.0",
++        "mdast-util-to-markdown": "^2.0.0"
++      },
++      "funding": {
++        "type": "opencollective",
++        "url": "https://opencollective.com/unified"
++      }
++    },
++    "node_modules/mdast-util-gfm-table": {
++      "version": "2.0.0",
++      "resolved": "https://registry.npmjs.org/mdast-util-gfm-table/-/mdast-util-gfm-table-2.0.0.tgz",
++      "integrity": "sha512-78UEvebzz/rJIxLvE7ZtDd/vIQ0RHv+3Mh5DR96p7cS7HsBhYIICDBCu8csTNWNO6tBWfqXPWekRuj2FNOGOZg==",
++      "license": "MIT",
++      "dependencies": {
++        "@types/mdast": "^4.0.0",
++        "devlop": "^1.0.0",
++        "markdown-table": "^3.0.0",
++        "mdast-util-from-markdown": "^2.0.0",
++        "mdast-util-to-markdown": "^2.0.0"
++      },
++      "funding": {
++        "type": "opencollective",
++        "url": "https://opencollective.com/unified"
++      }
++    },
++    "node_modules/mdast-util-gfm-task-list-item": {
++      "version": "2.0.0",
++      "resolved": "https://registry.npmjs.org/mdast-util-gfm-task-list-item/-/mdast-util-gfm-task-list-item-2.0.0.tgz",
++      "integrity": "sha512-IrtvNvjxC1o06taBAVJznEnkiHxLFTzgonUdy8hzFVeDun0uTjxxrRGVaNFqkU1wJR3RBPEfsxmU6jDWPofrTQ==",
++      "license": "MIT",
++      "dependencies": {
++        "@types/mdast": "^4.0.0",
++        "devlop": "^1.0.0",
++        "mdast-util-from-markdown": "^2.0.0",
++        "mdast-util-to-markdown": "^2.0.0"
++      },
++      "funding": {
++        "type": "opencollective",
++        "url": "https://opencollective.com/unified"
++      }
++    },
++    "node_modules/mdast-util-mdx-expression": {
++      "version": "2.0.1",
++      "resolved": "https://registry.npmjs.org/mdast-util-mdx-expression/-/mdast-util-mdx-expression-2.0.1.tgz",
++      "integrity": "sha512-J6f+9hUp+ldTZqKRSg7Vw5V6MqjATc+3E4gf3CFNcuZNWD8XdyI6zQ8GqH7f8169MM6P7hMBRDVGnn7oHB9kXQ==",
++      "license": "MIT",
++      "dependencies": {
++        "@types/estree-jsx": "^1.0.0",
++        "@types/hast": "^3.0.0",
++        "@types/mdast": "^4.0.0",
++        "devlop": "^1.0.0",
++        "mdast-util-from-markdown": "^2.0.0",
++        "mdast-util-to-markdown": "^2.0.0"
++      },
++      "funding": {
++        "type": "opencollective",
++        "url": "https://opencollective.com/unified"
++      }
++    },
++    "node_modules/mdast-util-mdx-jsx": {
++      "version": "3.2.0",
++      "resolved": "https://registry.npmjs.org/mdast-util-mdx-jsx/-/mdast-util-mdx-jsx-3.2.0.tgz",
++      "integrity": "sha512-lj/z8v0r6ZtsN/cGNNtemmmfoLAFZnjMbNyLzBafjzikOM+glrjNHPlf6lQDOTccj9n5b0PPihEBbhneMyGs1Q==",
++      "license": "MIT",
++      "dependencies": {
++        "@types/estree-jsx": "^1.0.0",
++        "@types/hast": "^3.0.0",
++        "@types/mdast": "^4.0.0",
++        "@types/unist": "^3.0.0",
++        "ccount": "^2.0.0",
++        "devlop": "^1.1.0",
++        "mdast-util-from-markdown": "^2.0.0",
++        "mdast-util-to-markdown": "^2.0.0",
++        "parse-entities": "^4.0.0",
++        "stringify-entities": "^4.0.0",
++        "unist-util-stringify-position": "^4.0.0",
++        "vfile-message": "^4.0.0"
++      },
++      "funding": {
++        "type": "opencollective",
++        "url": "https://opencollective.com/unified"
++      }
++    },
++    "node_modules/mdast-util-mdxjs-esm": {
++      "version": "2.0.1",
++      "resolved": "https://registry.npmjs.org/mdast-util-mdxjs-esm/-/mdast-util-mdxjs-esm-2.0.1.tgz",
++      "integrity": "sha512-EcmOpxsZ96CvlP03NghtH1EsLtr0n9Tm4lPUJUBccV9RwUOneqSycg19n5HGzCf+10LozMRSObtVr3ee1WoHtg==",
++      "license": "MIT",
++      "dependencies": {
++        "@types/estree-jsx": "^1.0.0",
++        "@types/hast": "^3.0.0",
++        "@types/mdast": "^4.0.0",
++        "devlop": "^1.0.0",
++        "mdast-util-from-markdown": "^2.0.0",
++        "mdast-util-to-markdown": "^2.0.0"
++      },
++      "funding": {
++        "type": "opencollective",
++        "url": "https://opencollective.com/unified"
++      }
++    },
++    "node_modules/mdast-util-phrasing": {
++      "version": "4.1.0",
++      "resolved": "https://registry.npmjs.org/mdast-util-phrasing/-/mdast-util-phrasing-4.1.0.tgz",
++      "integrity": "sha512-TqICwyvJJpBwvGAMZjj4J2n0X8QWp21b9l0o7eXyVJ25YNWYbJDVIyD1bZXE6WtV6RmKJVYmQAKWa0zWOABz2w==",
++      "license": "MIT",
++      "dependencies": {
++        "@types/mdast": "^4.0.0",
++        "unist-util-is": "^6.0.0"
++      },
++      "funding": {
++        "type": "opencollective",
++        "url": "https://opencollective.com/unified"
++      }
++    },
++    "node_modules/mdast-util-to-hast": {
++      "version": "13.2.1",
++      "resolved": "https://registry.npmjs.org/mdast-util-to-hast/-/mdast-util-to-hast-13.2.1.tgz",
++      "integrity": "sha512-cctsq2wp5vTsLIcaymblUriiTcZd0CwWtCbLvrOzYCDZoWyMNV8sZ7krj09FSnsiJi3WVsHLM4k6Dq/yaPyCXA==",
++      "license": "MIT",
++      "dependencies": {
++        "@types/hast": "^3.0.0",
++        "@types/mdast": "^4.0.0",
++        "@ungap/structured-clone": "^1.0.0",
++        "devlop": "^1.0.0",
++        "micromark-util-sanitize-uri": "^2.0.0",
++        "trim-lines": "^3.0.0",
++        "unist-util-position": "^5.0.0",
++        "unist-util-visit": "^5.0.0",
++        "vfile": "^6.0.0"
++      },
++      "funding": {
++        "type": "opencollective",
++        "url": "https://opencollective.com/unified"
++      }
++    },
++    "node_modules/mdast-util-to-markdown": {
++      "version": "2.1.2",
++      "resolved": "https://registry.npmjs.org/mdast-util-to-markdown/-/mdast-util-to-markdown-2.1.2.tgz",
++      "integrity": "sha512-xj68wMTvGXVOKonmog6LwyJKrYXZPvlwabaryTjLh9LuvovB/KAH+kvi8Gjj+7rJjsFi23nkUxRQv1KqSroMqA==",
++      "license": "MIT",
++      "dependencies": {
++        "@types/mdast": "^4.0.0",
++        "@types/unist": "^3.0.0",
++        "longest-streak": "^3.0.0",
++        "mdast-util-phrasing": "^4.0.0",
++        "mdast-util-to-string": "^4.0.0",
++        "micromark-util-classify-character": "^2.0.0",
++        "micromark-util-decode-string": "^2.0.0",
++        "unist-util-visit": "^5.0.0",
++        "zwitch": "^2.0.0"
++      },
++      "funding": {
++        "type": "opencollective",
++        "url": "https://opencollective.com/unified"
++      }
++    },
++    "node_modules/mdast-util-to-string": {
++      "version": "4.0.0",
++      "resolved": "https://registry.npmjs.org/mdast-util-to-string/-/mdast-util-to-string-4.0.0.tgz",
++      "integrity": "sha512-0H44vDimn51F0YwvxSJSm0eCDOJTRlmN0R1yBh4HLj9wiV1Dn0QoXGbvFAWj2hSItVTlCmBF1hqKlIyUBVFLPg==",
++      "license": "MIT",
++      "dependencies": {
++        "@types/mdast": "^4.0.0"
++      },
++      "funding": {
++        "type": "opencollective",
++        "url": "https://opencollective.com/unified"
++      }
++    },
++    "node_modules/mdn-data": {
++      "version": "2.27.1",
++      "resolved": "https://registry.npmjs.org/mdn-data/-/mdn-data-2.27.1.tgz",
++      "integrity": "sha512-9Yubnt3e8A0OKwxYSXyhLymGW4sCufcLG6VdiDdUGVkPhpqLxlvP5vl1983gQjJl3tqbrM731mjaZaP68AgosQ==",
++      "dev": true,
++      "license": "CC0-1.0"
++    },
++    "node_modules/media-typer": {
++      "version": "1.1.1",
++      "resolved": "https://registry.npmjs.org/media-typer/-/media-typer-1.1.1.tgz",
++      "integrity": "sha512-yz3xRaG20c6/BOzvYoDaGtPmGscs7YivItZEEqe6GbwNfHuxu9YNmvnEkMzKldAGY4/80pRcQRZSEnhquk9XuQ==",
++      "license": "MIT",
++      "engines": {
++        "node": ">= 0.8"
++      },
++      "funding": {
++        "type": "opencollective",
++        "url": "https://opencollective.com/express"
++      }
++    },
++    "node_modules/meow": {
++      "version": "14.1.0",
++      "resolved": "https://registry.npmjs.org/meow/-/meow-14.1.0.tgz",
++      "integrity": "sha512-EDYo6VlmtnumlcBCbh1gLJ//9jvM/ndXHfVXIFrZVr6fGcwTUyCTFNTLCKuY3ffbK8L/+3Mzqnd58RojiZqHVw==",
++      "dev": true,
++      "license": "MIT",
++      "engines": {
++        "node": ">=20"
++      },
++      "funding": {
++        "url": "https://github.com/sponsors/sindresorhus"
++      }
++    },
++    "node_modules/merge-descriptors": {
++      "version": "2.0.0",
++      "resolved": "https://registry.npmjs.org/merge-descriptors/-/merge-descriptors-2.0.0.tgz",
++      "integrity": "sha512-Snk314V5ayFLhp3fkUREub6WtjBfPdCPY1Ln8/8munuLuiYhsABgBVWsozAG+MWMbVEvcdcpbi9R7ww22l9Q3g==",
++      "license": "MIT",
++      "engines": {
++        "node": ">=18"
++      },
++      "funding": {
++        "url": "https://github.com/sponsors/sindresorhus"
++      }
++    },
++    "node_modules/merge2": {
++      "version": "1.4.1",
++      "resolved": "https://registry.npmjs.org/merge2/-/merge2-1.4.1.tgz",
++      "integrity": "sha512-8q7VEgMJW4J8tcfVPy8g09NcQwZdbwFEqhe/WZkoIzjn/3TGDwtOCYtXGxA3O8tPzpczCCDgv+P2P5y00ZJOOg==",
++      "dev": true,
++      "license": "MIT",
++      "engines": {
++        "node": ">= 8"
++      }
++    },
++    "node_modules/micromark": {
++      "version": "4.0.2",
++      "resolved": "https://registry.npmjs.org/micromark/-/micromark-4.0.2.tgz",
++      "integrity": "sha512-zpe98Q6kvavpCr1NPVSCMebCKfD7CA2NqZ+rykeNhONIJBpc1tFKt9hucLGwha3jNTNI8lHpctWJWoimVF4PfA==",
++      "funding": [
++        {
++          "type": "GitHub Sponsors",
++          "url": "https://github.com/sponsors/unifiedjs"
++        },
++        {
++          "type": "OpenCollective",
++          "url": "https://opencollective.com/unified"
++        }
++      ],
++      "license": "MIT",
++      "dependencies": {
++        "@types/debug": "^4.0.0",
++        "debug": "^4.0.0",
++        "decode-named-character-reference": "^1.0.0",
++        "devlop": "^1.0.0",
++        "micromark-core-commonmark": "^2.0.0",
++        "micromark-factory-space": "^2.0.0",
++        "micromark-util-character": "^2.0.0",
++        "micromark-util-chunked": "^2.0.0",
++        "micromark-util-combine-extensions": "^2.0.0",
++        "micromark-util-decode-numeric-character-reference": "^2.0.0",
++        "micromark-util-encode": "^2.0.0",
++        "micromark-util-normalize-identifier": "^2.0.0",
++        "micromark-util-resolve-all": "^2.0.0",
++        "micromark-util-sanitize-uri": "^2.0.0",
++        "micromark-util-subtokenize": "^2.0.0",
++        "micromark-util-symbol": "^2.0.0",
++        "micromark-util-types": "^2.0.0"
++      }
++    },
++    "node_modules/micromark-core-commonmark": {
++      "version": "2.0.3",
++      "resolved": "https://registry.npmjs.org/micromark-core-commonmark/-/micromark-core-commonmark-2.0.3.tgz",
++      "integrity": "sha512-RDBrHEMSxVFLg6xvnXmb1Ayr2WzLAWjeSATAoxwKYJV94TeNavgoIdA0a9ytzDSVzBy2YKFK+emCPOEibLeCrg==",
++      "funding": [
++        {
++          "type": "GitHub Sponsors",
++          "url": "https://github.com/sponsors/unifiedjs"
++        },
++        {
++          "type": "OpenCollective",
++          "url": "https://opencollective.com/unified"
++        }
++      ],
++      "license": "MIT",
++      "dependencies": {
++        "decode-named-character-reference": "^1.0.0",
++        "devlop": "^1.0.0",
++        "micromark-factory-destination": "^2.0.0",
++        "micromark-factory-label": "^2.0.0",
++        "micromark-factory-space": "^2.0.0",
++        "micromark-factory-title": "^2.0.0",
++        "micromark-factory-whitespace": "^2.0.0",
++        "micromark-util-character": "^2.0.0",
++        "micromark-util-chunked": "^2.0.0",
++        "micromark-util-classify-character": "^2.0.0",
++        "micromark-util-html-tag-name": "^2.0.0",
++        "micromark-util-normalize-identifier": "^2.0.0",
++        "micromark-util-resolve-all": "^2.0.0",
++        "micromark-util-subtokenize": "^2.0.0",
++        "micromark-util-symbol": "^2.0.0",
++        "micromark-util-types": "^2.0.0"
++      }
++    },
++    "node_modules/micromark-extension-gfm": {
++      "version": "3.0.0",
++      "resolved": "https://registry.npmjs.org/micromark-extension-gfm/-/micromark-extension-gfm-3.0.0.tgz",
++      "integrity": "sha512-vsKArQsicm7t0z2GugkCKtZehqUm31oeGBV/KVSorWSy8ZlNAv7ytjFhvaryUiCUJYqs+NoE6AFhpQvBTM6Q4w==",
++      "license": "MIT",
++      "dependencies": {
++        "micromark-extension-gfm-autolink-literal": "^2.0.0",
++        "micromark-extension-gfm-footnote": "^2.0.0",
++        "micromark-extension-gfm-strikethrough": "^2.0.0",
++        "micromark-extension-gfm-table": "^2.0.0",
++        "micromark-extension-gfm-tagfilter": "^2.0.0",
++        "micromark-extension-gfm-task-list-item": "^2.0.0",
++        "micromark-util-combine-extensions": "^2.0.0",
++        "micromark-util-types": "^2.0.0"
++      },
++      "funding": {
++        "type": "opencollective",
++        "url": "https://opencollective.com/unified"
++      }
++    },
++    "node_modules/micromark-extension-gfm-autolink-literal": {
++      "version": "2.1.0",
++      "resolved": "https://registry.npmjs.org/micromark-extension-gfm-autolink-literal/-/micromark-extension-gfm-autolink-literal-2.1.0.tgz",
++      "integrity": "sha512-oOg7knzhicgQ3t4QCjCWgTmfNhvQbDDnJeVu9v81r7NltNCVmhPy1fJRX27pISafdjL+SVc4d3l48Gb6pbRypw==",
++      "license": "MIT",
++      "dependencies": {
++        "micromark-util-character": "^2.0.0",
++        "micromark-util-sanitize-uri": "^2.0.0",
++        "micromark-util-symbol": "^2.0.0",
++        "micromark-util-types": "^2.0.0"
++      },
++      "funding": {
++        "type": "opencollective",
++        "url": "https://opencollective.com/unified"
++      }
++    },
++    "node_modules/micromark-extension-gfm-footnote": {
++      "version": "2.1.0",
++      "resolved": "https://registry.npmjs.org/micromark-extension-gfm-footnote/-/micromark-extension-gfm-footnote-2.1.0.tgz",
++      "integrity": "sha512-/yPhxI1ntnDNsiHtzLKYnE3vf9JZ6cAisqVDauhp4CEHxlb4uoOTxOCJ+9s51bIB8U1N1FJ1RXOKTIlD5B/gqw==",
++      "license": "MIT",
++      "dependencies": {
++        "devlop": "^1.0.0",
++        "micromark-core-commonmark": "^2.0.0",
++        "micromark-factory-space": "^2.0.0",
++        "micromark-util-character": "^2.0.0",
++        "micromark-util-normalize-identifier": "^2.0.0",
++        "micromark-util-sanitize-uri": "^2.0.0",
++        "micromark-util-symbol": "^2.0.0",
++        "micromark-util-types": "^2.0.0"
++      },
++      "funding": {
++        "type": "opencollective",
++        "url": "https://opencollective.com/unified"
++      }
++    },
++    "node_modules/micromark-extension-gfm-strikethrough": {
++      "version": "2.1.0",
++      "resolved": "https://registry.npmjs.org/micromark-extension-gfm-strikethrough/-/micromark-extension-gfm-strikethrough-2.1.0.tgz",
++      "integrity": "sha512-ADVjpOOkjz1hhkZLlBiYA9cR2Anf8F4HqZUO6e5eDcPQd0Txw5fxLzzxnEkSkfnD0wziSGiv7sYhk/ktvbf1uw==",
++      "license": "MIT",
++      "dependencies": {
++        "devlop": "^1.0.0",
++        "micromark-util-chunked": "^2.0.0",
++        "micromark-util-classify-character": "^2.0.0",
++        "micromark-util-resolve-all": "^2.0.0",
++        "micromark-util-symbol": "^2.0.0",
++        "micromark-util-types": "^2.0.0"
++      },
++      "funding": {
++        "type": "opencollective",
++        "url": "https://opencollective.com/unified"
++      }
++    },
++    "node_modules/micromark-extension-gfm-table": {
++      "version": "2.1.1",
++      "resolved": "https://registry.npmjs.org/micromark-extension-gfm-table/-/micromark-extension-gfm-table-2.1.1.tgz",
++      "integrity": "sha512-t2OU/dXXioARrC6yWfJ4hqB7rct14e8f7m0cbI5hUmDyyIlwv5vEtooptH8INkbLzOatzKuVbQmAYcbWoyz6Dg==",
++      "license": "MIT",
++      "dependencies": {
++        "devlop": "^1.0.0",
++        "micromark-factory-space": "^2.0.0",
++        "micromark-util-character": "^2.0.0",
++        "micromark-util-symbol": "^2.0.0",
++        "micromark-util-types": "^2.0.0"
++      },
++      "funding": {
++        "type": "opencollective",
++        "url": "https://opencollective.com/unified"
++      }
++    },
++    "node_modules/micromark-extension-gfm-tagfilter": {
++      "version": "2.0.0",
++      "resolved": "https://registry.npmjs.org/micromark-extension-gfm-tagfilter/-/micromark-extension-gfm-tagfilter-2.0.0.tgz",
++      "integrity": "sha512-xHlTOmuCSotIA8TW1mDIM6X2O1SiX5P9IuDtqGonFhEK0qgRI4yeC6vMxEV2dgyr2TiD+2PQ10o+cOhdVAcwfg==",
++      "license": "MIT",
++      "dependencies": {
++        "micromark-util-types": "^2.0.0"
++      },
++      "funding": {
++        "type": "opencollective",
++        "url": "https://opencollective.com/unified"
++      }
++    },
++    "node_modules/micromark-extension-gfm-task-list-item": {
++      "version": "2.1.0",
++      "resolved": "https://registry.npmjs.org/micromark-extension-gfm-task-list-item/-/micromark-extension-gfm-task-list-item-2.1.0.tgz",
++      "integrity": "sha512-qIBZhqxqI6fjLDYFTBIa4eivDMnP+OZqsNwmQ3xNLE4Cxwc+zfQEfbs6tzAo2Hjq+bh6q5F+Z8/cksrLFYWQQw==",
++      "license": "MIT",
++      "dependencies": {
++        "devlop": "^1.0.0",
++        "micromark-factory-space": "^2.0.0",
++        "micromark-util-character": "^2.0.0",
++        "micromark-util-symbol": "^2.0.0",
++        "micromark-util-types": "^2.0.0"
++      },
++      "funding": {
++        "type": "opencollective",
++        "url": "https://opencollective.com/unified"
++      }
++    },
++    "node_modules/micromark-factory-destination": {
++      "version": "2.0.1",
++      "resolved": "https://registry.npmjs.org/micromark-factory-destination/-/micromark-factory-destination-2.0.1.tgz",
++      "integrity": "sha512-Xe6rDdJlkmbFRExpTOmRj9N3MaWmbAgdpSrBQvCFqhezUn4AHqJHbaEnfbVYYiexVSs//tqOdY/DxhjdCiJnIA==",
++      "funding": [
++        {
++          "type": "GitHub Sponsors",
++          "url": "https://github.com/sponsors/unifiedjs"
++        },
++        {
++          "type": "OpenCollective",
++          "url": "https://opencollective.com/unified"
++        }
++      ],
++      "license": "MIT",
++      "dependencies": {
++        "micromark-util-character": "^2.0.0",
++        "micromark-util-symbol": "^2.0.0",
++        "micromark-util-types": "^2.0.0"
++      }
++    },
++    "node_modules/micromark-factory-label": {
++      "version": "2.0.1",
++      "resolved": "https://registry.npmjs.org/micromark-factory-label/-/micromark-factory-label-2.0.1.tgz",
++      "integrity": "sha512-VFMekyQExqIW7xIChcXn4ok29YE3rnuyveW3wZQWWqF4Nv9Wk5rgJ99KzPvHjkmPXF93FXIbBp6YdW3t71/7Vg==",
++      "funding": [
++        {
++          "type": "GitHub Sponsors",
++          "url": "https://github.com/sponsors/unifiedjs"
++        },
++        {
++          "type": "OpenCollective",
++          "url": "https://opencollective.com/unified"
++        }
++      ],
++      "license": "MIT",
++      "dependencies": {
++        "devlop": "^1.0.0",
++        "micromark-util-character": "^2.0.0",
++        "micromark-util-symbol": "^2.0.0",
++        "micromark-util-types": "^2.0.0"
++      }
++    },
++    "node_modules/micromark-factory-space": {
++      "version": "2.0.1",
++      "resolved": "https://registry.npmjs.org/micromark-factory-space/-/micromark-factory-space-2.0.1.tgz",
++      "integrity": "sha512-zRkxjtBxxLd2Sc0d+fbnEunsTj46SWXgXciZmHq0kDYGnck/ZSGj9/wULTV95uoeYiK5hRXP2mJ98Uo4cq/LQg==",
++      "funding": [
++        {
++          "type": "GitHub Sponsors",
++          "url": "https://github.com/sponsors/unifiedjs"
++        },
++        {
++          "type": "OpenCollective",
++          "url": "https://opencollective.com/unified"
++        }
++      ],
++      "license": "MIT",
++      "dependencies": {
++        "micromark-util-character": "^2.0.0",
++        "micromark-util-types": "^2.0.0"
++      }
++    },
++    "node_modules/micromark-factory-title": {
++      "version": "2.0.1",
++      "resolved": "https://registry.npmjs.org/micromark-factory-title/-/micromark-factory-title-2.0.1.tgz",
++      "integrity": "sha512-5bZ+3CjhAd9eChYTHsjy6TGxpOFSKgKKJPJxr293jTbfry2KDoWkhBb6TcPVB4NmzaPhMs1Frm9AZH7OD4Cjzw==",
++      "funding": [
++        {
++          "type": "GitHub Sponsors",
++          "url": "https://github.com/sponsors/unifiedjs"
++        },
++        {
++          "type": "OpenCollective",
++          "url": "https://opencollective.com/unified"
++        }
++      ],
++      "license": "MIT",
++      "dependencies": {
++        "micromark-factory-space": "^2.0.0",
++        "micromark-util-character": "^2.0.0",
++        "micromark-util-symbol": "^2.0.0",
++        "micromark-util-types": "^2.0.0"
++      }
++    },
++    "node_modules/micromark-factory-whitespace": {
++      "version": "2.0.1",
++      "resolved": "https://registry.npmjs.org/micromark-factory-whitespace/-/micromark-factory-whitespace-2.0.1.tgz",
++      "integrity": "sha512-Ob0nuZ3PKt/n0hORHyvoD9uZhr+Za8sFoP+OnMcnWK5lngSzALgQYKMr9RJVOWLqQYuyn6ulqGWSXdwf6F80lQ==",
++      "funding": [
++        {
++          "type": "GitHub Sponsors",
++          "url": "https://github.com/sponsors/unifiedjs"
++        },
++        {
++          "type": "OpenCollective",
++          "url": "https://opencollective.com/unified"
++        }
++      ],
++      "license": "MIT",
++      "dependencies": {
++        "micromark-factory-space": "^2.0.0",
++        "micromark-util-character": "^2.0.0",
++        "micromark-util-symbol": "^2.0.0",
++        "micromark-util-types": "^2.0.0"
++      }
++    },
++    "node_modules/micromark-util-character": {
++      "version": "2.1.1",
++      "resolved": "https://registry.npmjs.org/micromark-util-character/-/micromark-util-character-2.1.1.tgz",
++      "integrity": "sha512-wv8tdUTJ3thSFFFJKtpYKOYiGP2+v96Hvk4Tu8KpCAsTMs6yi+nVmGh1syvSCsaxz45J6Jbw+9DD6g97+NV67Q==",
++      "funding": [
++        {
++          "type": "GitHub Sponsors",
++          "url": "https://github.com/sponsors/unifiedjs"
++        },
++        {
++          "type": "OpenCollective",
++          "url": "https://opencollective.com/unified"
++        }
++      ],
++      "license": "MIT",
++      "dependencies": {
++        "micromark-util-symbol": "^2.0.0",
++        "micromark-util-types": "^2.0.0"
++      }
++    },
++    "node_modules/micromark-util-chunked": {
++      "version": "2.0.1",
++      "resolved": "https://registry.npmjs.org/micromark-util-chunked/-/micromark-util-chunked-2.0.1.tgz",
++      "integrity": "sha512-QUNFEOPELfmvv+4xiNg2sRYeS/P84pTW0TCgP5zc9FpXetHY0ab7SxKyAQCNCc1eK0459uoLI1y5oO5Vc1dbhA==",
++      "funding": [
++        {
++          "type": "GitHub Sponsors",
++          "url": "https://github.com/sponsors/unifiedjs"
++        },
++        {
++          "type": "OpenCollective",
++          "url": "https://opencollective.com/unified"
++        }
++      ],
++      "license": "MIT",
++      "dependencies": {
++        "micromark-util-symbol": "^2.0.0"
++      }
++    },
++    "node_modules/micromark-util-classify-character": {
++      "version": "2.0.1",
++      "resolved": "https://registry.npmjs.org/micromark-util-classify-character/-/micromark-util-classify-character-2.0.1.tgz",
++      "integrity": "sha512-K0kHzM6afW/MbeWYWLjoHQv1sgg2Q9EccHEDzSkxiP/EaagNzCm7T/WMKZ3rjMbvIpvBiZgwR3dKMygtA4mG1Q==",
++      "funding": [
++        {
++          "type": "GitHub Sponsors",
++          "url": "https://github.com/sponsors/unifiedjs"
++        },
++        {
++          "type": "OpenCollective",
++          "url": "https://opencollective.com/unified"
++        }
++      ],
++      "license": "MIT",
++      "dependencies": {
++        "micromark-util-character": "^2.0.0",
++        "micromark-util-symbol": "^2.0.0",
++        "micromark-util-types": "^2.0.0"
++      }
++    },
++    "node_modules/micromark-util-combine-extensions": {
++      "version": "2.0.1",
++      "resolved": "https://registry.npmjs.org/micromark-util-combine-extensions/-/micromark-util-combine-extensions-2.0.1.tgz",
++      "integrity": "sha512-OnAnH8Ujmy59JcyZw8JSbK9cGpdVY44NKgSM7E9Eh7DiLS2E9RNQf0dONaGDzEG9yjEl5hcqeIsj4hfRkLH/Bg==",
++      "funding": [
++        {
++          "type": "GitHub Sponsors",
++          "url": "https://github.com/sponsors/unifiedjs"
++        },
++        {
++          "type": "OpenCollective",
++          "url": "https://opencollective.com/unified"
++        }
++      ],
++      "license": "MIT",
++      "dependencies": {
++        "micromark-util-chunked": "^2.0.0",
++        "micromark-util-types": "^2.0.0"
++      }
++    },
++    "node_modules/micromark-util-decode-numeric-character-reference": {
++      "version": "2.0.2",
++      "resolved": "https://registry.npmjs.org/micromark-util-decode-numeric-character-reference/-/micromark-util-decode-numeric-character-reference-2.0.2.tgz",
++      "integrity": "sha512-ccUbYk6CwVdkmCQMyr64dXz42EfHGkPQlBj5p7YVGzq8I7CtjXZJrubAYezf7Rp+bjPseiROqe7G6foFd+lEuw==",
++      "funding": [
++        {
++          "type": "GitHub Sponsors",
++          "url": "https://github.com/sponsors/unifiedjs"
++        },
++        {
++          "type": "OpenCollective",
++          "url": "https://opencollective.com/unified"
++        }
++      ],
++      "license": "MIT",
++      "dependencies": {
++        "micromark-util-symbol": "^2.0.0"
++      }
++    },
++    "node_modules/micromark-util-decode-string": {
++      "version": "2.0.1",
++      "resolved": "https://registry.npmjs.org/micromark-util-decode-string/-/micromark-util-decode-string-2.0.1.tgz",
++      "integrity": "sha512-nDV/77Fj6eH1ynwscYTOsbK7rR//Uj0bZXBwJZRfaLEJ1iGBR6kIfNmlNqaqJf649EP0F3NWNdeJi03elllNUQ==",
++      "funding": [
++        {
++          "type": "GitHub Sponsors",
++          "url": "https://github.com/sponsors/unifiedjs"
++        },
++        {
++          "type": "OpenCollective",
++          "url": "https://opencollective.com/unified"
++        }
++      ],
++      "license": "MIT",
++      "dependencies": {
++        "decode-named-character-reference": "^1.0.0",
++        "micromark-util-character": "^2.0.0",
++        "micromark-util-decode-numeric-character-reference": "^2.0.0",
++        "micromark-util-symbol": "^2.0.0"
++      }
++    },
++    "node_modules/micromark-util-encode": {
++      "version": "2.0.1",
++      "resolved": "https://registry.npmjs.org/micromark-util-encode/-/micromark-util-encode-2.0.1.tgz",
++      "integrity": "sha512-c3cVx2y4KqUnwopcO9b/SCdo2O67LwJJ/UyqGfbigahfegL9myoEFoDYZgkT7f36T0bLrM9hZTAaAyH+PCAXjw==",
++      "funding": [
++        {
++          "type": "GitHub Sponsors",
++          "url": "https://github.com/sponsors/unifiedjs"
++        },
++        {
++          "type": "OpenCollective",
++          "url": "https://opencollective.com/unified"
++        }
++      ],
++      "license": "MIT"
++    },
++    "node_modules/micromark-util-html-tag-name": {
++      "version": "2.0.1",
++      "resolved": "https://registry.npmjs.org/micromark-util-html-tag-name/-/micromark-util-html-tag-name-2.0.1.tgz",
++      "integrity": "sha512-2cNEiYDhCWKI+Gs9T0Tiysk136SnR13hhO8yW6BGNyhOC4qYFnwF1nKfD3HFAIXA5c45RrIG1ub11GiXeYd1xA==",
++      "funding": [
++        {
++          "type": "GitHub Sponsors",
++          "url": "https://github.com/sponsors/unifiedjs"
++        },
++        {
++          "type": "OpenCollective",
++          "url": "https://opencollective.com/unified"
++        }
++      ],
++      "license": "MIT"
++    },
++    "node_modules/micromark-util-normalize-identifier": {
++      "version": "2.0.1",
++      "resolved": "https://registry.npmjs.org/micromark-util-normalize-identifier/-/micromark-util-normalize-identifier-2.0.1.tgz",
++      "integrity": "sha512-sxPqmo70LyARJs0w2UclACPUUEqltCkJ6PhKdMIDuJ3gSf/Q+/GIe3WKl0Ijb/GyH9lOpUkRAO2wp0GVkLvS9Q==",
++      "funding": [
++        {
++          "type": "GitHub Sponsors",
++          "url": "https://github.com/sponsors/unifiedjs"
++        },
++        {
++          "type": "OpenCollective",
++          "url": "https://opencollective.com/unified"
++        }
++      ],
++      "license": "MIT",
++      "dependencies": {
++        "micromark-util-symbol": "^2.0.0"
++      }
++    },
++    "node_modules/micromark-util-resolve-all": {
++      "version": "2.0.1",
++      "resolved": "https://registry.npmjs.org/micromark-util-resolve-all/-/micromark-util-resolve-all-2.0.1.tgz",
++      "integrity": "sha512-VdQyxFWFT2/FGJgwQnJYbe1jjQoNTS4RjglmSjTUlpUMa95Htx9NHeYW4rGDJzbjvCsl9eLjMQwGeElsqmzcHg==",
++      "funding": [
++        {
++          "type": "GitHub Sponsors",
++          "url": "https://github.com/sponsors/unifiedjs"
++        },
++        {
++          "type": "OpenCollective",
++          "url": "https://opencollective.com/unified"
++        }
++      ],
++      "license": "MIT",
++      "dependencies": {
++        "micromark-util-types": "^2.0.0"
++      }
++    },
++    "node_modules/micromark-util-sanitize-uri": {
++      "version": "2.0.1",
++      "resolved": "https://registry.npmjs.org/micromark-util-sanitize-uri/-/micromark-util-sanitize-uri-2.0.1.tgz",
++      "integrity": "sha512-9N9IomZ/YuGGZZmQec1MbgxtlgougxTodVwDzzEouPKo3qFWvymFHWcnDi2vzV1ff6kas9ucW+o3yzJK9YB1AQ==",
++      "funding": [
++        {
++          "type": "GitHub Sponsors",
++          "url": "https://github.com/sponsors/unifiedjs"
++        },
++        {
++          "type": "OpenCollective",
++          "url": "https://opencollective.com/unified"
++        }
++      ],
++      "license": "MIT",
++      "dependencies": {
++        "micromark-util-character": "^2.0.0",
++        "micromark-util-encode": "^2.0.0",
++        "micromark-util-symbol": "^2.0.0"
++      }
++    },
++    "node_modules/micromark-util-subtokenize": {
++      "version": "2.1.0",
++      "resolved": "https://registry.npmjs.org/micromark-util-subtokenize/-/micromark-util-subtokenize-2.1.0.tgz",
++      "integrity": "sha512-XQLu552iSctvnEcgXw6+Sx75GflAPNED1qx7eBJ+wydBb2KCbRZe+NwvIEEMM83uml1+2WSXpBAcp9IUCgCYWA==",
++      "funding": [
++        {
++          "type": "GitHub Sponsors",
++          "url": "https://github.com/sponsors/unifiedjs"
++        },
++        {
++          "type": "OpenCollective",
++          "url": "https://opencollective.com/unified"
++        }
++      ],
++      "license": "MIT",
++      "dependencies": {
++        "devlop": "^1.0.0",
++        "micromark-util-chunked": "^2.0.0",
++        "micromark-util-symbol": "^2.0.0",
++        "micromark-util-types": "^2.0.0"
++      }
++    },
++    "node_modules/micromark-util-symbol": {
++      "version": "2.0.1",
++      "resolved": "https://registry.npmjs.org/micromark-util-symbol/-/micromark-util-symbol-2.0.1.tgz",
++      "integrity": "sha512-vs5t8Apaud9N28kgCrRUdEed4UJ+wWNvicHLPxCa9ENlYuAY31M0ETy5y1vA33YoNPDFTghEbnh6efaE8h4x0Q==",
++      "funding": [
++        {
++          "type": "GitHub Sponsors",
++          "url": "https://github.com/sponsors/unifiedjs"
++        },
++        {
++          "type": "OpenCollective",
++          "url": "https://opencollective.com/unified"
++        }
++      ],
++      "license": "MIT"
++    },
++    "node_modules/micromark-util-types": {
++      "version": "2.0.2",
++      "resolved": "https://registry.npmjs.org/micromark-util-types/-/micromark-util-types-2.0.2.tgz",
++      "integrity": "sha512-Yw0ECSpJoViF1qTU4DC6NwtC4aWGt1EkzaQB8KPPyCRR8z9TWeV0HbEFGTO+ZY1wB22zmxnJqhPyTpOVCpeHTA==",
++      "funding": [
++        {
++          "type": "GitHub Sponsors",
++          "url": "https://github.com/sponsors/unifiedjs"
++        },
++        {
++          "type": "OpenCollective",
++          "url": "https://opencollective.com/unified"
++        }
++      ],
++      "license": "MIT"
++    },
++    "node_modules/micromatch": {
++      "version": "4.0.8",
++      "resolved": "https://registry.npmjs.org/micromatch/-/micromatch-4.0.8.tgz",
++      "integrity": "sha512-PXwfBhYu0hBCPw8Dn0E+WDYb7af3dSLVWKi3HGv84IdF4TyFoC0ysxFd0Goxw7nSv4T/PzEJQxsYsEiFCKo2BA==",
++      "dev": true,
++      "license": "MIT",
++      "dependencies": {
++        "braces": "^3.0.3",
++        "picomatch": "^2.3.1"
++      },
++      "engines": {
++        "node": ">=8.6"
++      }
++    },
++    "node_modules/micromatch/node_modules/picomatch": {
++      "version": "2.3.2",
+       "resolved": "https://registry.npmjs.org/picomatch/-/picomatch-2.3.2.tgz",
+       "integrity": "sha512-V7+vQEJ06Z+c5tSye8S+nHUfI51xoXIXjHQ99cQtKUkQqqO1kO/KCJUfZXuB47h/YBlDhah2H3hdUGXn8ie0oA==",
+       "dev": true,
+@@ -8019,7 +9165,6 @@
+       "version": "3.3.16",
+       "resolved": "https://registry.npmjs.org/nanoid/-/nanoid-3.3.16.tgz",
+       "integrity": "sha512-bzlKTyNJ7+LdGIIwy8ijFpIqEQIvafahV7eYykJ8Cvh42EdJeODoJ6gUJXpQJvej1BddH8OqTXZNE/KfbWAu8Q==",
+-      "dev": true,
+       "funding": [
+         {
+           "type": "github",
+@@ -8308,6 +9453,31 @@
+         "node": ">=6"
+       }
+     },
++    "node_modules/parse-entities": {
++      "version": "4.0.2",
++      "resolved": "https://registry.npmjs.org/parse-entities/-/parse-entities-4.0.2.tgz",
++      "integrity": "sha512-GG2AQYWoLgL877gQIKeRPGO1xF9+eG1ujIb5soS5gPvLQ1y2o8FL90w2QWNdf9I361Mpp7726c+lj3U0qK1uGw==",
++      "license": "MIT",
++      "dependencies": {
++        "@types/unist": "^2.0.0",
++        "character-entities-legacy": "^3.0.0",
++        "character-reference-invalid": "^2.0.0",
++        "decode-named-character-reference": "^1.0.0",
++        "is-alphanumerical": "^2.0.0",
++        "is-decimal": "^2.0.0",
++        "is-hexadecimal": "^2.0.0"
++      },
++      "funding": {
++        "type": "github",
++        "url": "https://github.com/sponsors/wooorm"
++      }
++    },
++    "node_modules/parse-entities/node_modules/@types/unist": {
++      "version": "2.0.11",
++      "resolved": "https://registry.npmjs.org/@types/unist/-/unist-2.0.11.tgz",
++      "integrity": "sha512-CmBKiL6NNo/OqgmMn95Fk9Whlp2mtvIv+KNpQKN2F4SjvrEesubTRWGYSg+BnWZOnlCaSTU1sMpsBOzgbYhnsA==",
++      "license": "MIT"
++    },
+     "node_modules/parse-json": {
+       "version": "5.2.0",
+       "resolved": "https://registry.npmjs.org/parse-json/-/parse-json-5.2.0.tgz",
+@@ -8449,7 +9619,6 @@
+       "version": "8.5.19",
+       "resolved": "https://registry.npmjs.org/postcss/-/postcss-8.5.19.tgz",
+       "integrity": "sha512-Mz8SaolMd8nB+G13WkORcxQKHZ/NE4xXevtkJHVuG+guo9/wYKlIMTKAqGdEmYOXR2ijPjTYNHssizdaVSUNdQ==",
+-      "dev": true,
+       "funding": [
+         {
+           "type": "opencollective",
+@@ -8577,6 +9746,16 @@
+       "integrity": "sha512-24e6ynE2H+OKt4kqsOvNd8kBpV65zoxbA4BVsEOB3ARVWQki/DHzaUoC5KuON/BiccDaCCTZBuOcfZs70kR8bQ==",
+       "license": "MIT"
+     },
++    "node_modules/property-information": {
++      "version": "7.2.0",
++      "resolved": "https://registry.npmjs.org/property-information/-/property-information-7.2.0.tgz",
++      "integrity": "sha512-IAtzIB6sUiWaJYrX9smp3V46pBGbBeLFRGdh25kg1334VcBlD8HzhPeNIWQH9zhGmo2itIe25EHt9dQP7G5hmg==",
++      "license": "MIT",
++      "funding": {
++        "type": "github",
++        "url": "https://github.com/sponsors/wooorm"
++      }
++    },
+     "node_modules/proxy-addr": {
+       "version": "2.0.7",
+       "resolved": "https://registry.npmjs.org/proxy-addr/-/proxy-addr-2.0.7.tgz",
+@@ -8750,6 +9929,33 @@
+       "integrity": "sha512-/LLMVyas0ljjAtoYiPqYiL8VWXzUUdThrmU5+n20DZv+a+ClRoevUzw5JxU+Ieh5/c87ytoTBV9G1FiKfNJdmg==",
+       "license": "MIT"
+     },
++    "node_modules/react-markdown": {
++      "version": "10.1.0",
++      "resolved": "https://registry.npmjs.org/react-markdown/-/react-markdown-10.1.0.tgz",
++      "integrity": "sha512-qKxVopLT/TyA6BX3Ue5NwabOsAzm0Q7kAPwq6L+wWDwisYs7R8vZ0nRXqq6rkueboxpkjvLGU9fWifiX/ZZFxQ==",
++      "license": "MIT",
++      "dependencies": {
++        "@types/hast": "^3.0.0",
++        "@types/mdast": "^4.0.0",
++        "devlop": "^1.0.0",
++        "hast-util-to-jsx-runtime": "^2.0.0",
++        "html-url-attributes": "^3.0.0",
++        "mdast-util-to-hast": "^13.0.0",
++        "remark-parse": "^11.0.0",
++        "remark-rehype": "^11.0.0",
++        "unified": "^11.0.0",
++        "unist-util-visit": "^5.0.0",
++        "vfile": "^6.0.0"
++      },
++      "funding": {
++        "type": "opencollective",
++        "url": "https://opencollective.com/unified"
++      },
++      "peerDependencies": {
++        "@types/react": ">=18",
++        "react": ">=18"
++      }
++    },
+     "node_modules/react-refresh": {
+       "version": "0.18.0",
+       "resolved": "https://registry.npmjs.org/react-refresh/-/react-refresh-0.18.0.tgz",
+@@ -8916,6 +10122,72 @@
+         "decimal.js-light": "^2.4.1"
+       }
+     },
++    "node_modules/remark-gfm": {
++      "version": "4.0.1",
++      "resolved": "https://registry.npmjs.org/remark-gfm/-/remark-gfm-4.0.1.tgz",
++      "integrity": "sha512-1quofZ2RQ9EWdeN34S79+KExV1764+wCUGop5CPL1WGdD0ocPpu91lzPGbwWMECpEpd42kJGQwzRfyov9j4yNg==",
++      "license": "MIT",
++      "dependencies": {
++        "@types/mdast": "^4.0.0",
++        "mdast-util-gfm": "^3.0.0",
++        "micromark-extension-gfm": "^3.0.0",
++        "remark-parse": "^11.0.0",
++        "remark-stringify": "^11.0.0",
++        "unified": "^11.0.0"
++      },
++      "funding": {
++        "type": "opencollective",
++        "url": "https://opencollective.com/unified"
++      }
++    },
++    "node_modules/remark-parse": {
++      "version": "11.0.0",
++      "resolved": "https://registry.npmjs.org/remark-parse/-/remark-parse-11.0.0.tgz",
++      "integrity": "sha512-FCxlKLNGknS5ba/1lmpYijMUzX2esxW5xQqjWxw2eHFfS2MSdaHVINFmhjo+qN1WhZhNimq0dZATN9pH0IDrpA==",
++      "license": "MIT",
++      "dependencies": {
++        "@types/mdast": "^4.0.0",
++        "mdast-util-from-markdown": "^2.0.0",
++        "micromark-util-types": "^2.0.0",
++        "unified": "^11.0.0"
++      },
++      "funding": {
++        "type": "opencollective",
++        "url": "https://opencollective.com/unified"
++      }
++    },
++    "node_modules/remark-rehype": {
++      "version": "11.1.2",
++      "resolved": "https://registry.npmjs.org/remark-rehype/-/remark-rehype-11.1.2.tgz",
++      "integrity": "sha512-Dh7l57ianaEoIpzbp0PC9UKAdCSVklD8E5Rpw7ETfbTl3FqcOOgq5q2LVDhgGCkaBv7p24JXikPdvhhmHvKMsw==",
++      "license": "MIT",
++      "dependencies": {
++        "@types/hast": "^3.0.0",
++        "@types/mdast": "^4.0.0",
++        "mdast-util-to-hast": "^13.0.0",
++        "unified": "^11.0.0",
++        "vfile": "^6.0.0"
++      },
++      "funding": {
++        "type": "opencollective",
++        "url": "https://opencollective.com/unified"
++      }
++    },
++    "node_modules/remark-stringify": {
++      "version": "11.0.0",
++      "resolved": "https://registry.npmjs.org/remark-stringify/-/remark-stringify-11.0.0.tgz",
++      "integrity": "sha512-1OSmLd3awB/t8qdoEOMazZkNsfVTeY4fTsgzcQFdXNq8ToTN4ZGwrMnlda4K6smTFKD+GRV6O48i6Z4iKgPPpw==",
++      "license": "MIT",
++      "dependencies": {
++        "@types/mdast": "^4.0.0",
++        "mdast-util-to-markdown": "^2.0.0",
++        "unified": "^11.0.0"
++      },
++      "funding": {
++        "type": "opencollective",
++        "url": "https://opencollective.com/unified"
++      }
++    },
+     "node_modules/require-from-string": {
+       "version": "2.0.2",
+       "resolved": "https://registry.npmjs.org/require-from-string/-/require-from-string-2.0.2.tgz",
+@@ -8950,7 +10222,7 @@
+       "version": "1.2.0",
+       "resolved": "https://registry.npmjs.org/rolldown/-/rolldown-1.2.0.tgz",
+       "integrity": "sha512-u7tgm5l4Yw1iTqUL4EcYOAt7fFvCgQMLeidrnD4GALlC6aOznCjezYajgxeyKw27u0Q5N7fwgCzjVyPIWzwuBA==",
+-      "dev": true,
++      "devOptional": true,
+       "license": "MIT",
+       "dependencies": {
+         "@oxc-project/types": "=0.140.0",
+@@ -8984,7 +10256,7 @@
+       "version": "0.140.0",
+       "resolved": "https://registry.npmjs.org/@oxc-project/types/-/types-0.140.0.tgz",
+       "integrity": "sha512-h5LUOzGArYemnW1NMz/DuuQhBi96J6JL2Bk8zE4kvqxB5Sg3jxmCiH4uyOWHDkiKSt5vWlG4FIwCR/DbstcNRQ==",
+-      "dev": true,
++      "devOptional": true,
+       "license": "MIT",
+       "funding": {
+         "url": "https://github.com/sponsors/Boshen"
+@@ -8994,7 +10266,7 @@
+       "version": "1.0.1",
+       "resolved": "https://registry.npmjs.org/@rolldown/pluginutils/-/pluginutils-1.0.1.tgz",
+       "integrity": "sha512-2j9bGt5Jh8hj+vPtgzPtl72j0yRxHAyumoo6TNfAjsLB04UtpSvPbPcDcBMxz7n+9CYB0c1GxQFxYRg2jimqGw==",
+-      "dev": true,
++      "devOptional": true,
+       "license": "MIT"
+     },
+     "node_modules/rou3": {
+@@ -9314,6 +10586,16 @@
+         "node": ">=0.10.0"
+       }
+     },
++    "node_modules/space-separated-tokens": {
++      "version": "2.0.2",
++      "resolved": "https://registry.npmjs.org/space-separated-tokens/-/space-separated-tokens-2.0.2.tgz",
++      "integrity": "sha512-PEGlAwrG8yXGXRjW32fGbg66JAlOAwbObuqVoJpv/mRgoWDQfgH1wDPvtzWyUSNAXBGSk8h755YDbbcEy3SH2Q==",
++      "license": "MIT",
++      "funding": {
++        "type": "github",
++        "url": "https://github.com/sponsors/wooorm"
++      }
++    },
+     "node_modules/srvx": {
+       "version": "0.11.22",
+       "resolved": "https://registry.npmjs.org/srvx/-/srvx-0.11.22.tgz",
+@@ -9352,6 +10634,20 @@
+         "url": "https://github.com/sponsors/sindresorhus"
+       }
+     },
++    "node_modules/stringify-entities": {
++      "version": "4.0.4",
++      "resolved": "https://registry.npmjs.org/stringify-entities/-/stringify-entities-4.0.4.tgz",
++      "integrity": "sha512-IwfBptatlO+QCJUo19AqvrPNqlVMpW9YEL2LIVY+Rpv2qsjCGxaDLNRgeGsQWJhfItebuJhsGSLjaBbNSQ+ieg==",
++      "license": "MIT",
++      "dependencies": {
++        "character-entities-html4": "^2.0.0",
++        "character-entities-legacy": "^3.0.0"
++      },
++      "funding": {
++        "type": "github",
++        "url": "https://github.com/sponsors/wooorm"
++      }
++    },
+     "node_modules/strip-ansi": {
+       "version": "7.2.0",
+       "resolved": "https://registry.npmjs.org/strip-ansi/-/strip-ansi-7.2.0.tgz",
+@@ -9381,6 +10677,24 @@
+         "url": "https://github.com/sponsors/sindresorhus"
+       }
+     },
++    "node_modules/style-to-js": {
++      "version": "1.1.21",
++      "resolved": "https://registry.npmjs.org/style-to-js/-/style-to-js-1.1.21.tgz",
++      "integrity": "sha512-RjQetxJrrUJLQPHbLku6U/ocGtzyjbJMP9lCNK7Ag0CNh690nSH8woqWH9u16nMjYBAok+i7JO1NP2pOy8IsPQ==",
++      "license": "MIT",
++      "dependencies": {
++        "style-to-object": "1.0.14"
++      }
++    },
++    "node_modules/style-to-object": {
++      "version": "1.0.14",
++      "resolved": "https://registry.npmjs.org/style-to-object/-/style-to-object-1.0.14.tgz",
++      "integrity": "sha512-LIN7rULI0jBscWQYaSswptyderlarFkjQ+t79nzty8tcIAceVomEVlLzH5VP4Cmsv6MtKhs7qaAiwlcp+Mgaxw==",
++      "license": "MIT",
++      "dependencies": {
++        "inline-style-parser": "0.2.7"
++      }
++    },
+     "node_modules/stylelint": {
+       "version": "17.14.1",
+       "resolved": "https://registry.npmjs.org/stylelint/-/stylelint-17.14.1.tgz",
+@@ -9752,6 +11066,26 @@
+         "node": ">=0.6"
+       }
+     },
++    "node_modules/trim-lines": {
++      "version": "3.0.1",
++      "resolved": "https://registry.npmjs.org/trim-lines/-/trim-lines-3.0.1.tgz",
++      "integrity": "sha512-kRj8B+YHZCc9kQYdWfJB2/oUl9rA99qbowYYBtr4ui4mZyAQ2JpvVBd/6U2YloATfqBhBTSMhTpgBHtU0Mf3Rg==",
++      "license": "MIT",
++      "funding": {
++        "type": "github",
++        "url": "https://github.com/sponsors/wooorm"
++      }
++    },
++    "node_modules/trough": {
++      "version": "2.2.0",
++      "resolved": "https://registry.npmjs.org/trough/-/trough-2.2.0.tgz",
++      "integrity": "sha512-tmMpK00BjZiUyVyvrBK7knerNgmgvcV/KLVyuma/SC+TQN167GrMRciANTz09+k3zW8L8t60jWO1GpfkZdjTaw==",
++      "license": "MIT",
++      "funding": {
++        "type": "github",
++        "url": "https://github.com/sponsors/wooorm"
++      }
++    },
+     "node_modules/ts-api-utils": {
+       "version": "2.5.0",
+       "resolved": "https://registry.npmjs.org/ts-api-utils/-/ts-api-utils-2.5.0.tgz",
+@@ -9849,7 +11183,7 @@
+       "version": "5.9.3",
+       "resolved": "https://registry.npmjs.org/typescript/-/typescript-5.9.3.tgz",
+       "integrity": "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==",
+-      "dev": true,
++      "devOptional": true,
+       "license": "Apache-2.0",
+       "bin": {
+         "tsc": "bin/tsc",
+@@ -9893,7 +11227,7 @@
+       "version": "6.21.0",
+       "resolved": "https://registry.npmjs.org/undici-types/-/undici-types-6.21.0.tgz",
+       "integrity": "sha512-iwDZqg0QAGrg9Rav5H4n0M64c3mkR59cJ6wQp+7C4nI0gsmExaedaYLNO44eT4AtBBwjbTiGPMlt2Md0T9H9JQ==",
+-      "dev": true,
++      "devOptional": true,
+       "license": "MIT"
+     },
+     "node_modules/unenv": {
+@@ -9919,6 +11253,93 @@
+         "url": "https://github.com/sponsors/sindresorhus"
+       }
+     },
++    "node_modules/unified": {
++      "version": "11.0.5",
++      "resolved": "https://registry.npmjs.org/unified/-/unified-11.0.5.tgz",
++      "integrity": "sha512-xKvGhPWw3k84Qjh8bI3ZeJjqnyadK+GEFtazSfZv/rKeTkTjOJho6mFqh2SM96iIcZokxiOpg78GazTSg8+KHA==",
++      "license": "MIT",
++      "dependencies": {
++        "@types/unist": "^3.0.0",
++        "bail": "^2.0.0",
++        "devlop": "^1.0.0",
++        "extend": "^3.0.0",
++        "is-plain-obj": "^4.0.0",
++        "trough": "^2.0.0",
++        "vfile": "^6.0.0"
++      },
++      "funding": {
++        "type": "opencollective",
++        "url": "https://opencollective.com/unified"
++      }
++    },
++    "node_modules/unist-util-is": {
++      "version": "6.0.1",
++      "resolved": "https://registry.npmjs.org/unist-util-is/-/unist-util-is-6.0.1.tgz",
++      "integrity": "sha512-LsiILbtBETkDz8I9p1dQ0uyRUWuaQzd/cuEeS1hoRSyW5E5XGmTzlwY1OrNzzakGowI9Dr/I8HVaw4hTtnxy8g==",
++      "license": "MIT",
++      "dependencies": {
++        "@types/unist": "^3.0.0"
++      },
++      "funding": {
++        "type": "opencollective",
++        "url": "https://opencollective.com/unified"
++      }
++    },
++    "node_modules/unist-util-position": {
++      "version": "5.0.0",
++      "resolved": "https://registry.npmjs.org/unist-util-position/-/unist-util-position-5.0.0.tgz",
++      "integrity": "sha512-fucsC7HjXvkB5R3kTCO7kUjRdrS0BJt3M/FPxmHMBOm8JQi2BsHAHFsy27E0EolP8rp0NzXsJ+jNPyDWvOJZPA==",
++      "license": "MIT",
++      "dependencies": {
++        "@types/unist": "^3.0.0"
++      },
++      "funding": {
++        "type": "opencollective",
++        "url": "https://opencollective.com/unified"
++      }
++    },
++    "node_modules/unist-util-stringify-position": {
++      "version": "4.0.0",
++      "resolved": "https://registry.npmjs.org/unist-util-stringify-position/-/unist-util-stringify-position-4.0.0.tgz",
++      "integrity": "sha512-0ASV06AAoKCDkS2+xw5RXJywruurpbC4JZSm7nr7MOt1ojAzvyyaO+UxZf18j8FCF6kmzCZKcAgN/yu2gm2XgQ==",
++      "license": "MIT",
++      "dependencies": {
++        "@types/unist": "^3.0.0"
++      },
++      "funding": {
++        "type": "opencollective",
++        "url": "https://opencollective.com/unified"
++      }
++    },
++    "node_modules/unist-util-visit": {
++      "version": "5.1.0",
++      "resolved": "https://registry.npmjs.org/unist-util-visit/-/unist-util-visit-5.1.0.tgz",
++      "integrity": "sha512-m+vIdyeCOpdr/QeQCu2EzxX/ohgS8KbnPDgFni4dQsfSCtpz8UqDyY5GjRru8PDKuYn7Fq19j1CQ+nJSsGKOzg==",
++      "license": "MIT",
++      "dependencies": {
++        "@types/unist": "^3.0.0",
++        "unist-util-is": "^6.0.0",
++        "unist-util-visit-parents": "^6.0.0"
++      },
++      "funding": {
++        "type": "opencollective",
++        "url": "https://opencollective.com/unified"
++      }
++    },
++    "node_modules/unist-util-visit-parents": {
++      "version": "6.0.2",
++      "resolved": "https://registry.npmjs.org/unist-util-visit-parents/-/unist-util-visit-parents-6.0.2.tgz",
++      "integrity": "sha512-goh1s1TBrqSqukSc8wrjwWhL0hiJxgA8m4kFxGlQ+8FYQ3C/m11FcTs4YYem7V664AhHVvgoQLk890Ssdsr2IQ==",
++      "license": "MIT",
++      "dependencies": {
++        "@types/unist": "^3.0.0",
++        "unist-util-is": "^6.0.0"
++      },
++      "funding": {
++        "type": "opencollective",
++        "url": "https://opencollective.com/unified"
++      }
++    },
+     "node_modules/unpipe": {
+       "version": "1.0.0",
+       "resolved": "https://registry.npmjs.org/unpipe/-/unpipe-1.0.0.tgz",
+@@ -10206,6 +11627,34 @@
+         "react-dom": "^16.8 || ^17.0 || ^18.0 || ^19.0.0 || ^19.0.0-rc"
+       }
+     },
++    "node_modules/vfile": {
++      "version": "6.0.3",
++      "resolved": "https://registry.npmjs.org/vfile/-/vfile-6.0.3.tgz",
++      "integrity": "sha512-KzIbH/9tXat2u30jf+smMwFCsno4wHVdNmzFyL+T/L3UGqqk6JKfVqOFOZEpZSHADH1k40ab6NUIXZq422ov3Q==",
++      "license": "MIT",
++      "dependencies": {
++        "@types/unist": "^3.0.0",
++        "vfile-message": "^4.0.0"
++      },
++      "funding": {
++        "type": "opencollective",
++        "url": "https://opencollective.com/unified"
++      }
++    },
++    "node_modules/vfile-message": {
++      "version": "4.0.3",
++      "resolved": "https://registry.npmjs.org/vfile-message/-/vfile-message-4.0.3.tgz",
++      "integrity": "sha512-QTHzsGd1EhbZs4AsQ20JX1rC3cOlt/IWJruk893DfLRr57lcnOeMaWG4K0JrRta4mIJZKth2Au3mM3u03/JWKw==",
++      "license": "MIT",
++      "dependencies": {
++        "@types/unist": "^3.0.0",
++        "unist-util-stringify-position": "^4.0.0"
++      },
++      "funding": {
++        "type": "opencollective",
++        "url": "https://opencollective.com/unified"
++      }
++    },
+     "node_modules/victory-vendor": {
+       "version": "36.9.2",
+       "resolved": "https://registry.npmjs.org/victory-vendor/-/victory-vendor-36.9.2.tgz",
+@@ -10232,7 +11681,6 @@
+       "version": "8.1.4",
+       "resolved": "https://registry.npmjs.org/vite/-/vite-8.1.4.tgz",
+       "integrity": "sha512-bTT9PsdWO+MQMNG9ZXIP/qM9wGh37DFxTV/sPq9cFpHr3w4jkgef032PkAL9jAqhk3Nz8NQw3O8n6/xFkqO4QQ==",
+-      "dev": true,
+       "license": "MIT",
+       "dependencies": {
+         "lightningcss": "^1.32.0",
+@@ -10324,7 +11772,6 @@
+       "version": "1.11.1",
+       "resolved": "https://registry.npmjs.org/@emnapi/core/-/core-1.11.1.tgz",
+       "integrity": "sha512-RSvbQmHzdKzNsLYa/wHrbc3KN4sYLKAdPZxqiM2HATqv/SBk2/ENSHpvXGaLOMcsAyz0poEGqkmmKYG3OWiJEQ==",
+-      "dev": true,
+       "license": "MIT",
+       "optional": true,
+       "dependencies": {
+@@ -10336,7 +11783,6 @@
+       "version": "1.11.1",
+       "resolved": "https://registry.npmjs.org/@emnapi/runtime/-/runtime-1.11.1.tgz",
+       "integrity": "sha512-vgj7R3y3Wgx24IQaGPA/R6YFXLHVMOZ0uVEyIQPaWs+rd1AzfEMXlAC22FYwO1XkKR6NPsq7mUandH8oIRdZFw==",
+-      "dev": true,
+       "license": "MIT",
+       "optional": true,
+       "dependencies": {
+@@ -10347,7 +11793,6 @@
+       "version": "0.139.0",
+       "resolved": "https://registry.npmjs.org/@oxc-project/types/-/types-0.139.0.tgz",
+       "integrity": "sha512-r9gHphtCs+1M7J0pw6Sn/hh/Wpa/iQrOOkrNAlVLF/gHq+/CJmHIWKKUUhdWjcD6CIa8idarspCsASiXCXvFUw==",
+-      "dev": true,
+       "license": "MIT",
+       "funding": {
+         "url": "https://github.com/sponsors/Boshen"
+@@ -10360,7 +11805,6 @@
+       "cpu": [
+         "arm64"
+       ],
+-      "dev": true,
+       "license": "MIT",
+       "optional": true,
+       "os": [
+@@ -10377,7 +11821,6 @@
+       "cpu": [
+         "arm64"
+       ],
+-      "dev": true,
+       "license": "MIT",
+       "optional": true,
+       "os": [
+@@ -10394,7 +11837,6 @@
+       "cpu": [
+         "x64"
+       ],
+-      "dev": true,
+       "license": "MIT",
+       "optional": true,
+       "os": [
+@@ -10411,7 +11853,6 @@
+       "cpu": [
+         "x64"
+       ],
+-      "dev": true,
+       "license": "MIT",
+       "optional": true,
+       "os": [
+@@ -10428,7 +11869,6 @@
+       "cpu": [
+         "arm"
+       ],
+-      "dev": true,
+       "license": "MIT",
+       "optional": true,
+       "os": [
+@@ -10445,7 +11885,6 @@
+       "cpu": [
+         "arm64"
+       ],
+-      "dev": true,
+       "license": "MIT",
+       "optional": true,
+       "os": [
+@@ -10462,7 +11901,6 @@
+       "cpu": [
+         "arm64"
+       ],
+-      "dev": true,
+       "license": "MIT",
+       "optional": true,
+       "os": [
+@@ -10479,7 +11917,6 @@
+       "cpu": [
+         "ppc64"
+       ],
+-      "dev": true,
+       "license": "MIT",
+       "optional": true,
+       "os": [
+@@ -10496,7 +11933,6 @@
+       "cpu": [
+         "s390x"
+       ],
+-      "dev": true,
+       "license": "MIT",
+       "optional": true,
+       "os": [
+@@ -10513,7 +11949,6 @@
+       "cpu": [
+         "x64"
+       ],
+-      "dev": true,
+       "license": "MIT",
+       "optional": true,
+       "os": [
+@@ -10530,7 +11965,6 @@
+       "cpu": [
+         "x64"
+       ],
+-      "dev": true,
+       "license": "MIT",
+       "optional": true,
+       "os": [
+@@ -10547,7 +11981,6 @@
+       "cpu": [
+         "arm64"
+       ],
+-      "dev": true,
+       "license": "MIT",
+       "optional": true,
+       "os": [
+@@ -10564,7 +11997,6 @@
+       "cpu": [
+         "wasm32"
+       ],
+-      "dev": true,
+       "license": "MIT",
+       "optional": true,
+       "dependencies": {
+@@ -10583,7 +12015,6 @@
+       "cpu": [
+         "arm64"
+       ],
+-      "dev": true,
+       "license": "MIT",
+       "optional": true,
+       "os": [
+@@ -10600,7 +12031,6 @@
+       "cpu": [
+         "x64"
+       ],
+-      "dev": true,
+       "license": "MIT",
+       "optional": true,
+       "os": [
+@@ -10614,14 +12044,12 @@
+       "version": "1.0.1",
+       "resolved": "https://registry.npmjs.org/@rolldown/pluginutils/-/pluginutils-1.0.1.tgz",
+       "integrity": "sha512-2j9bGt5Jh8hj+vPtgzPtl72j0yRxHAyumoo6TNfAjsLB04UtpSvPbPcDcBMxz7n+9CYB0c1GxQFxYRg2jimqGw==",
+-      "dev": true,
+       "license": "MIT"
+     },
+     "node_modules/vite/node_modules/rolldown": {
+       "version": "1.1.5",
+       "resolved": "https://registry.npmjs.org/rolldown/-/rolldown-1.1.5.tgz",
+       "integrity": "sha512-t9z29cJjXf/vxQ8dyhCSpt6H6aSwHTk8cT5I3iy6SMXuFpk5mB6PL6XfC8PCwrPTx93udwKUm9HRteAlTGBLiA==",
+-      "dev": true,
+       "license": "MIT",
+       "dependencies": {
+         "@oxc-project/types": "=0.139.0",
+@@ -10793,6 +12221,16 @@
+       "peerDependencies": {
+         "zod": "^3.25.28 || ^4"
+       }
++    },
++    "node_modules/zwitch": {
++      "version": "2.0.4",
++      "resolved": "https://registry.npmjs.org/zwitch/-/zwitch-2.0.4.tgz",
++      "integrity": "sha512-bXE4cR/kVZhKZX/RjPEflHaKVhUVl85noU3v6b8apfQEc1x4A+zBxjZ4lN8LqGd6WZ3dl98pY4o717VFmoPp+A==",
++      "license": "MIT",
++      "funding": {
++        "type": "github",
++        "url": "https://github.com/sponsors/wooorm"
++      }
+     }
+   }
+ }
+diff --git a/src/integrations/lovable/index.ts b/src/integrations/lovable/index.ts
+index 3f1a66b..e66953f 100644
+--- a/src/integrations/lovable/index.ts
++++ b/src/integrations/lovable/index.ts
+@@ -11,7 +11,10 @@ type SignInOptions = {
+ 
+ export const lovable = {
+   auth: {
+-    signInWithOAuth: async (provider: "google" | "apple" | "microsoft" | "lovable", opts?: SignInOptions) => {
++    signInWithOAuth: async (
++      provider: "google" | "apple" | "microsoft" | "lovable",
++      opts?: SignInOptions,
++    ) => {
+       const result = await lovableAuth.signInWithOAuth(provider, {
+         ...opts,
+         extraParams: {
+diff --git a/src/lib/mcp/auth.ts b/src/lib/mcp/auth.ts
+index f8e8c42..c079d6a 100644
+--- a/src/lib/mcp/auth.ts
++++ b/src/lib/mcp/auth.ts
+@@ -32,4 +32,4 @@ export function exigirAutorizacao(ctx: ToolContext): string {
+     throw new ToolError("A sua conta não está autorizada a aceder aos dados do IGESDF.");
+   }
+   return email;
+-}
+\ No newline at end of file
++}
+diff --git a/src/lib/mcp/db.ts b/src/lib/mcp/db.ts
+index f51798d..3572989 100644
+--- a/src/lib/mcp/db.ts
++++ b/src/lib/mcp/db.ts
+@@ -10,4 +10,4 @@ export async function db() {
+ 
+ export function texto(valor: unknown): string {
+   return JSON.stringify(valor, null, 2);
+-}
+\ No newline at end of file
++}
+diff --git a/src/lib/mcp/index.ts b/src/lib/mcp/index.ts
+index 9299c57..025de94 100644
+--- a/src/lib/mcp/index.ts
++++ b/src/lib/mcp/index.ts
+@@ -8,7 +8,7 @@ import listarNormativas from "./tools/listar-normativas";
+ 
+ // O emissor OAuth tem de ser o host direto do Supabase (o URL publicado é um
+ // proxy e seria rejeitado na verificação RFC 8414).
+-const projectRef = import.meta.env['VITE_SUPABASE_PROJECT_ID'] ?? "project-ref-unset";
++const projectRef = import.meta.env["VITE_SUPABASE_PROJECT_ID"] ?? "project-ref-unset";
+ 
+ export default defineMcp({
+   name: "igesdf-licenciamento",
+@@ -28,4 +28,4 @@ export default defineMcp({
+     listarProcessosSei,
+     listarNormativas,
+   ],
+-});
+\ No newline at end of file
++});
+diff --git a/src/lib/mcp/tools/detalhe-unidade.ts b/src/lib/mcp/tools/detalhe-unidade.ts
+index 675c414..f82df15 100644
+--- a/src/lib/mcp/tools/detalhe-unidade.ts
++++ b/src/lib/mcp/tools/detalhe-unidade.ts
+@@ -59,4 +59,4 @@ export default defineTool({
+       structuredContent: resultado,
+     };
+   },
+-});
+\ No newline at end of file
++});
+diff --git a/src/lib/mcp/tools/licencas-a-vencer.ts b/src/lib/mcp/tools/licencas-a-vencer.ts
+index 7212ecb..dda2f3c 100644
+--- a/src/lib/mcp/tools/licencas-a-vencer.ts
++++ b/src/lib/mcp/tools/licencas-a-vencer.ts
+@@ -10,7 +10,10 @@ export default defineTool({
+     "Devolve as licenças já vencidas ou a vencer dentro de um número de dias, ordenadas pelo prazo mais próximo.",
+   inputSchema: {
+     dias: z.number().optional().describe("Janela em dias a partir de hoje (por omissão 90)."),
+-    incluir_vencidas: z.boolean().optional().describe("Incluir licenças já vencidas (sim por omissão)."),
++    incluir_vencidas: z
++      .boolean()
++      .optional()
++      .describe("Incluir licenças já vencidas (sim por omissão)."),
+   },
+   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+   handler: async ({ dias, incluir_vencidas }, ctx) => {
+@@ -36,4 +39,4 @@ export default defineTool({
+       structuredContent: { janela_dias: janela, licencas: data ?? [] },
+     };
+   },
+-});
+\ No newline at end of file
++});
+diff --git a/src/lib/mcp/tools/listar-licencas.ts b/src/lib/mcp/tools/listar-licencas.ts
+index da5d722..35a5660 100644
+--- a/src/lib/mcp/tools/listar-licencas.ts
++++ b/src/lib/mcp/tools/listar-licencas.ts
+@@ -36,4 +36,4 @@ export default defineTool({
+       structuredContent: { licencas: data ?? [] },
+     };
+   },
+-});
+\ No newline at end of file
++});
+diff --git a/src/lib/mcp/tools/listar-normativas.ts b/src/lib/mcp/tools/listar-normativas.ts
+index 69bba18..cfaf137 100644
+--- a/src/lib/mcp/tools/listar-normativas.ts
++++ b/src/lib/mcp/tools/listar-normativas.ts
+@@ -22,7 +22,8 @@ export default defineTool({
+       .order("ano", { ascending: false, nullsFirst: false })
+       .limit(200);
+     if (orgao) q = q.ilike("orgao_sigla", `%${orgao}%`);
+-    if (procura) q = q.or(`titulo.ilike.%${procura}%,ementa.ilike.%${procura}%,numero.ilike.%${procura}%`);
++    if (procura)
++      q = q.or(`titulo.ilike.%${procura}%,ementa.ilike.%${procura}%,numero.ilike.%${procura}%`);
+     const { data, error } = await q;
+     if (error) return { content: [{ type: "text", text: error.message }], isError: true };
+     return {
+@@ -30,4 +31,4 @@ export default defineTool({
+       structuredContent: { normativas: data ?? [] },
+     };
+   },
+-});
+\ No newline at end of file
++});
+diff --git a/src/lib/mcp/tools/listar-processos-sei.ts b/src/lib/mcp/tools/listar-processos-sei.ts
+index c20a9f5..c75f75d 100644
+--- a/src/lib/mcp/tools/listar-processos-sei.ts
++++ b/src/lib/mcp/tools/listar-processos-sei.ts
+@@ -11,7 +11,10 @@ export default defineTool({
+   inputSchema: {
+     unidade: z.string().optional().describe("Nome (ou parte) da unidade."),
+     numero: z.string().optional().describe("Número do processo SEI."),
+-    incluir_itens: z.boolean().optional().describe("Incluir os itens de checklist de cada processo."),
++    incluir_itens: z
++      .boolean()
++      .optional()
++      .describe("Incluir os itens de checklist de cada processo."),
+   },
+   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
+   handler: async ({ unidade, numero, incluir_itens }, ctx) => {
+@@ -19,7 +22,9 @@ export default defineTool({
+     const supabase = await db();
+     let q = supabase
+       .from("processos_sei")
+-      .select("id, numero, tipo, assunto, orgao, situacao, responsavel, data_abertura, link, unidade_id")
++      .select(
++        "id, numero, tipo, assunto, orgao, situacao, responsavel, data_abertura, link, unidade_id",
++      )
+       .eq("ativo", true)
+       .order("created_at", { ascending: false })
+       .limit(200);
+@@ -53,4 +58,4 @@ export default defineTool({
+     const resultado = { processos: lista, itens };
+     return { content: [{ type: "text", text: texto(resultado) }], structuredContent: resultado };
+   },
+-});
+\ No newline at end of file
++});
+diff --git a/src/lib/mcp/tools/listar-unidades.ts b/src/lib/mcp/tools/listar-unidades.ts
+index 2d54cd0..54e8da1 100644
+--- a/src/lib/mcp/tools/listar-unidades.ts
++++ b/src/lib/mcp/tools/listar-unidades.ts
+@@ -30,4 +30,4 @@ export default defineTool({
+       structuredContent: { unidades: data ?? [] },
+     };
+   },
+-});
+\ No newline at end of file
++});
+diff --git a/src/lib/processos.functions.ts b/src/lib/processos.functions.ts
+index fa7dcae..2b902f3 100644
+--- a/src/lib/processos.functions.ts
++++ b/src/lib/processos.functions.ts
+@@ -120,7 +120,7 @@ export const upsertProcesso = createServerFn({ method: "POST" })
+         .eq("orgao", data.orgao)
+         .order("ordem");
+       if (tpl && tpl.length > 0) {
+-        await context.supabase.from("processo_itens").insert(
++        const { error: itensError } = await context.supabase.from("processo_itens").insert(
+           tpl.map((t) => ({
+             processo_id: ins.id,
+             template_id: t.id,
+@@ -133,16 +133,34 @@ export const upsertProcesso = createServerFn({ method: "POST" })
+             situacao: "pendente",
+           })),
+         );
++        // O erro era ignorado: o processo nascia sem checklist e ninguém sabia.
++        if (itensError) throw itensError;
+       }
+     }
+     return { id: ins.id };
+   });
+ 
++/**
++ * Arquiva o processo (remoção lógica), à semelhança de `deleteUnidade`.
++ *
++ * Antes era um DELETE definitivo. Como `documentos.processo_id` e
++ * `processo_itens.processo_id` têm ON DELETE CASCADE, apagar um processo
++ * destruía também o checklist e os registos dos anexos — e os ficheiros ficavam
++ * órfãos no bucket, porque nada os removia de lá. Num sistema cuja função é
++ * justamente guardar o histórico dos processos de licenciamento, essa perda é
++ * irreversível e sem rasto.
++ *
++ * A coluna `ativo` já existia no esquema e `listProcessos` já filtrava por ela:
++ * a remoção lógica era a intenção original.
++ */
+ export const deleteProcesso = createServerFn({ method: "POST" })
+   .middleware([requireEdicao])
+   .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
+   .handler(async ({ data, context }) => {
+-    const { error } = await context.supabase.from("processos_sei").delete().eq("id", data.id);
++    const { error } = await context.supabase
++      .from("processos_sei")
++      .update({ ativo: false })
++      .eq("id", data.id);
+     if (error) throw error;
+     return { ok: true };
+   });
+diff --git a/src/routes/[.]lovable.oauth.consent.tsx b/src/routes/[.]lovable.oauth.consent.tsx
+index 8924840..4b47657 100644
+--- a/src/routes/[.]lovable.oauth.consent.tsx
++++ b/src/routes/[.]lovable.oauth.consent.tsx
+@@ -142,4 +142,4 @@ function Consentimento() {
+       </p>
+     </main>
+   );
+-}
+\ No newline at end of file
++}
+diff --git a/src/routes/_authenticated/ia.tsx b/src/routes/_authenticated/ia.tsx
+index 055647f..6449825 100644
+--- a/src/routes/_authenticated/ia.tsx
++++ b/src/routes/_authenticated/ia.tsx
+@@ -2,7 +2,18 @@ import { createFileRoute } from "@tanstack/react-router";
+ import { useEffect, useRef, useState } from "react";
+ import ReactMarkdown from "react-markdown";
+ import remarkGfm from "remark-gfm";
+-import { Bot, Check, Copy, Loader2, Paperclip, Send, Sparkles, Trash2, User, X } from "lucide-react";
++import {
++  Bot,
++  Check,
++  Copy,
++  Loader2,
++  Paperclip,
++  Send,
++  Sparkles,
++  Trash2,
++  User,
++  X,
++} from "lucide-react";
+ import { Button } from "@/components/ui/button";
+ import { Card, CardContent } from "@/components/ui/card";
+ import { Textarea } from "@/components/ui/textarea";
+@@ -93,7 +104,11 @@ function lerFicheiro(f: File): Promise<Anexo> {
+     const leitor = new FileReader();
+     leitor.onerror = () => reject(new Error(`Não foi possível ler "${f.name}".`));
+     leitor.onload = () =>
+-      resolve({ nome: f.name, tipo: f.type || "application/octet-stream", dados: String(leitor.result) });
++      resolve({
++        nome: f.name,
++        tipo: f.type || "application/octet-stream",
++        dados: String(leitor.result),
++      });
+     leitor.readAsDataURL(f);
+   });
+ }
+@@ -151,7 +166,11 @@ function PaginaIA() {
+     const pergunta = conteudo.trim();
+     if ((!pergunta && anexos.length === 0) || ocupado) return;
+     setErro(null);
+-    const nova: Mensagem = { role: "user", content: pergunta, anexos: anexos.length ? anexos : undefined };
++    const nova: Mensagem = {
++      role: "user",
++      content: pergunta,
++      anexos: anexos.length ? anexos : undefined,
++    };
+     const historico = [...mensagens, nova];
+     setMensagens([...historico, { role: "assistant", content: "" }]);
+     setTexto("");
+@@ -398,4 +417,4 @@ function PaginaIA() {
+       </Card>
+     </div>
+   );
+-}
+\ No newline at end of file
++}
+diff --git a/src/routes/_authenticated/processos.index.tsx b/src/routes/_authenticated/processos.index.tsx
+index d2b3861..c6105a7 100644
+--- a/src/routes/_authenticated/processos.index.tsx
++++ b/src/routes/_authenticated/processos.index.tsx
+@@ -231,9 +231,10 @@ function ProcessoCard({
+               }
+             />
+             <ConfirmDelete
+-              titulo={`Excluir processo ${processo.numero}?`}
+-              descricao="O checklist e os anexos ligados a este processo também são removidos."
+-              mensagemSucesso="Processo excluído"
++              titulo={`Arquivar processo ${processo.numero}?`}
++              descricao="O processo sai da listagem e deixa de contar nos indicadores. O checklist, os anexos e todo o histórico ficam preservados."
++              rotuloConfirmar="Arquivar"
++              mensagemSucesso="Processo arquivado"
+               onConfirm={() => deleteProcesso({ data: { id: processo.id } })}
+               onDone={() => invalidarDados(qc)}
+             />
+diff --git a/src/routes/api/ia.ts b/src/routes/api/ia.ts
+index 856a107..19a1bb5 100644
+--- a/src/routes/api/ia.ts
++++ b/src/routes/api/ia.ts
+@@ -69,7 +69,9 @@ export const Route = createFileRoute("/api/ia")({
+         // créditos ou memória a desserializar.
+         const bruto = await request.text();
+         if (bruto.length > LIMITE_CARACTERES && !bruto.includes("base64,")) {
+-          return new Response("Pedido demasiado grande. Reduza o contexto enviado.", { status: 413 });
++          return new Response("Pedido demasiado grande. Reduza o contexto enviado.", {
++            status: 413,
++          });
+         }
+ 
+         let body: {
+@@ -112,8 +114,7 @@ export const Route = createFileRoute("/api/ia")({
+ 
+         // O contexto é limpo aqui, no servidor: dados de pessoas físicas nunca
+         // saem do sistema, mesmo que o navegador os tenha incluído.
+-        const contextoLimpo =
+-          body.contexto === undefined ? null : sanitizarContexto(body.contexto);
++        const contextoLimpo = body.contexto === undefined ? null : sanitizarContexto(body.contexto);
+ 
+         const sistema =
+           CONTEXTO_DOMINIO +
+@@ -165,10 +166,9 @@ export const Route = createFileRoute("/api/ia")({
+         } catch (erro) {
+           clearTimeout(relogio);
+           console.error("[ia] falha na chamada à Anthropic:", erro);
+-          return new Response(
+-            "Serviço de IA temporariamente indisponível. Tente novamente.",
+-            { status: 503 },
+-          );
++          return new Response("Serviço de IA temporariamente indisponível. Tente novamente.", {
++            status: 503,
++          });
+         }
+         clearTimeout(relogio);
+ 
+@@ -181,10 +181,9 @@ export const Route = createFileRoute("/api/ia")({
+             return new Response("Assistente indisponível no momento.", { status: 500 });
+           }
+           if (resposta.status === 429 || resposta.status === 529 || resposta.status >= 500) {
+-            return new Response(
+-              "Serviço de IA temporariamente indisponível. Tente novamente.",
+-              { status: 503 },
+-            );
++            return new Response("Serviço de IA temporariamente indisponível. Tente novamente.", {
++              status: 503,
++            });
+           }
+           if (resposta.status === 400 && detalhe.includes("credit")) {
+             return new Response(
+diff --git a/supabase/migrations/20260730120000_dashboard_view_somente_unidades_ativas.sql b/supabase/migrations/20260730120000_dashboard_view_somente_unidades_ativas.sql
+deleted file mode 100644
+index 43b2fe9..0000000
+--- a/supabase/migrations/20260730120000_dashboard_view_somente_unidades_ativas.sql
++++ /dev/null
+@@ -1,80 +0,0 @@
+--- Excluir licenças de unidades desativadas da view do painel.
+---
+--- `deleteUnidade` faz remoção lógica (`ativa = false`) e `listUnidades` filtra
+--- por `ativa`, mas a view fazia JOIN com `unidades` sem esse filtro. Resultado:
+--- ao desativar uma unidade ela desaparecia do cadastro e dos seletores, mas as
+--- suas licenças continuavam a contar nos KPIs do painel, na listagem global, no
+--- calendário de vencimentos, nos relatórios de conformidade e nos alertas —
+--- inflando os números e apontando para uma unidade que já não existia na
+--- interface.
+---
+--- A lista de colunas é exatamente a da versão anterior: os tipos gerados em
+--- src/integrations/supabase/types.ts descrevem esta view, e acrescentar colunas
+--- aqui exigiria regerar esses tipos.
+-
+-CREATE OR REPLACE VIEW public.v_licencas_dashboard AS
+-SELECT l.*,
+-  u.nome AS unidade_nome, u.numero_iges, u.tipo AS unidade_tipo, u.cnpj AS unidade_cnpj,
+-  CASE
+-    WHEN l.status IN ('indeferida','dispensada') THEN l.status::text
+-    WHEN l.data_vencimento IS NULL THEN COALESCE(l.status::text,'sem_data')
+-    WHEN l.data_vencimento < CURRENT_DATE THEN 'vencida'
+-    WHEN l.data_vencimento <= CURRENT_DATE + INTERVAL '60 days' THEN 'a_vencer_critico'
+-    WHEN l.data_vencimento <= CURRENT_DATE + INTERVAL '90 days' THEN 'a_vencer_alerta'
+-    ELSE 'vigente'
+-  END AS semaforo,
+-  (l.data_vencimento - CURRENT_DATE) AS dias_restantes
+-FROM public.licencas l
+-JOIN public.unidades u ON u.id = l.unidade_id
+-WHERE u.ativa;
+-
+--- `CREATE OR REPLACE VIEW` preserva as opções existentes, mas reafirmamos o
+--- security_invoker para a view nunca passar a correr com os privilégios do dono.
+-ALTER VIEW public.v_licencas_dashboard SET (security_invoker = true);
+-
+-GRANT SELECT ON public.v_licencas_dashboard TO authenticated;
+-
+-
+--- Impedir itens de checklist duplicados.
+---
+--- `getChecklist` semeia os itens a partir do template do órgão na primeira
+--- abertura. Sem restrição de unicidade, duas abas (ou dois cliques rápidos) na
+--- mesma licença corriam o INSERT em paralelo e o checklist ficava com cada item
+--- em duplicado.
+---
+--- A desduplicação mantém, de cada grupo, o item com mais trabalho registado
+--- (concluído antes de em curso, antes de pendente; com responsável antes de sem
+--- responsável) e só usa a data de criação como desempate. Uma versão anterior
+--- deste script mantinha simplesmente o mais antigo, o que podia apagar o item
+--- onde o progresso tinha sido preenchido.
+-WITH classificados AS (
+-  SELECT id,
+-         ROW_NUMBER() OVER (
+-           PARTITION BY licenca_id, template_id
+-           ORDER BY
+-             CASE status
+-               WHEN 'concluido' THEN 0
+-               WHEN 'em_curso' THEN 1
+-               WHEN 'nao_aplicavel' THEN 2
+-               ELSE 3
+-             END,
+-             (data_conclusao IS NULL),
+-             (responsavel IS NULL),
+-             (observacoes IS NULL),
+-             created_at,
+-             id
+-         ) AS posicao
+-  FROM public.checklist_itens
+-  WHERE template_id IS NOT NULL
+-)
+-DELETE FROM public.checklist_itens c
+-USING classificados x
+-WHERE c.id = x.id
+-  AND x.posicao > 1;
+-
+--- Índice total (não parcial) de propósito: o `on_conflict` do PostgREST só envia
+--- a lista de colunas, e o Postgres não consegue inferir um índice parcial a
+--- partir dela. Como o padrão é NULLS DISTINCT, itens avulsos (template_id nulo)
+--- continuam a poder repetir-se na mesma licença.
+-CREATE UNIQUE INDEX IF NOT EXISTS uq_checklist_itens_licenca_template
+-  ON public.checklist_itens(licenca_id, template_id);
+-- 
+2.43.0
+
+
+From 87a4e5717751b12c4af76f2ffe8b50122e56de46 Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Sun, 9 Aug 2026 23:18:28 +0000
+Subject: [PATCH 2/2] Ligar o assistente de IA aos dados e acrescentar a matriz
+ de compliance
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Assistente com acesso aos dados do sistema
+- A página enviava apenas {mensagens, modelo, acao} e nunca o campo `contexto`.
+  Como o prompt manda responder só a partir do contexto, o assistente dizia
+  "não consta no sistema" a qualquer pergunta sobre unidades ou licenças reais:
+  o sanitizador de dados pessoais e as ações "resumo de unidade" e "priorizar
+  pendências" apontavam para dados que nunca chegavam.
+- O contexto passa a ser montado no servidor (`ia-contexto.server.ts`), não
+  enviado pelo navegador. Assim os dados vão sempre frescos, não estouram o
+  limite do pedido, e o cliente não escolhe o que a IA vê.
+- Dois âmbitos: retrato da rede (indicadores, vencidas e críticas, processos em
+  aberto) ou o detalhe de uma unidade, escolhido num seletor na página. As
+  listas têm teto e avisam quando truncam.
+- "Explicar exigência" continua sem dados de propósito: é pergunta sobre a regra
+  do órgão, e mandar a base inteira só aumentaria custo e exposição.
+- Tudo continua a passar por `sanitizarContexto`, que remove CPF, e-mail,
+  telefone e campos de pessoas antes de a informação sair do servidor. O prompt
+  passa a explicar isso ao modelo, para ele orientar quem perguntar por esses
+  dados a consultar a ficha da unidade.
+
+Matriz de compliance (unidade × órgão)
+- Vista cruzada pedida no levantamento inicial e que faltava: os relatórios
+  agrupavam por unidade ou por órgão, mas não mostravam o cruzamento, que é o
+  que revela onde está o risco.
+- Cada célula mostra a licença mais urgente daquele cruzamento, com a data e a
+  contagem quando há mais de uma, e liga para a listagem já filtrada por unidade
+  e órgão. Cruzamento sem licença aparece como lacuna, não como vazio ambíguo.
+- Só entram colunas de órgãos com licenças registadas; filtro por tipo de
+  unidade, filtro de "só com pendência", exportação para planilha e impressão.
+
+A regra que decide a cor de cada célula ficou em `src/lib/matriz.ts`, fora do
+componente, com 12 testes (`npm test`) — um engano aí faria a matriz apresentar
+como regular uma unidade com licença vencida, que é precisamente o erro que ela
+existe para evitar.
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01R7ySchKZ2rGxxbZHJZojvX
+---
+ package.json                         |   3 +-
+ src/components/app-shell.tsx         |   2 +
+ src/lib/ia-contexto.server.ts        | 152 ++++++++++++++
+ src/lib/ia.server.ts                 |   5 +-
+ src/lib/matriz.ts                    |  65 ++++++
+ src/routeTree.gen.ts                 |  21 ++
+ src/routes/_authenticated/ia.tsx     |  39 +++-
+ src/routes/_authenticated/matriz.tsx | 283 +++++++++++++++++++++++++++
+ src/routes/api/ia.ts                 |  15 +-
+ test-results/.last-run.json          |   4 +
+ tests/matriz.spec.ts                 | 133 +++++++++++++
+ 11 files changed, 715 insertions(+), 7 deletions(-)
+ create mode 100644 src/lib/ia-contexto.server.ts
+ create mode 100644 src/lib/matriz.ts
+ create mode 100644 src/routes/_authenticated/matriz.tsx
+ create mode 100644 test-results/.last-run.json
+ create mode 100644 tests/matriz.spec.ts
+
+diff --git a/package.json b/package.json
+index 68fa34c..3c34889 100644
+--- a/package.json
++++ b/package.json
+@@ -12,7 +12,8 @@
+     "lint:css": "stylelint 'src/**/*.css' --allow-empty-input",
+     "validate:css": "node scripts/validate-css.mjs",
+     "test:pdf": "playwright test tests/pdf-no-truncation.spec.ts",
+-    "format": "prettier --write ."
++    "format": "prettier --write .",
++    "test": "playwright test tests/matriz.spec.ts"
+   },
+   "dependencies": {
+     "@hookform/resolvers": "^5.2.2",
+diff --git a/src/components/app-shell.tsx b/src/components/app-shell.tsx
+index 273dba7..3df1c25 100644
+--- a/src/components/app-shell.tsx
++++ b/src/components/app-shell.tsx
+@@ -5,6 +5,7 @@ import {
+   CalendarClock,
+   FileBarChart2,
+   FileCheck2,
++  Grid3x3,
+   FolderOpen,
+   Landmark,
+   LayoutDashboard,
+@@ -25,6 +26,7 @@ const NAV: ItemNav[] = [
+   { to: "/dashboard", label: "Painel", icon: LayoutDashboard },
+   { to: "/unidades", label: "Unidades", icon: Building2 },
+   { to: "/licencas", label: "Licenças", icon: FileCheck2 },
++  { to: "/matriz", label: "Matriz", icon: Grid3x3 },
+   { to: "/processos", label: "Processos SEI", icon: FolderOpen },
+   { to: "/calendario", label: "Vencimentos", icon: CalendarClock },
+   { to: "/relatorios", label: "Relatórios", icon: FileBarChart2 },
+diff --git a/src/lib/ia-contexto.server.ts b/src/lib/ia-contexto.server.ts
+new file mode 100644
+index 0000000..6ee1a34
+--- /dev/null
++++ b/src/lib/ia-contexto.server.ts
+@@ -0,0 +1,152 @@
++/**
++ * Monta o retrato do sistema que acompanha cada pergunta ao assistente.
++ *
++ * O contexto é construído aqui, no servidor, e não enviado pelo navegador. Isso
++ * evita despachar centenas de registos a cada mensagem, garante que os dados
++ * estão frescos, e — mais importante — impede que o cliente escolha o que a IA
++ * vê. Antes o campo `contexto` existia no endpoint mas ninguém o preenchia: o
++ * assistente respondia sempre "não consta no sistema" a qualquer pergunta sobre
++ * unidades ou licenças reais.
++ *
++ * Tudo o que sai daqui passa ainda por `sanitizarContexto`, que remove CPF,
++ * e-mail, telefone e nomes de pessoas antes de a informação deixar o servidor.
++ */
++
++/** Tectos por lista, para o contexto não crescer sem limite com a rede toda. */
++const MAX_LINHAS = 120;
++const MAX_UNIDADES = 40;
++
++type Semaforo = string | null;
++
++function contar(valores: Semaforo[]): Record<string, number> {
++  const saida: Record<string, number> = {};
++  for (const v of valores) {
++    const chave = v ?? "sem_data";
++    saida[chave] = (saida[chave] ?? 0) + 1;
++  }
++  return saida;
++}
++
++/**
++ * Retrato da rede: indicadores, o que está vencido ou em prazo crítico, e os
++ * processos ainda abertos. Responde à maioria das perguntas de gestão sem
++ * precisar de despejar a base inteira.
++ */
++async function contextoRede() {
++  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
++
++  const [licencas, unidades, processos] = await Promise.all([
++    supabaseAdmin
++      .from("v_licencas_dashboard")
++      .select(
++        "unidade_nome, orgao, descricao, status, semaforo, data_vencimento, dias_restantes, numero, processo_sei",
++      )
++      .order("data_vencimento", { ascending: true, nullsFirst: false }),
++    supabaseAdmin
++      .from("unidades")
++      .select("nome, tipo, regiao_administrativa, situacao_edificacao, cnpj")
++      .eq("ativa", true)
++      .order("nome"),
++    supabaseAdmin
++      .from("processos_sei")
++      .select("numero, assunto, tipo, orgao, situacao, data_abertura, unidades(nome)")
++      .eq("ativo", true)
++      .neq("situacao", "concluido")
++      .order("data_abertura", { ascending: false }),
++  ]);
++
++  const todas = licencas.data ?? [];
++  const criticas = todas.filter(
++    (l) => l.semaforo === "vencida" || l.semaforo === "a_vencer_critico",
++  );
++  const aVencer = todas.filter((l) => l.semaforo === "a_vencer_alerta");
++
++  return {
++    escopo: "rede completa",
++    gerado_em: new Date().toISOString().slice(0, 10),
++    indicadores: {
++      unidades_ativas: (unidades.data ?? []).length,
++      licencas_total: todas.length,
++      por_semaforo: contar(todas.map((l) => l.semaforo)),
++      processos_em_aberto: (processos.data ?? []).length,
++    },
++    unidades: (unidades.data ?? []).slice(0, MAX_UNIDADES),
++    licencas_vencidas_ou_criticas: criticas.slice(0, MAX_LINHAS),
++    licencas_a_vencer_90_dias: aVencer.slice(0, MAX_LINHAS),
++    processos_em_aberto: (processos.data ?? []).slice(0, MAX_LINHAS),
++    nota:
++      criticas.length > MAX_LINHAS || aVencer.length > MAX_LINHAS
++        ? `Listas truncadas em ${MAX_LINHAS} registos. Peça o detalhe de uma unidade específica para ver o resto.`
++        : undefined,
++  };
++}
++
++/** Retrato de uma unidade: licenças, CNAEs e processos. */
++async function contextoUnidade(unidadeId: string) {
++  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
++
++  const { data: unidade } = await supabaseAdmin
++    .from("unidades")
++    .select(
++      "id, nome, tipo, cnpj, cf_df, processo_sei, regiao_administrativa, situacao_edificacao, endereco, observacoes",
++    )
++    .eq("id", unidadeId)
++    .eq("ativa", true)
++    .maybeSingle();
++
++  if (!unidade) return { escopo: "unidade", erro: "Unidade não encontrada ou desativada." };
++
++  const [licencas, cnaes, processos] = await Promise.all([
++    supabaseAdmin
++      .from("v_licencas_dashboard")
++      .select(
++        "orgao, descricao, status, semaforo, data_emissao, data_vencimento, dias_restantes, numero, processo_sei, observacoes",
++      )
++      .eq("unidade_id", unidadeId)
++      .order("orgao"),
++    supabaseAdmin
++      .from("cnaes_unidade")
++      .select("codigo, descricao, status, data_vencimento")
++      .eq("unidade_id", unidadeId)
++      .order("codigo"),
++    supabaseAdmin
++      .from("processos_sei")
++      .select("numero, assunto, tipo, orgao, situacao, data_abertura, data_conclusao")
++      .eq("unidade_id", unidadeId)
++      .eq("ativo", true)
++      .order("data_abertura", { ascending: false }),
++  ]);
++
++  return {
++    escopo: "unidade",
++    gerado_em: new Date().toISOString().slice(0, 10),
++    unidade,
++    resumo_semaforo: contar((licencas.data ?? []).map((l) => l.semaforo)),
++    licencas: (licencas.data ?? []).slice(0, MAX_LINHAS),
++    cnaes: cnaes.data ?? [],
++    processos: (processos.data ?? []).slice(0, MAX_LINHAS),
++  };
++}
++
++/**
++ * Escolhe o contexto conforme a ação pedida.
++ *
++ * `explicar_exigencia` fica sem dados de propósito: é uma pergunta sobre a regra
++ * do órgão, não sobre o estado da rede, e mandar a base inteira só aumentaria
++ * custo e exposição sem melhorar a resposta.
++ */
++export async function montarContexto(
++  acao: string,
++  unidadeId?: string | null,
++): Promise<unknown | null> {
++  try {
++    if (acao === "explicar_exigencia") return null;
++    if (unidadeId) return await contextoUnidade(unidadeId);
++    return await contextoRede();
++  } catch (erro) {
++    console.error("[ia] falha ao montar o contexto:", erro);
++    // Sem contexto a IA responde que não tem os dados — melhor do que falhar
++    // o pedido inteiro por causa de uma consulta.
++    return null;
++  }
++}
+diff --git a/src/lib/ia.server.ts b/src/lib/ia.server.ts
+index d861bea..5ee18ae 100644
+--- a/src/lib/ia.server.ts
++++ b/src/lib/ia.server.ts
+@@ -39,7 +39,10 @@ Regra do semáforo de vencimento: até 60 dias = crítico; de 61 a 90 dias = a v
+ Estados possíveis de um processo: finalizado, em estudo, aguardando órgão, vencido, dentro do prazo.
+ Responda em português do Brasil, de forma objetiva e técnica.
+ Baseie-se exclusivamente nos dados do contexto fornecido.
+-Se a informação não estiver no contexto, diga que não consta no sistema — nunca invente número de processo, data de validade ou situação.`;
++Se a informação não estiver no contexto, diga que não consta no sistema — nunca invente número de processo, data de validade ou situação.
++Os dados do contexto vêm da base do sistema no momento da pergunta. Campos de pessoas físicas (nome de responsável técnico, CPF, e-mail, telefone) são removidos antes de chegarem a você: se perguntarem por eles, explique que o sistema não os envia ao assistente e que devem ser consultados na ficha da unidade.
++Quando listar licenças ou prazos, cite sempre a unidade, o órgão e a data, para a resposta ser verificável no sistema.
++Se uma lista vier truncada (indicado no campo "nota" do contexto), avise que há mais registos e sugira consultar a unidade específica.`;
+ 
+ /**
+  * Campos que identificam pessoas físicas e nunca são enviados à Anthropic.
+diff --git a/src/lib/matriz.ts b/src/lib/matriz.ts
+new file mode 100644
+index 0000000..a7c6650
+--- /dev/null
++++ b/src/lib/matriz.ts
+@@ -0,0 +1,65 @@
++import { semaforoColor } from "@/lib/domain";
++import type { LicencaDashboard } from "@/lib/rows";
++
++/**
++ * Agregação da matriz de compliance (unidade × órgão).
++ *
++ * Vive fora do componente para poder ser testada sozinha: é aqui que está a
++ * regra que decide o que cada célula mostra, e um engano aqui faria a matriz
++ * apresentar uma unidade como regular quando tem licença vencida.
++ */
++
++export type Celula = {
++  licencas: LicencaDashboard[];
++  /** A licença mais urgente do cruzamento — é ela que dá cor à célula. */
++  pior: LicencaDashboard | null;
++};
++
++/** Menor peso = mais urgente. Empate resolve-se pelo vencimento mais próximo. */
++export function piorLicenca(lista: LicencaDashboard[]): LicencaDashboard | null {
++  if (lista.length === 0) return null;
++  return [...lista].sort((a, b) => {
++    const pa = semaforoColor(a.semaforo ?? "").peso;
++    const pb = semaforoColor(b.semaforo ?? "").peso;
++    if (pa !== pb) return pa - pb;
++    return (a.data_vencimento ?? "9999-12-31").localeCompare(b.data_vencimento ?? "9999-12-31");
++  })[0]!;
++}
++
++/** unidade_id → orgao → célula. */
++export type Grade = Map<string, Map<string, Celula>>;
++
++export function montarGrade(licencas: LicencaDashboard[]): Grade {
++  const grade: Grade = new Map();
++  for (const l of licencas) {
++    if (!l.unidade_id || !l.orgao) continue;
++    const porOrgao = grade.get(l.unidade_id) ?? new Map<string, Celula>();
++    const celula = porOrgao.get(l.orgao) ?? { licencas: [], pior: null };
++    celula.licencas.push(l);
++    porOrgao.set(l.orgao, celula);
++    grade.set(l.unidade_id, porOrgao);
++  }
++  for (const porOrgao of grade.values()) {
++    for (const celula of porOrgao.values()) celula.pior = piorLicenca(celula.licencas);
++  }
++  return grade;
++}
++
++/**
++ * Uma unidade tem pendência quando algum cruzamento não está regular, ou quando
++ * falta licença num órgão que as outras unidades já têm — a ausência de registo
++ * é, ela própria, uma pendência de diagnóstico.
++ */
++export function temPendencia(
++  unidadeId: string,
++  grade: Grade,
++  orgaosUsados: readonly string[],
++): boolean {
++  const porOrgao = grade.get(unidadeId);
++  if (!porOrgao) return true;
++  for (const celula of porOrgao.values()) {
++    // peso <= 4 cobre vencida, crítico, alerta, indeferida e os estados em aberto.
++    if (semaforoColor(celula.pior?.semaforo ?? "").peso <= 4) return true;
++  }
++  return orgaosUsados.some((o) => !porOrgao.has(o));
++}
+diff --git a/src/routeTree.gen.ts b/src/routeTree.gen.ts
+index a098361..e9da51a 100644
+--- a/src/routeTree.gen.ts
++++ b/src/routeTree.gen.ts
+@@ -18,6 +18,7 @@ import { Route as ApiIaRouteImport } from './routes/api/ia'
+ import { Route as AuthenticatedRelatoriosRouteImport } from './routes/_authenticated/relatorios'
+ import { Route as AuthenticatedOrgaosRouteImport } from './routes/_authenticated/orgaos'
+ import { Route as AuthenticatedNormativasRouteImport } from './routes/_authenticated/normativas'
++import { Route as AuthenticatedMatrizRouteImport } from './routes/_authenticated/matriz'
+ import { Route as AuthenticatedLicencasRouteImport } from './routes/_authenticated/licencas'
+ import { Route as AuthenticatedIaRouteImport } from './routes/_authenticated/ia'
+ import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+@@ -77,6 +78,11 @@ const AuthenticatedNormativasRoute = AuthenticatedNormativasRouteImport.update({
+   path: '/normativas',
+   getParentRoute: () => AuthenticatedRouteRoute,
+ } as any)
++const AuthenticatedMatrizRoute = AuthenticatedMatrizRouteImport.update({
++  id: '/matriz',
++  path: '/matriz',
++  getParentRoute: () => AuthenticatedRouteRoute,
++} as any)
+ const AuthenticatedLicencasRoute = AuthenticatedLicencasRouteImport.update({
+   id: '/licencas',
+   path: '/licencas',
+@@ -167,6 +173,7 @@ export interface FileRoutesByFullPath {
+   '/dashboard': typeof AuthenticatedDashboardRoute
+   '/ia': typeof AuthenticatedIaRoute
+   '/licencas': typeof AuthenticatedLicencasRoute
++  '/matriz': typeof AuthenticatedMatrizRoute
+   '/normativas': typeof AuthenticatedNormativasRoute
+   '/orgaos': typeof AuthenticatedOrgaosRoute
+   '/relatorios': typeof AuthenticatedRelatoriosRoute
+@@ -191,6 +198,7 @@ export interface FileRoutesByTo {
+   '/dashboard': typeof AuthenticatedDashboardRoute
+   '/ia': typeof AuthenticatedIaRoute
+   '/licencas': typeof AuthenticatedLicencasRoute
++  '/matriz': typeof AuthenticatedMatrizRoute
+   '/normativas': typeof AuthenticatedNormativasRoute
+   '/orgaos': typeof AuthenticatedOrgaosRoute
+   '/relatorios': typeof AuthenticatedRelatoriosRoute
+@@ -217,6 +225,7 @@ export interface FileRoutesById {
+   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+   '/_authenticated/ia': typeof AuthenticatedIaRoute
+   '/_authenticated/licencas': typeof AuthenticatedLicencasRoute
++  '/_authenticated/matriz': typeof AuthenticatedMatrizRoute
+   '/_authenticated/normativas': typeof AuthenticatedNormativasRoute
+   '/_authenticated/orgaos': typeof AuthenticatedOrgaosRoute
+   '/_authenticated/relatorios': typeof AuthenticatedRelatoriosRoute
+@@ -243,6 +252,7 @@ export interface FileRouteTypes {
+     | '/dashboard'
+     | '/ia'
+     | '/licencas'
++    | '/matriz'
+     | '/normativas'
+     | '/orgaos'
+     | '/relatorios'
+@@ -267,6 +277,7 @@ export interface FileRouteTypes {
+     | '/dashboard'
+     | '/ia'
+     | '/licencas'
++    | '/matriz'
+     | '/normativas'
+     | '/orgaos'
+     | '/relatorios'
+@@ -292,6 +303,7 @@ export interface FileRouteTypes {
+     | '/_authenticated/dashboard'
+     | '/_authenticated/ia'
+     | '/_authenticated/licencas'
++    | '/_authenticated/matriz'
+     | '/_authenticated/normativas'
+     | '/_authenticated/orgaos'
+     | '/_authenticated/relatorios'
+@@ -385,6 +397,13 @@ declare module '@tanstack/react-router' {
+       preLoaderRoute: typeof AuthenticatedNormativasRouteImport
+       parentRoute: typeof AuthenticatedRouteRoute
+     }
++    '/_authenticated/matriz': {
++      id: '/_authenticated/matriz'
++      path: '/matriz'
++      fullPath: '/matriz'
++      preLoaderRoute: typeof AuthenticatedMatrizRouteImport
++      parentRoute: typeof AuthenticatedRouteRoute
++    }
+     '/_authenticated/licencas': {
+       id: '/_authenticated/licencas'
+       path: '/licencas'
+@@ -491,6 +510,7 @@ interface AuthenticatedRouteRouteChildren {
+   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+   AuthenticatedIaRoute: typeof AuthenticatedIaRoute
+   AuthenticatedLicencasRoute: typeof AuthenticatedLicencasRoute
++  AuthenticatedMatrizRoute: typeof AuthenticatedMatrizRoute
+   AuthenticatedNormativasRoute: typeof AuthenticatedNormativasRoute
+   AuthenticatedOrgaosRoute: typeof AuthenticatedOrgaosRoute
+   AuthenticatedRelatoriosRoute: typeof AuthenticatedRelatoriosRoute
+@@ -506,6 +526,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+   AuthenticatedIaRoute: AuthenticatedIaRoute,
+   AuthenticatedLicencasRoute: AuthenticatedLicencasRoute,
++  AuthenticatedMatrizRoute: AuthenticatedMatrizRoute,
+   AuthenticatedNormativasRoute: AuthenticatedNormativasRoute,
+   AuthenticatedOrgaosRoute: AuthenticatedOrgaosRoute,
+   AuthenticatedRelatoriosRoute: AuthenticatedRelatoriosRoute,
+diff --git a/src/routes/_authenticated/ia.tsx b/src/routes/_authenticated/ia.tsx
+index 6449825..b98ee38 100644
+--- a/src/routes/_authenticated/ia.tsx
++++ b/src/routes/_authenticated/ia.tsx
+@@ -1,5 +1,6 @@
+ import { createFileRoute } from "@tanstack/react-router";
+ import { useEffect, useRef, useState } from "react";
++import { useQuery } from "@tanstack/react-query";
+ import ReactMarkdown from "react-markdown";
+ import remarkGfm from "remark-gfm";
+ import {
+@@ -16,7 +17,15 @@ import {
+ } from "lucide-react";
+ import { Button } from "@/components/ui/button";
+ import { Card, CardContent } from "@/components/ui/card";
++import {
++  Select,
++  SelectContent,
++  SelectItem,
++  SelectTrigger,
++  SelectValue,
++} from "@/components/ui/select";
+ import { Textarea } from "@/components/ui/textarea";
++import { unidadesQuery } from "@/lib/queries";
+ import { PageHeader } from "@/components/page-header";
+ import { useEhMaster } from "@/lib/perfil";
+ import { cn } from "@/lib/utils";
+@@ -120,6 +129,9 @@ function PaginaIA() {
+   const [anexos, setAnexos] = useState<Anexo[]>([]);
+   const [modelo, setModelo] = useState<"rapido" | "aprofundado">("rapido");
+   const [acao, setAcao] = useState<Acao>("pergunta_livre");
++  // "rede" = retrato de toda a rede; caso contrário o id da unidade a detalhar.
++  const [escopo, setEscopo] = useState<string>("rede");
++  const { data: unidades } = useQuery(unidadesQuery);
+   const [ocupado, setOcupado] = useState(false);
+   const [erro, setErro] = useState<string | null>(null);
+   const fimRef = useRef<HTMLDivElement>(null);
+@@ -181,7 +193,12 @@ function PaginaIA() {
+       const res = await fetch("/api/ia", {
+         method: "POST",
+         headers: { "Content-Type": "application/json" },
+-        body: JSON.stringify({ mensagens: historico, modelo, acao }),
++        body: JSON.stringify({
++          mensagens: historico,
++          modelo,
++          acao,
++          unidadeId: escopo === "rede" ? undefined : escopo,
++        }),
+       });
+       if (!res.ok || !res.body) {
+         throw new Error(mensagemErro(res.status, await res.text().catch(() => "")));
+@@ -266,6 +283,26 @@ function PaginaIA() {
+         ))}
+       </div>
+ 
++      <div className="flex flex-wrap items-center gap-2 text-xs">
++        <span className="text-muted-foreground">Dados consultados:</span>
++        <Select value={escopo} onValueChange={setEscopo}>
++          <SelectTrigger className="h-8 w-72" aria-label="Escolher os dados enviados ao assistente">
++            <SelectValue />
++          </SelectTrigger>
++          <SelectContent>
++            <SelectItem value="rede">Rede completa (indicadores e pendências)</SelectItem>
++            {(unidades ?? []).map((u) => (
++              <SelectItem key={u.id} value={u.id}>
++                {u.nome}
++              </SelectItem>
++            ))}
++          </SelectContent>
++        </Select>
++        <span className="text-muted-foreground">
++          O assistente recebe estes dados a cada pergunta. Dados pessoais são removidos.
++        </span>
++      </div>
++
+       <Card className="flex h-[62vh] min-h-100 flex-col">
+         <CardContent className="flex-1 space-y-4 overflow-y-auto p-4">
+           {mensagens.length === 0 && (
+diff --git a/src/routes/_authenticated/matriz.tsx b/src/routes/_authenticated/matriz.tsx
+new file mode 100644
+index 0000000..d73944c
+--- /dev/null
++++ b/src/routes/_authenticated/matriz.tsx
+@@ -0,0 +1,283 @@
++import { createFileRoute, Link } from "@tanstack/react-router";
++import { useSuspenseQuery } from "@tanstack/react-query";
++import { useMemo, useState } from "react";
++import { Download, Grid3x3 } from "lucide-react";
++import { PageHeader } from "@/components/page-header";
++import { EmptyState, ErrorState, PageSkeleton } from "@/components/states";
++import { TableScroll } from "@/components/data-table";
++import { PrintModeToggle } from "@/components/print-mode-toggle";
++import { Button } from "@/components/ui/button";
++import { Card, CardContent } from "@/components/ui/card";
++import {
++  Select,
++  SelectContent,
++  SelectItem,
++  SelectTrigger,
++  SelectValue,
++} from "@/components/ui/select";
++import { licencasQuery, unidadesQuery } from "@/lib/queries";
++import {
++  ORGAOS,
++  TIPO_UNIDADE_LABEL,
++  orgaoLabel,
++  semaforoColor,
++  statusLabel,
++  tipoUnidadeLabel,
++} from "@/lib/domain";
++import { formatDate } from "@/lib/dates";
++import { baixarCsv, sufixoData, type ColunaCsv } from "@/lib/csv";
++import { montarGrade, temPendencia, type Celula } from "@/lib/matriz";
++import type { Unidade } from "@/lib/rows";
++import { cn } from "@/lib/utils";
++
++export const Route = createFileRoute("/_authenticated/matriz")({
++  loader: ({ context }) =>
++    Promise.all([
++      context.queryClient.ensureQueryData(licencasQuery),
++      context.queryClient.ensureQueryData(unidadesQuery),
++    ]),
++  component: MatrizPage,
++  pendingComponent: () => <PageSkeleton colunas={8} linhas={10} />,
++  head: () => ({
++    meta: [
++      { title: "Matriz de compliance — IGESDF" },
++      {
++        name: "description",
++        content:
++          "Matriz cruzada unidade × órgão licenciador: situação, vencimento e pendências de cada licença da rede IGESDF numa única visão.",
++      },
++      { property: "og:title", content: "Matriz de compliance — IGESDF" },
++      { property: "og:url", content: "https://igesdf-licenciamento.qidominios.tech/matriz" },
++    ],
++    links: [{ rel: "canonical", href: "https://igesdf-licenciamento.qidominios.tech/matriz" }],
++  }),
++  errorComponent: ({ error, reset }) => <ErrorState error={error} onRetry={reset} />,
++});
++
++function MatrizPage() {
++  const { data: licencas } = useSuspenseQuery(licencasQuery);
++  const { data: unidades } = useSuspenseQuery(unidadesQuery);
++  const [tipoF, setTipoF] = useState("todos");
++  const [apenasPendencias, setApenasPendencias] = useState(false);
++
++  const unidadesFiltradas = useMemo(
++    () => unidades.filter((u) => tipoF === "todos" || u.tipo === tipoF),
++    [unidades, tipoF],
++  );
++
++  /** Só as colunas de órgãos que têm alguma licença — evita 19 colunas vazias. */
++  const orgaosUsados = useMemo(() => {
++    const presentes = new Set(licencas.map((l) => l.orgao).filter(Boolean) as string[]);
++    return ORGAOS.filter((o) => presentes.has(o.value));
++  }, [licencas]);
++
++  const grade = useMemo(() => montarGrade(licencas), [licencas]);
++
++  const linhas = useMemo(() => {
++    if (!apenasPendencias) return unidadesFiltradas;
++    const codigos = orgaosUsados.map((o) => o.value);
++    return unidadesFiltradas.filter((u) => temPendencia(u.id, grade, codigos));
++  }, [unidadesFiltradas, grade, orgaosUsados, apenasPendencias]);
++
++  const colunasCsv: ColunaCsv<Unidade>[] = useMemo(
++    () => [
++      { cabecalho: "Unidade", valor: (u) => u.nome },
++      { cabecalho: "Tipo", valor: (u) => tipoUnidadeLabel(u.tipo) },
++      { cabecalho: "Região", valor: (u) => u.regiao_administrativa },
++      ...orgaosUsados.map((o) => ({
++        cabecalho: o.label,
++        valor: (u: Unidade) => {
++          const celula = grade.get(u.id)?.get(o.value);
++          if (!celula?.pior) return "sem registo";
++          const tom = semaforoColor(celula.pior.semaforo ?? "");
++          const venc = celula.pior.data_vencimento
++            ? ` até ${formatDate(celula.pior.data_vencimento)}`
++            : "";
++          const extra = celula.licencas.length > 1 ? ` (${celula.licencas.length} licenças)` : "";
++          return `${tom.label}${venc}${extra}`;
++        },
++      })),
++    ],
++    [orgaosUsados, grade],
++  );
++
++  function exportar() {
++    baixarCsv(`matriz-compliance-igesdf-${sufixoData()}`, linhas, colunasCsv);
++  }
++
++  return (
++    <div className="print-area space-y-5 p-4 sm:p-6 lg:p-8">
++      <PageHeader
++        titulo="Matriz de compliance"
++        descricao={`${linhas.length} unidade(s) × ${orgaosUsados.length} órgão(s). Cada célula mostra a licença mais urgente do cruzamento.`}
++        acoes={
++          <>
++            <Button variant="outline" onClick={exportar} disabled={linhas.length === 0}>
++              <Download className="mr-1 size-4" aria-hidden="true" /> Exportar planilha
++            </Button>
++            <PrintModeToggle defaultOrientation="landscape" />
++          </>
++        }
++      />
++
++      <div className="flex flex-wrap items-center gap-3 no-print">
++        <Select value={tipoF} onValueChange={setTipoF}>
++          <SelectTrigger className="w-56" aria-label="Filtrar por tipo de unidade">
++            <SelectValue placeholder="Tipo" />
++          </SelectTrigger>
++          <SelectContent>
++            <SelectItem value="todos">Todos os tipos</SelectItem>
++            {Object.entries(TIPO_UNIDADE_LABEL).map(([chave, rotulo]) => (
++              <SelectItem key={chave} value={chave}>
++                {rotulo}
++              </SelectItem>
++            ))}
++          </SelectContent>
++        </Select>
++        <Button
++          variant={apenasPendencias ? "default" : "outline"}
++          aria-pressed={apenasPendencias}
++          onClick={() => setApenasPendencias((v) => !v)}
++        >
++          {apenasPendencias ? "Mostrando só com pendência" : "Só unidades com pendência"}
++        </Button>
++      </div>
++
++      <Legenda />
++
++      <Card>
++        <CardContent className="p-0">
++          {linhas.length === 0 ? (
++            <EmptyState
++              icone={<Grid3x3 className="size-5" aria-hidden="true" />}
++              titulo="Nenhuma unidade para estes filtros"
++              descricao="Ajuste o tipo de unidade ou desligue o filtro de pendências."
++            />
++          ) : (
++            <TableScroll>
++              <table className="w-full border-collapse text-sm">
++                <thead>
++                  <tr className="border-b text-left text-xs text-muted-foreground">
++                    <th className="sticky left-0 z-10 bg-card p-3 font-medium">Unidade</th>
++                    {orgaosUsados.map((o) => (
++                      <th key={o.value} className="p-3 text-center font-medium whitespace-nowrap">
++                        <span title={o.descricao}>{o.label}</span>
++                      </th>
++                    ))}
++                  </tr>
++                </thead>
++                <tbody>
++                  {linhas.map((u) => (
++                    <tr key={u.id} className="border-b last:border-0 hover:bg-muted/30">
++                      <th
++                        scope="row"
++                        className="sticky left-0 z-10 bg-card p-3 text-left font-normal"
++                      >
++                        <Link
++                          to="/unidades/$id"
++                          params={{ id: u.id }}
++                          className="font-medium hover:underline"
++                        >
++                          {u.nome}
++                        </Link>
++                        <div className="text-xs text-muted-foreground">
++                          {tipoUnidadeLabel(u.tipo)}
++                          {u.regiao_administrativa ? ` · ${u.regiao_administrativa}` : ""}
++                        </div>
++                      </th>
++                      {orgaosUsados.map((o) => (
++                        <CelulaMatriz
++                          key={o.value}
++                          unidadeId={u.id}
++                          orgao={o.value}
++                          celula={grade.get(u.id)?.get(o.value)}
++                        />
++                      ))}
++                    </tr>
++                  ))}
++                </tbody>
++              </table>
++            </TableScroll>
++          )}
++        </CardContent>
++      </Card>
++    </div>
++  );
++}
++
++function CelulaMatriz({
++  unidadeId,
++  orgao,
++  celula,
++}: {
++  unidadeId: string;
++  orgao: string;
++  celula?: Celula;
++}) {
++  if (!celula?.pior) {
++    return (
++      <td className="p-2 text-center align-middle">
++        <span
++          className="inline-block rounded border border-dashed px-2 py-1 text-xs text-muted-foreground"
++          title="Nenhuma licença registada para este órgão nesta unidade"
++        >
++          —
++        </span>
++      </td>
++    );
++  }
++
++  const tom = semaforoColor(celula.pior.semaforo ?? "");
++  const venc = celula.pior.data_vencimento ? formatDate(celula.pior.data_vencimento) : null;
++
++  return (
++    <td className="p-2 text-center align-middle">
++      <Link
++        to="/licencas"
++        search={{ unidade: unidadeId, orgao }}
++        className={cn(
++          "inline-flex min-w-24 flex-col items-center gap-0.5 rounded-md px-2 py-1.5 transition-opacity hover:opacity-80",
++          tom.bg,
++          tom.text,
++        )}
++        title={`${statusLabel(celula.pior.status)}${venc ? ` · vence ${venc}` : ""} · ${celula.licencas.length} licença(s)`}
++      >
++        <span className="text-[11px] font-medium">{tom.label}</span>
++        {venc && <span className="text-[10px] opacity-80">{venc}</span>}
++        {celula.licencas.length > 1 && (
++          <span className="text-[10px] opacity-70">{celula.licencas.length} licenças</span>
++        )}
++      </Link>
++    </td>
++  );
++}
++
++function Legenda() {
++  const estados = [
++    "vencida",
++    "a_vencer_critico",
++    "a_vencer_alerta",
++    "vigente",
++    "dispensada",
++  ] as const;
++  return (
++    <div className="flex flex-wrap items-center gap-3 text-xs">
++      <span className="text-muted-foreground">Legenda:</span>
++      {estados.map((e) => {
++        const tom = semaforoColor(e);
++        return (
++          <span
++            key={e}
++            className={cn("inline-flex items-center gap-1.5 rounded px-2 py-1", tom.bg, tom.text)}
++          >
++            <span className={cn("size-1.5 rounded-full", tom.dot)} aria-hidden="true" />
++            {tom.label}
++          </span>
++        );
++      })}
++      <span className="inline-flex items-center gap-1.5 rounded border border-dashed px-2 py-1 text-muted-foreground">
++        — sem licença registada
++      </span>
++    </div>
++  );
++}
+diff --git a/src/routes/api/ia.ts b/src/routes/api/ia.ts
+index 19a1bb5..10bdabf 100644
+--- a/src/routes/api/ia.ts
++++ b/src/routes/api/ia.ts
+@@ -13,6 +13,8 @@ import { createFileRoute } from "@tanstack/react-router";
+  * mensagens de erro.
+  */
+ 
++const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
++
+ type Anexo = { nome: string; tipo: string; dados: string };
+ type Mensagem = { role: "user" | "assistant"; content: string; anexos?: Anexo[] };
+ 
+@@ -78,8 +80,8 @@ export const Route = createFileRoute("/api/ia")({
+           mensagens?: Mensagem[];
+           modelo?: string;
+           acao?: string;
+-          contexto?: unknown;
+           pergunta?: string;
++          unidadeId?: string;
+         };
+         try {
+           body = JSON.parse(bruto);
+@@ -112,9 +114,14 @@ export const Route = createFileRoute("/api/ia")({
+ 
+         const modelo = body.modelo === "aprofundado" ? "claude-opus-5" : "claude-sonnet-5";
+ 
+-        // O contexto é limpo aqui, no servidor: dados de pessoas físicas nunca
+-        // saem do sistema, mesmo que o navegador os tenha incluído.
+-        const contextoLimpo = body.contexto === undefined ? null : sanitizarContexto(body.contexto);
++        // O contexto é montado no servidor a partir da base de dados — o
++        // navegador só indica a ação e, quando aplicável, a unidade. Depois é
++        // limpo: dados de pessoas físicas nunca saem do sistema.
++        const { montarContexto } = await import("@/lib/ia-contexto.server");
++        const unidadeId =
++          typeof body.unidadeId === "string" && UUID.test(body.unidadeId) ? body.unidadeId : null;
++        const contextoBruto = await montarContexto(acao, unidadeId);
++        const contextoLimpo = contextoBruto === null ? null : sanitizarContexto(contextoBruto);
+ 
+         const sistema =
+           CONTEXTO_DOMINIO +
+diff --git a/test-results/.last-run.json b/test-results/.last-run.json
+new file mode 100644
+index 0000000..cbcc1fb
+--- /dev/null
++++ b/test-results/.last-run.json
+@@ -0,0 +1,4 @@
++{
++  "status": "passed",
++  "failedTests": []
++}
+\ No newline at end of file
+diff --git a/tests/matriz.spec.ts b/tests/matriz.spec.ts
+new file mode 100644
+index 0000000..2f4deed
+--- /dev/null
++++ b/tests/matriz.spec.ts
+@@ -0,0 +1,133 @@
++import { expect, test } from "@playwright/test";
++import { montarGrade, piorLicenca, temPendencia } from "../src/lib/matriz";
++import type { LicencaDashboard } from "../src/lib/rows";
++
++/**
++ * Regras da matriz de compliance. É aqui que se decide a cor de cada célula:
++ * um engano faria a matriz mostrar uma unidade como regular tendo ela licença
++ * vencida — exatamente o erro que a matriz existe para evitar.
++ */
++
++const U1 = "11111111-1111-1111-1111-111111111111";
++const U2 = "22222222-2222-2222-2222-222222222222";
++
++function lic(p: Partial<LicencaDashboard>): LicencaDashboard {
++  return {
++    id: Math.random().toString(36).slice(2),
++    unidade_id: U1,
++    unidade_nome: "UPA Gama",
++    orgao: "VISA",
++    descricao: null,
++    status: "vigente",
++    semaforo: "vigente",
++    data_vencimento: null,
++    dias_restantes: null,
++    numero: null,
++    processo_sei: null,
++    data_emissao: null,
++    data_protocolo: null,
++    observacoes: null,
++    numero_iges: null,
++    unidade_tipo: "upa",
++    unidade_cnpj: null,
++    created_at: null,
++    updated_at: null,
++    ...p,
++  } as LicencaDashboard;
++}
++
++test.describe("piorLicenca", () => {
++  test("uma licença vencida ganha a uma vigente no mesmo cruzamento", () => {
++    const vencida = lic({ semaforo: "vencida", data_vencimento: "2026-01-10" });
++    const vigente = lic({ semaforo: "vigente", data_vencimento: "2027-06-01" });
++    expect(piorLicenca([vigente, vencida])?.semaforo).toBe("vencida");
++    // A ordem de entrada não pode alterar o resultado.
++    expect(piorLicenca([vencida, vigente])?.semaforo).toBe("vencida");
++  });
++
++  test("entre dois estados iguais vence a de vencimento mais próximo", () => {
++    const cedo = lic({ semaforo: "a_vencer_critico", data_vencimento: "2026-09-01" });
++    const tarde = lic({ semaforo: "a_vencer_critico", data_vencimento: "2026-10-01" });
++    expect(piorLicenca([tarde, cedo])?.data_vencimento).toBe("2026-09-01");
++  });
++
++  test("crítico é mais urgente que alerta, e alerta que vigente", () => {
++    const critico = lic({ semaforo: "a_vencer_critico" });
++    const alerta = lic({ semaforo: "a_vencer_alerta" });
++    const vigente = lic({ semaforo: "vigente" });
++    expect(piorLicenca([vigente, alerta, critico])?.semaforo).toBe("a_vencer_critico");
++    expect(piorLicenca([vigente, alerta])?.semaforo).toBe("a_vencer_alerta");
++  });
++
++  test("licença sem data não ofusca uma vencida", () => {
++    const semData = lic({ semaforo: "em_analise", data_vencimento: null });
++    const vencida = lic({ semaforo: "vencida", data_vencimento: "2026-01-10" });
++    expect(piorLicenca([semData, vencida])?.semaforo).toBe("vencida");
++  });
++
++  test("lista vazia devolve nulo", () => {
++    expect(piorLicenca([])).toBeNull();
++  });
++});
++
++test.describe("montarGrade", () => {
++  test("agrupa por unidade e órgão, somando as licenças do cruzamento", () => {
++    const grade = montarGrade([
++      lic({ unidade_id: U1, orgao: "VISA", semaforo: "vencida", data_vencimento: "2026-01-10" }),
++      lic({ unidade_id: U1, orgao: "VISA", semaforo: "vigente", data_vencimento: "2027-06-01" }),
++      lic({ unidade_id: U1, orgao: "CBMDF", semaforo: "a_vencer_critico" }),
++      lic({ unidade_id: U2, orgao: "VISA", semaforo: "vigente" }),
++    ]);
++    expect(grade.get(U1)?.get("VISA")?.licencas).toHaveLength(2);
++    expect(grade.get(U1)?.get("VISA")?.pior?.semaforo).toBe("vencida");
++    expect(grade.get(U1)?.get("CBMDF")?.licencas).toHaveLength(1);
++    expect(grade.get(U2)?.get("VISA")?.pior?.semaforo).toBe("vigente");
++    // Cruzamento sem licença não existe na grade — a célula fica vazia.
++    expect(grade.get(U2)?.get("CBMDF")).toBeUndefined();
++  });
++
++  test("ignora linhas sem unidade ou sem órgão em vez de as agrupar em branco", () => {
++    const grade = montarGrade([
++      lic({ unidade_id: null as unknown as string, orgao: "VISA" }),
++      lic({ unidade_id: U1, orgao: null as unknown as LicencaDashboard["orgao"] }),
++    ]);
++    expect(grade.size).toBe(0);
++  });
++});
++
++test.describe("temPendencia", () => {
++  const orgaos = ["VISA", "CBMDF"];
++
++  test("unidade com tudo vigente e completo não tem pendência", () => {
++    const grade = montarGrade([
++      lic({ unidade_id: U1, orgao: "VISA", semaforo: "vigente" }),
++      lic({ unidade_id: U1, orgao: "CBMDF", semaforo: "vigente" }),
++    ]);
++    expect(temPendencia(U1, grade, orgaos)).toBe(false);
++  });
++
++  test("licença vencida marca pendência", () => {
++    const grade = montarGrade([
++      lic({ unidade_id: U1, orgao: "VISA", semaforo: "vencida" }),
++      lic({ unidade_id: U1, orgao: "CBMDF", semaforo: "vigente" }),
++    ]);
++    expect(temPendencia(U1, grade, orgaos)).toBe(true);
++  });
++
++  test("faltar licença num órgão exigido marca pendência", () => {
++    const grade = montarGrade([lic({ unidade_id: U1, orgao: "VISA", semaforo: "vigente" })]);
++    expect(temPendencia(U1, grade, orgaos)).toBe(true);
++  });
++
++  test("unidade sem nenhuma licença marca pendência", () => {
++    expect(temPendencia(U2, montarGrade([]), orgaos)).toBe(true);
++  });
++
++  test("dispensada não é pendência", () => {
++    const grade = montarGrade([
++      lic({ unidade_id: U1, orgao: "VISA", semaforo: "vigente" }),
++      lic({ unidade_id: U1, orgao: "CBMDF", semaforo: "dispensada" }),
++    ]);
++    expect(temPendencia(U1, grade, orgaos)).toBe(false);
++  });
++});
+-- 
+2.43.0
+
