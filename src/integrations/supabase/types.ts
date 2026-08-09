@@ -306,6 +306,33 @@ export type Database = {
           },
         ]
       }
+      ia_uso: {
+        Row: {
+          acao: string
+          criado_em: string
+          id: string
+          perfil: string
+          tokens_entrada: number
+          tokens_saida: number
+        }
+        Insert: {
+          acao: string
+          criado_em?: string
+          id?: string
+          perfil: string
+          tokens_entrada?: number
+          tokens_saida?: number
+        }
+        Update: {
+          acao?: string
+          criado_em?: string
+          id?: string
+          perfil?: string
+          tokens_entrada?: number
+          tokens_saida?: number
+        }
+        Relationships: []
+      }
       licencas: {
         Row: {
           created_at: string
