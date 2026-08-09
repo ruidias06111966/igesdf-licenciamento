@@ -232,6 +232,21 @@ function PaginaIA() {
         ))}
       </div>
 
+      <div className="flex flex-wrap items-center gap-2 text-xs">
+        <span className="text-muted-foreground">Ação:</span>
+        {ACOES.map(([valor, rotulo]) => (
+          <Button
+            key={valor}
+            type="button"
+            size="sm"
+            variant={acao === valor ? "default" : "outline"}
+            onClick={() => setAcao(valor)}
+          >
+            {rotulo}
+          </Button>
+        ))}
+      </div>
+
       <Card className="flex h-[62vh] min-h-100 flex-col">
         <CardContent className="flex-1 space-y-4 overflow-y-auto p-4">
           {mensagens.length === 0 && (
