@@ -1,79 +1,58 @@
-## Objetivo
+# Assistente de IA — reforço de segurança, limites e ações estruturadas
 
-Adicionar teste E2E de PDF, lint de CSS, toggle "Modo Impressão" com preview e fallback para @page nomeada.
+## O que já existe (verificado)
 
-## 1. Toggle "Modo Impressão" (UI)
+- Já existe um assistente de IA em `/ia`, restrito ao perfil master, com a chamada à Anthropic feita **no servidor** em `src/routes/api/ia.ts` (lê `ANTHROPIC_API_KEY` do ambiente do servidor; nunca chega ao navegador).
+- O segredo `ANTHROPIC_API_KEY` já está gravado no backend — não é preciso pedi-lo de novo.
+- O sistema **não tem contas individuais**: o acesso é por senha partilhada com cookie assinado (consulta / edição / master). Não existe JWT de utilizador.
 
-Novo componente `src/components/print-mode-toggle.tsx`:
-- Botão flutuante/no header com dropdown: Orientação (Retrato/Paisagem), Escala (75/85/100%), botão "Pré-visualizar" e "Exportar PDF".
-- Aplica `document.body.classList` (`print-portrait` / `print-landscape`) e `--print-scale` CSS var.
-- Preview: abre modal fullscreen simulando A4 (com `.print-preview` que replica regras `@media print` em `@media screen` via classe).
+## Desvios necessários ao pedido (e porquê)
 
-Substituir os botões `window.print()` isolados em: `dashboard.tsx`, `licencas.tsx`, `calendario.tsx`, `relatorios.tsx`, `unidades.$id.dossie.tsx` pelo componente unificado.
+Três pontos não se aplicam tal e qual a este projeto; o objetivo de segurança é cumprido de outra forma:
 
-## 2. Fallback @page nomeada
+1. **Edge Function (Deno)** → este sistema corre em TanStack Start e a lógica de servidor vive em rotas de API do próprio projeto. A rota `/api/ia` cumpre exatamente o mesmo papel: chave só no servidor.
+2. **JWT do Supabase / `supabase.functions.invoke`** → substituído pela verificação do cookie master já existente. Sem sessão master → 403.
+3. **CORS por origem** → desnecessário: o endpoint é same-origin e não é chamável de outro domínio.
 
-Em `src/styles.css`:
-- Manter `@page portrait { size: A4 portrait; }` + `body.print-portrait { page: portrait; }`.
-- Adicionar fallback JS: `usePrintOrientation` hook injeta `<style id="print-page-dyn">@page { size: A4 portrait; margin: 10mm }</style>` no `<head>` antes de `window.print()`, e remove depois. Isso funciona mesmo em navegadores sem suporte a named pages (Firefox).
-- Ajustar `@page` root para não fixar orientação — orientação vem sempre da tag injetada dinamicamente.
+Todo o resto do pedido é implementado como descrito.
 
-## 3. Lint CSS no pipeline
+## O que vai ser feito
 
-- `bun add -d stylelint stylelint-config-standard`
-- Config `.stylelintrc.json` com regras básicas + validação sintática (detecta `@page` aninhado, `@import` fora do topo, etc.).
-- Script `package.json`: `"lint:css": "stylelint 'src/**/*.css'"`.
-- Adicionar chamada `lint:css` ao script `lint` existente.
+### 1. Registo de uso e limite por hora
+- Nova tabela `ia_uso`: perfil de quem chamou, ação, tokens de entrada, tokens de saída, data.
+- Antes de cada chamada: contar registos da última hora. **Limite 30/hora**; ao exceder, 429 com "Limite de consultas de IA atingido. Tente novamente em alguns minutos."
+- Depois da resposta: gravar o consumo, para o custo ficar visível e o limite poder ser calibrado com dados reais.
 
-Também validar via lightningcss diretamente:
-- Script `scripts/validate-css.mjs` que corre `lightningcss` (já dependência do Tailwind v4) sobre `src/styles.css` e falha se houver erro de parsing. Integrado em `lint`.
+### 2. Validação de entrada
+- Corpo aceite: `{ acao, contexto, pergunta? }`, além do modo conversa atual.
+- Payload acima de 20.000 caracteres → 413.
+- `acao` fora da lista → 400. Ações permitidas: `resumo_unidade`, `priorizar_pendencias`, `explicar_exigencia`, `pergunta_livre`.
 
-## 4. Teste automatizado de PDF (Playwright)
+### 3. Contexto de domínio
+- O prompt de sistema passa a incluir o texto indicado: 19 unidades, órgãos acompanhados, regra do semáforo (até 60 dias crítico, 61–90 a vencer, acima de 90 dentro do prazo, data passada = vencido), estados de processo, resposta em pt-BR e proibição expressa de inventar número, data ou situação.
 
-`tests/pdf-no-truncation.spec.ts` (Playwright):
-- Faz login (usa `LOVABLE_BROWSER_SUPABASE_*` do sandbox).
-- Percorre rotas: `/dashboard`, `/licencas`, `/calendario`, `/relatorios`, `/unidades/:id`, `/unidades/:id/dossie`.
-- Em cada rota, aplica classe `.print-portrait` ou landscape, chama `page.pdf({ format: 'A4', landscape, printBackground: true })`.
-- Salva em `/tmp/pdf-out/`.
-- Valida ausência de truncamento comparando `scrollWidth > clientWidth` em `.print-area *` (após aplicar media emulation `page.emulateMedia({ media: 'print' })`), garante nenhuma célula com `text-overflow: ellipsis` computado, e valida que altura do PDF gerado > 0 e nº de páginas coerente (via `pdf-parse` para contar páginas).
-- Script `bun test:pdf` que corre `playwright test tests/pdf-no-truncation.spec.ts`.
+### 4. Proteção de dados (filtragem no servidor)
+- Antes de montar o pedido à Anthropic, o servidor remove do contexto qualquer campo com CPF, nome de pessoa física, e-mail ou telefone. Só seguem dados institucionais: unidade, órgão, tipo e número de processo, datas e situação.
+- A filtragem corre no servidor; não se confia no que o navegador enviou.
 
-Execução manual em CI local via `code--exec` no fim para validar.
+### 5. Tratamento de erro
+- Nunca devolver ao cliente o corpo bruto do erro nem qualquer vestígio da chave.
+- 401 da Anthropic → registado no servidor; cliente recebe erro genérico 500.
+- 429 ou 529 da Anthropic → 503 "Serviço de IA temporariamente indisponível. Tente novamente."
+- Timeout de 60s com `AbortController`; erro completo sempre registado no servidor.
+
+### 6. Interface
+- No ecrã `/ia`: seletor de ação (as 4 acima), campo de pergunta, estado de carregamento, resposta e **botão para copiar**.
+- Mensagens visuais distintas para 403 (sem permissão), 429 (limite atingido) e 503 (indisponível).
+- Modelo mantém-se `claude-sonnet-5`; `max_tokens` fica em 2000 no modo estruturado, fácil de subir para 4000 depois com o custo já medido.
 
 ## Detalhes técnicos
 
-**CSS var de escala:**
-```css
-@media print { .print-area { zoom: var(--print-scale, 1); } }
-```
+- Migração: cria `public.ia_uso` (`id`, `perfil`, `acao`, `tokens_entrada`, `tokens_saida`, `criado_em`), com GRANT apenas a `service_role`, RLS ativa e sem políticas para `anon`/`authenticated` — só o servidor lê e escreve.
+- `src/routes/api/ia.ts`: validação de ação e tamanho, filtro de dados pessoais, contagem do limite, chamada com `AbortController`, mapeamento de erros e registo de `usage.input_tokens` / `output_tokens`.
+- `src/lib/ia.server.ts` (novo): lista de ações, sanitização de contexto, contagem e registo de uso.
+- `src/routes/_authenticated/ia.tsx`: seletor de ação, botão copiar e mensagens de erro por código.
 
-**Hook de orientação (injeção dinâmica):**
-```ts
-function applyPrintOrientation(o: 'portrait'|'landscape') {
-  document.body.classList.toggle('print-portrait', o==='portrait');
-  document.body.classList.toggle('print-landscape', o==='landscape');
-  let el = document.getElementById('print-page-dyn');
-  if (!el) { el = document.createElement('style'); el.id='print-page-dyn'; document.head.appendChild(el); }
-  el.textContent = `@page { size: A4 ${o}; margin: ${o==='portrait'?'10mm':'8mm'}; }`;
-}
-```
+## Confirmação final
 
-**Detecção de truncamento no teste:**
-```ts
-const bad = await page.$$eval('.print-area *', els => els.filter(e => {
-  const cs = getComputedStyle(e);
-  return (cs.textOverflow === 'ellipsis' && cs.overflow !== 'visible')
-      || e.scrollWidth - e.clientWidth > 1;
-}).map(e => e.tagName + '.' + e.className));
-expect(bad).toEqual([]);
-```
-
-## Ordem de execução
-
-1. Instalar deps (`stylelint`, `stylelint-config-standard`, `@playwright/test`, `pdf-parse`).
-2. Criar `.stylelintrc.json` + `scripts/validate-css.mjs`.
-3. Atualizar `src/styles.css` (fallback + var de escala).
-4. Criar `src/components/print-mode-toggle.tsx`.
-5. Trocar botões de imprimir nas 5 rotas.
-6. Criar `tests/pdf-no-truncation.spec.ts` + config Playwright mínima.
-7. Correr `bun lint:css` e o teste para validar.
+No fim confirmo explicitamente: onde a chave está guardada, que não aparece em nenhum ficheiro do cliente, e qual o ficheiro que faz a chamada à API.
