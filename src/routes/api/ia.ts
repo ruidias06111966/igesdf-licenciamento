@@ -23,11 +23,34 @@ Regras:
 - Cita a base legal quando a conheceres; se não tiveres certeza da vigência de uma norma, diz isso claramente em vez de inventar número ou data.
 - Sê objetivo: primeiro a resposta, depois os detalhes.`;
 
+/** Extrai o base64 puro de um data URL ("data:...;base64,XXXX"). */
+function base64(dados: string): string {
+  const i = dados.indexOf("base64,");
+  return i >= 0 ? dados.slice(i + 7) : dados;
+}
+
+/** Converte um anexo no bloco de conteúdo correspondente da API da Anthropic. */
 function parteAnexo(a: Anexo) {
   if (a.tipo.startsWith("image/")) {
-    return { type: "image_url", image_url: { url: a.dados } };
+    return {
+      type: "image",
+      source: { type: "base64", media_type: a.tipo, data: base64(a.dados) },
+    };
   }
-  return { type: "file", file: { filename: a.nome, file_data: a.dados } };
+  if (a.tipo === "application/pdf") {
+    return {
+      type: "document",
+      source: { type: "base64", media_type: "application/pdf", data: base64(a.dados) },
+    };
+  }
+  // Texto simples (txt, md, csv): enviado como texto para o modelo.
+  let conteudo = "";
+  try {
+    conteudo = atob(base64(a.dados));
+  } catch {
+    conteudo = "(não foi possível ler o conteúdo deste ficheiro)";
+  }
+  return { type: "text", text: `Ficheiro anexado "${a.nome}":\n\n${conteudo.slice(0, 200_000)}` };
 }
 
 export const Route = createFileRoute("/api/ia")({
@@ -39,15 +62,14 @@ export const Route = createFileRoute("/api/ia")({
           return new Response("Acesso restrito ao utilizador master.", { status: 403 });
         }
 
-        const chave = process.env['LOVABLE_API_KEY'];
-        if (!chave) return new Response("Assistente não configurado.", { status: 500 });
+        const chave = process.env['ANTHROPIC_API_KEY'];
+        if (!chave) return new Response("Assistente não configurado (falta a chave Anthropic).", { status: 500 });
 
         const body = (await request.json()) as { mensagens?: Mensagem[]; modelo?: string };
         const mensagens = Array.isArray(body.mensagens) ? body.mensagens.slice(-30) : [];
         if (mensagens.length === 0) return new Response("Sem mensagens.", { status: 400 });
 
-        const modelo =
-          body.modelo === "aprofundado" ? "google/gemini-3.1-pro-preview" : "google/gemini-3.6-flash";
+        const modelo = body.modelo === "aprofundado" ? "claude-opus-5" : "claude-sonnet-5";
 
         const payload = mensagens.map((m) => {
           if (m.role === "user" && m.anexos && m.anexos.length > 0) {
@@ -62,17 +84,19 @@ export const Route = createFileRoute("/api/ia")({
           return { role: m.role, content: m.content };
         });
 
-        const resposta = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+        const resposta = await fetch("https://api.anthropic.com/v1/messages", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
-            "Lovable-API-Key": chave,
-            "X-Lovable-AIG-SDK": "fetch",
+            "x-api-key": chave,
+            "anthropic-version": "2023-06-01",
           },
           body: JSON.stringify({
             model: modelo,
             stream: true,
-            messages: [{ role: "system", content: SISTEMA }, ...payload],
+            max_tokens: 8000,
+            system: SISTEMA,
+            messages: payload,
           }),
         });
 
@@ -80,10 +104,12 @@ export const Route = createFileRoute("/api/ia")({
           const texto = await resposta.text().catch(() => "");
           const mensagem =
             resposta.status === 429
-              ? "Limite de pedidos atingido. Tente novamente dentro de instantes."
-              : resposta.status === 402
-                ? "Créditos de IA esgotados. Adicione créditos nas definições da área de trabalho."
-                : `Falha do assistente (${resposta.status}). ${texto.slice(0, 300)}`;
+              ? "Limite de pedidos da conta Anthropic atingido. Tente novamente dentro de instantes."
+              : resposta.status === 401
+                ? "Chave Anthropic inválida ou revogada. Atualize a chave nas definições do projeto."
+                : resposta.status === 400 && texto.includes("credit")
+                  ? "Saldo esgotado na sua conta Anthropic. Adicione créditos em console.anthropic.com → Billing."
+                  : `Falha do assistente (${resposta.status}). ${texto.slice(0, 300)}`;
           return new Response(mensagem, { status: resposta.status || 500 });
         }
 
@@ -103,10 +129,13 @@ export const Route = createFileRoute("/api/ia")({
               if (!dados || dados === "[DONE]") continue;
               try {
                 const json = JSON.parse(dados) as {
-                  choices?: { delta?: { content?: string } }[];
+                  type?: string;
+                  delta?: { type?: string; text?: string };
                 };
-                const texto = json.choices?.[0]?.delta?.content;
-                if (texto) controller.enqueue(encoder.encode(texto));
+                if (json.type === "content_block_delta" && json.delta?.type === "text_delta") {
+                  const texto = json.delta.text;
+                  if (texto) controller.enqueue(encoder.encode(texto));
+                }
               } catch {
                 /* fragmento incompleto: ignorado */
               }
