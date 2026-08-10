@@ -120,7 +120,7 @@ export const upsertProcesso = createServerFn({ method: "POST" })
         .eq("orgao", data.orgao)
         .order("ordem");
       if (tpl && tpl.length > 0) {
-        await context.supabase.from("processo_itens").insert(
+        const { error: itensError } = await context.supabase.from("processo_itens").insert(
           tpl.map((t) => ({
             processo_id: ins.id,
             template_id: t.id,
@@ -133,16 +133,34 @@ export const upsertProcesso = createServerFn({ method: "POST" })
             situacao: "pendente",
           })),
         );
+        // O erro era ignorado: o processo nascia sem checklist e ninguém sabia.
+        if (itensError) throw itensError;
       }
     }
     return { id: ins.id };
   });
 
+/**
+ * Arquiva o processo (remoção lógica), à semelhança de `deleteUnidade`.
+ *
+ * Antes era um DELETE definitivo. Como `documentos.processo_id` e
+ * `processo_itens.processo_id` têm ON DELETE CASCADE, apagar um processo
+ * destruía também o checklist e os registos dos anexos — e os ficheiros ficavam
+ * órfãos no bucket, porque nada os removia de lá. Num sistema cuja função é
+ * justamente guardar o histórico dos processos de licenciamento, essa perda é
+ * irreversível e sem rasto.
+ *
+ * A coluna `ativo` já existia no esquema e `listProcessos` já filtrava por ela:
+ * a remoção lógica era a intenção original.
+ */
 export const deleteProcesso = createServerFn({ method: "POST" })
   .middleware([requireEdicao])
   .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
-    const { error } = await context.supabase.from("processos_sei").delete().eq("id", data.id);
+    const { error } = await context.supabase
+      .from("processos_sei")
+      .update({ ativo: false })
+      .eq("id", data.id);
     if (error) throw error;
     return { ok: true };
   });

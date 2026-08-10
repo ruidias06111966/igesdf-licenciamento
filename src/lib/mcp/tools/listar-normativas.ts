@@ -22,7 +22,8 @@ export default defineTool({
       .order("ano", { ascending: false, nullsFirst: false })
       .limit(200);
     if (orgao) q = q.ilike("orgao_sigla", `%${orgao}%`);
-    if (procura) q = q.or(`titulo.ilike.%${procura}%,ementa.ilike.%${procura}%,numero.ilike.%${procura}%`);
+    if (procura)
+      q = q.or(`titulo.ilike.%${procura}%,ementa.ilike.%${procura}%,numero.ilike.%${procura}%`);
     const { data, error } = await q;
     if (error) return { content: [{ type: "text", text: error.message }], isError: true };
     return {

@@ -13,6 +13,8 @@ import { createFileRoute } from "@tanstack/react-router";
  * mensagens de erro.
  */
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 type Anexo = { nome: string; tipo: string; dados: string };
 type Mensagem = { role: "user" | "assistant"; content: string; anexos?: Anexo[] };
 
@@ -69,15 +71,17 @@ export const Route = createFileRoute("/api/ia")({
         // créditos ou memória a desserializar.
         const bruto = await request.text();
         if (bruto.length > LIMITE_CARACTERES && !bruto.includes("base64,")) {
-          return new Response("Pedido demasiado grande. Reduza o contexto enviado.", { status: 413 });
+          return new Response("Pedido demasiado grande. Reduza o contexto enviado.", {
+            status: 413,
+          });
         }
 
         let body: {
           mensagens?: Mensagem[];
           modelo?: string;
           acao?: string;
-          contexto?: unknown;
           pergunta?: string;
+          unidadeId?: string;
         };
         try {
           body = JSON.parse(bruto);
@@ -110,10 +114,14 @@ export const Route = createFileRoute("/api/ia")({
 
         const modelo = body.modelo === "aprofundado" ? "claude-opus-5" : "claude-sonnet-5";
 
-        // O contexto é limpo aqui, no servidor: dados de pessoas físicas nunca
-        // saem do sistema, mesmo que o navegador os tenha incluído.
-        const contextoLimpo =
-          body.contexto === undefined ? null : sanitizarContexto(body.contexto);
+        // O contexto é montado no servidor a partir da base de dados — o
+        // navegador só indica a ação e, quando aplicável, a unidade. Depois é
+        // limpo: dados de pessoas físicas nunca saem do sistema.
+        const { montarContexto } = await import("@/lib/ia-contexto.server");
+        const unidadeId =
+          typeof body.unidadeId === "string" && UUID.test(body.unidadeId) ? body.unidadeId : null;
+        const contextoBruto = await montarContexto(acao, unidadeId);
+        const contextoLimpo = contextoBruto === null ? null : sanitizarContexto(contextoBruto);
 
         const sistema =
           CONTEXTO_DOMINIO +
@@ -165,10 +173,9 @@ export const Route = createFileRoute("/api/ia")({
         } catch (erro) {
           clearTimeout(relogio);
           console.error("[ia] falha na chamada à Anthropic:", erro);
-          return new Response(
-            "Serviço de IA temporariamente indisponível. Tente novamente.",
-            { status: 503 },
-          );
+          return new Response("Serviço de IA temporariamente indisponível. Tente novamente.", {
+            status: 503,
+          });
         }
         clearTimeout(relogio);
 
@@ -181,10 +188,9 @@ export const Route = createFileRoute("/api/ia")({
             return new Response("Assistente indisponível no momento.", { status: 500 });
           }
           if (resposta.status === 429 || resposta.status === 529 || resposta.status >= 500) {
-            return new Response(
-              "Serviço de IA temporariamente indisponível. Tente novamente.",
-              { status: 503 },
-            );
+            return new Response("Serviço de IA temporariamente indisponível. Tente novamente.", {
+              status: 503,
+            });
           }
           if (resposta.status === 400 && detalhe.includes("credit")) {
             return new Response(

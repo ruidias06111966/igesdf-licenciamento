@@ -8,7 +8,7 @@ import listarNormativas from "./tools/listar-normativas";
 
 // O emissor OAuth tem de ser o host direto do Supabase (o URL publicado é um
 // proxy e seria rejeitado na verificação RFC 8414).
-const projectRef = import.meta.env['VITE_SUPABASE_PROJECT_ID'] ?? "project-ref-unset";
+const projectRef = import.meta.env["VITE_SUPABASE_PROJECT_ID"] ?? "project-ref-unset";
 
 export default defineMcp({
   name: "igesdf-licenciamento",

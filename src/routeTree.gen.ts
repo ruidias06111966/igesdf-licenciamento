@@ -18,6 +18,7 @@ import { Route as ApiIaRouteImport } from './routes/api/ia'
 import { Route as AuthenticatedRelatoriosRouteImport } from './routes/_authenticated/relatorios'
 import { Route as AuthenticatedOrgaosRouteImport } from './routes/_authenticated/orgaos'
 import { Route as AuthenticatedNormativasRouteImport } from './routes/_authenticated/normativas'
+import { Route as AuthenticatedMatrizRouteImport } from './routes/_authenticated/matriz'
 import { Route as AuthenticatedLicencasRouteImport } from './routes/_authenticated/licencas'
 import { Route as AuthenticatedIaRouteImport } from './routes/_authenticated/ia'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
@@ -75,6 +76,11 @@ const AuthenticatedOrgaosRoute = AuthenticatedOrgaosRouteImport.update({
 const AuthenticatedNormativasRoute = AuthenticatedNormativasRouteImport.update({
   id: '/normativas',
   path: '/normativas',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedMatrizRoute = AuthenticatedMatrizRouteImport.update({
+  id: '/matriz',
+  path: '/matriz',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedLicencasRoute = AuthenticatedLicencasRouteImport.update({
@@ -167,6 +173,7 @@ export interface FileRoutesByFullPath {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/ia': typeof AuthenticatedIaRoute
   '/licencas': typeof AuthenticatedLicencasRoute
+  '/matriz': typeof AuthenticatedMatrizRoute
   '/normativas': typeof AuthenticatedNormativasRoute
   '/orgaos': typeof AuthenticatedOrgaosRoute
   '/relatorios': typeof AuthenticatedRelatoriosRoute
@@ -191,6 +198,7 @@ export interface FileRoutesByTo {
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/ia': typeof AuthenticatedIaRoute
   '/licencas': typeof AuthenticatedLicencasRoute
+  '/matriz': typeof AuthenticatedMatrizRoute
   '/normativas': typeof AuthenticatedNormativasRoute
   '/orgaos': typeof AuthenticatedOrgaosRoute
   '/relatorios': typeof AuthenticatedRelatoriosRoute
@@ -217,6 +225,7 @@ export interface FileRoutesById {
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/ia': typeof AuthenticatedIaRoute
   '/_authenticated/licencas': typeof AuthenticatedLicencasRoute
+  '/_authenticated/matriz': typeof AuthenticatedMatrizRoute
   '/_authenticated/normativas': typeof AuthenticatedNormativasRoute
   '/_authenticated/orgaos': typeof AuthenticatedOrgaosRoute
   '/_authenticated/relatorios': typeof AuthenticatedRelatoriosRoute
@@ -243,6 +252,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/ia'
     | '/licencas'
+    | '/matriz'
     | '/normativas'
     | '/orgaos'
     | '/relatorios'
@@ -267,6 +277,7 @@ export interface FileRouteTypes {
     | '/dashboard'
     | '/ia'
     | '/licencas'
+    | '/matriz'
     | '/normativas'
     | '/orgaos'
     | '/relatorios'
@@ -292,6 +303,7 @@ export interface FileRouteTypes {
     | '/_authenticated/dashboard'
     | '/_authenticated/ia'
     | '/_authenticated/licencas'
+    | '/_authenticated/matriz'
     | '/_authenticated/normativas'
     | '/_authenticated/orgaos'
     | '/_authenticated/relatorios'
@@ -383,6 +395,13 @@ declare module '@tanstack/react-router' {
       path: '/normativas'
       fullPath: '/normativas'
       preLoaderRoute: typeof AuthenticatedNormativasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/matriz': {
+      id: '/_authenticated/matriz'
+      path: '/matriz'
+      fullPath: '/matriz'
+      preLoaderRoute: typeof AuthenticatedMatrizRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/licencas': {
@@ -491,6 +510,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedIaRoute: typeof AuthenticatedIaRoute
   AuthenticatedLicencasRoute: typeof AuthenticatedLicencasRoute
+  AuthenticatedMatrizRoute: typeof AuthenticatedMatrizRoute
   AuthenticatedNormativasRoute: typeof AuthenticatedNormativasRoute
   AuthenticatedOrgaosRoute: typeof AuthenticatedOrgaosRoute
   AuthenticatedRelatoriosRoute: typeof AuthenticatedRelatoriosRoute
@@ -506,6 +526,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedIaRoute: AuthenticatedIaRoute,
   AuthenticatedLicencasRoute: AuthenticatedLicencasRoute,
+  AuthenticatedMatrizRoute: AuthenticatedMatrizRoute,
   AuthenticatedNormativasRoute: AuthenticatedNormativasRoute,
   AuthenticatedOrgaosRoute: AuthenticatedOrgaosRoute,
   AuthenticatedRelatoriosRoute: AuthenticatedRelatoriosRoute,
