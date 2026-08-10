@@ -87,7 +87,7 @@ export function FormSheet<T extends object>({
       {/* Janela ampla e centrada: dá espaço de leitura e escrita, em vez da
           gaveta estreita encostada à direita. */}
       <DialogContent
-        className={`flex h-[95vh] max-h-[95vh] w-[96vw] flex-col gap-0 overflow-hidden p-0 sm:max-w-[1100px] ${largura ?? ""}`}
+        className={`flex h-[95vh] max-h-[95vh] w-[96vw] flex-col gap-0 overflow-hidden p-0 sm:max-w-[1100px]`}
       >
         {/* pr-12 deixa espaço para o botão de fechar, posicionado em absoluto. */}
         <DialogHeader className="space-y-1 border-b p-4 pr-12 text-left">
