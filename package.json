@@ -12,7 +12,8 @@
     "lint:css": "stylelint 'src/**/*.css' --allow-empty-input",
     "validate:css": "node scripts/validate-css.mjs",
     "test:pdf": "playwright test tests/pdf-no-truncation.spec.ts",
-    "format": "prettier --write ."
+    "format": "prettier --write .",
+    "test": "playwright test tests/matriz.spec.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",

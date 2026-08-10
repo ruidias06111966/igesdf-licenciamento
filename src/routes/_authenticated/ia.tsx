@@ -1,11 +1,31 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { Bot, Check, Copy, Loader2, Paperclip, Send, Sparkles, Trash2, User, X } from "lucide-react";
+import {
+  Bot,
+  Check,
+  Copy,
+  Loader2,
+  Paperclip,
+  Send,
+  Sparkles,
+  Trash2,
+  User,
+  X,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { unidadesQuery } from "@/lib/queries";
 import { PageHeader } from "@/components/page-header";
 import { useEhMaster } from "@/lib/perfil";
 import { cn } from "@/lib/utils";
@@ -93,7 +113,11 @@ function lerFicheiro(f: File): Promise<Anexo> {
     const leitor = new FileReader();
     leitor.onerror = () => reject(new Error(`Não foi possível ler "${f.name}".`));
     leitor.onload = () =>
-      resolve({ nome: f.name, tipo: f.type || "application/octet-stream", dados: String(leitor.result) });
+      resolve({
+        nome: f.name,
+        tipo: f.type || "application/octet-stream",
+        dados: String(leitor.result),
+      });
     leitor.readAsDataURL(f);
   });
 }
@@ -105,6 +129,9 @@ function PaginaIA() {
   const [anexos, setAnexos] = useState<Anexo[]>([]);
   const [modelo, setModelo] = useState<"rapido" | "aprofundado">("rapido");
   const [acao, setAcao] = useState<Acao>("pergunta_livre");
+  // "rede" = retrato de toda a rede; caso contrário o id da unidade a detalhar.
+  const [escopo, setEscopo] = useState<string>("rede");
+  const { data: unidades } = useQuery(unidadesQuery);
   const [ocupado, setOcupado] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
   const fimRef = useRef<HTMLDivElement>(null);
@@ -151,7 +178,11 @@ function PaginaIA() {
     const pergunta = conteudo.trim();
     if ((!pergunta && anexos.length === 0) || ocupado) return;
     setErro(null);
-    const nova: Mensagem = { role: "user", content: pergunta, anexos: anexos.length ? anexos : undefined };
+    const nova: Mensagem = {
+      role: "user",
+      content: pergunta,
+      anexos: anexos.length ? anexos : undefined,
+    };
     const historico = [...mensagens, nova];
     setMensagens([...historico, { role: "assistant", content: "" }]);
     setTexto("");
@@ -162,7 +193,12 @@ function PaginaIA() {
       const res = await fetch("/api/ia", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ mensagens: historico, modelo, acao }),
+        body: JSON.stringify({
+          mensagens: historico,
+          modelo,
+          acao,
+          unidadeId: escopo === "rede" ? undefined : escopo,
+        }),
       });
       if (!res.ok || !res.body) {
         throw new Error(mensagemErro(res.status, await res.text().catch(() => "")));
@@ -245,6 +281,26 @@ function PaginaIA() {
             {rotulo}
           </Button>
         ))}
+      </div>
+
+      <div className="flex flex-wrap items-center gap-2 text-xs">
+        <span className="text-muted-foreground">Dados consultados:</span>
+        <Select value={escopo} onValueChange={setEscopo}>
+          <SelectTrigger className="h-8 w-72" aria-label="Escolher os dados enviados ao assistente">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="rede">Rede completa (indicadores e pendências)</SelectItem>
+            {(unidades ?? []).map((u) => (
+              <SelectItem key={u.id} value={u.id}>
+                {u.nome}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <span className="text-muted-foreground">
+          O assistente recebe estes dados a cada pergunta. Dados pessoais são removidos.
+        </span>
       </div>
 
       <Card className="flex h-[62vh] min-h-100 flex-col">

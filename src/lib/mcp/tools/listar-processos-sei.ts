@@ -11,7 +11,10 @@ export default defineTool({
   inputSchema: {
     unidade: z.string().optional().describe("Nome (ou parte) da unidade."),
     numero: z.string().optional().describe("Número do processo SEI."),
-    incluir_itens: z.boolean().optional().describe("Incluir os itens de checklist de cada processo."),
+    incluir_itens: z
+      .boolean()
+      .optional()
+      .describe("Incluir os itens de checklist de cada processo."),
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ unidade, numero, incluir_itens }, ctx) => {
@@ -19,7 +22,9 @@ export default defineTool({
     const supabase = await db();
     let q = supabase
       .from("processos_sei")
-      .select("id, numero, tipo, assunto, orgao, situacao, responsavel, data_abertura, link, unidade_id")
+      .select(
+        "id, numero, tipo, assunto, orgao, situacao, responsavel, data_abertura, link, unidade_id",
+      )
       .eq("ativo", true)
       .order("created_at", { ascending: false })
       .limit(200);

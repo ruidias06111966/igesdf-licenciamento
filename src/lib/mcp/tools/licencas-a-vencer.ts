@@ -10,7 +10,10 @@ export default defineTool({
     "Devolve as licenças já vencidas ou a vencer dentro de um número de dias, ordenadas pelo prazo mais próximo.",
   inputSchema: {
     dias: z.number().optional().describe("Janela em dias a partir de hoje (por omissão 90)."),
-    incluir_vencidas: z.boolean().optional().describe("Incluir licenças já vencidas (sim por omissão)."),
+    incluir_vencidas: z
+      .boolean()
+      .optional()
+      .describe("Incluir licenças já vencidas (sim por omissão)."),
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ dias, incluir_vencidas }, ctx) => {

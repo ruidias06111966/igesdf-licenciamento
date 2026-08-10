@@ -39,7 +39,10 @@ Regra do semáforo de vencimento: até 60 dias = crítico; de 61 a 90 dias = a v
 Estados possíveis de um processo: finalizado, em estudo, aguardando órgão, vencido, dentro do prazo.
 Responda em português do Brasil, de forma objetiva e técnica.
 Baseie-se exclusivamente nos dados do contexto fornecido.
-Se a informação não estiver no contexto, diga que não consta no sistema — nunca invente número de processo, data de validade ou situação.`;
+Se a informação não estiver no contexto, diga que não consta no sistema — nunca invente número de processo, data de validade ou situação.
+Os dados do contexto vêm da base do sistema no momento da pergunta. Campos de pessoas físicas (nome de responsável técnico, CPF, e-mail, telefone) são removidos antes de chegarem a você: se perguntarem por eles, explique que o sistema não os envia ao assistente e que devem ser consultados na ficha da unidade.
+Quando listar licenças ou prazos, cite sempre a unidade, o órgão e a data, para a resposta ser verificável no sistema.
+Se uma lista vier truncada (indicado no campo "nota" do contexto), avise que há mais registos e sugira consultar a unidade específica.`;
 
 /**
  * Campos que identificam pessoas físicas e nunca são enviados à Anthropic.

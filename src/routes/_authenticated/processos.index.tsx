@@ -231,9 +231,10 @@ function ProcessoCard({
               }
             />
             <ConfirmDelete
-              titulo={`Excluir processo ${processo.numero}?`}
-              descricao="O checklist e os anexos ligados a este processo também são removidos."
-              mensagemSucesso="Processo excluído"
+              titulo={`Arquivar processo ${processo.numero}?`}
+              descricao="O processo sai da listagem e deixa de contar nos indicadores. O checklist, os anexos e todo o histórico ficam preservados."
+              rotuloConfirmar="Arquivar"
+              mensagemSucesso="Processo arquivado"
               onConfirm={() => deleteProcesso({ data: { id: processo.id } })}
               onDone={() => invalidarDados(qc)}
             />
