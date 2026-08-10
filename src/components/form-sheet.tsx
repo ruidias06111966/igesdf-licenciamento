@@ -3,13 +3,13 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { usePodeEditar } from "@/lib/perfil";
 import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 
 /** Atualiza um campo do formulário preservando o resto. */
 export type DefinirCampo<T> = <K extends keyof T>(campo: K, valor: T[K]) => void;
@@ -30,6 +30,7 @@ type Props<T> = {
   /** Bloqueia o botão de salvar enquanto a validação local não passa. */
   podeSalvar?: (valores: T) => boolean;
   rotuloSalvar?: string;
+  /** Mantido por compatibilidade; a janela usa agora largura ampla centrada. */
   largura?: string;
   children: (
     valores: T,
@@ -46,7 +47,6 @@ export function FormSheet<T extends object>({
   onSubmit,
   podeSalvar,
   rotuloSalvar = "Salvar",
-  largura = "sm:max-w-lg",
   children,
 }: Props<T>) {
   const [aberto, setAberto] = useState(false);
@@ -81,17 +81,23 @@ export function FormSheet<T extends object>({
   const bloqueado = salvando || (podeSalvar ? !podeSalvar(valores) : false);
 
   return (
-    <Sheet open={aberto} onOpenChange={abrirOuFechar}>
-      <SheetTrigger asChild>{trigger}</SheetTrigger>
-      <SheetContent className={`flex w-full flex-col gap-0 p-0 ${largura}`}>
+    <Dialog open={aberto} onOpenChange={abrirOuFechar}>
+      <DialogTrigger asChild>{trigger}</DialogTrigger>
+      {/* Janela ampla e centrada: dá espaço de leitura e escrita, em vez da
+          gaveta estreita encostada à direita. */}
+      <DialogContent
+        className={`flex h-[95vh] max-h-[95vh] w-[96vw] flex-col gap-0 overflow-hidden p-0 sm:max-w-[1100px]`}
+      >
         {/* pr-12 deixa espaço para o botão de fechar, posicionado em absoluto. */}
-        <SheetHeader className="space-y-1 border-b p-4 pr-12">
-          <SheetTitle>{titulo}</SheetTitle>
-          {descricao && <SheetDescription className="text-xs">{descricao}</SheetDescription>}
-        </SheetHeader>
+        <DialogHeader className="space-y-1 border-b p-4 pr-12 text-left">
+          <DialogTitle>{titulo}</DialogTitle>
+          {descricao && <DialogDescription className="text-xs">{descricao}</DialogDescription>}
+        </DialogHeader>
         <form onSubmit={enviar} className="flex min-h-0 flex-1 flex-col">
-          <div className="min-h-0 flex-1 space-y-4 overflow-y-auto p-4">
-            {children(valores, definir, atualizar)}
+          <div className="min-h-0 flex-1 overflow-y-auto p-6">
+            <div className="mx-auto max-w-4xl space-y-4">
+              {children(valores, definir, atualizar)}
+            </div>
           </div>
           <div className="flex justify-end gap-2 border-t bg-background p-4">
             <Button type="button" variant="outline" onClick={() => setAberto(false)}>
@@ -102,8 +108,8 @@ export function FormSheet<T extends object>({
             </Button>
           </div>
         </form>
-      </SheetContent>
-    </Sheet>
+      </DialogContent>
+    </Dialog>
   );
 }
 
