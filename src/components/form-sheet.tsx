@@ -47,7 +47,6 @@ export function FormSheet<T extends object>({
   onSubmit,
   podeSalvar,
   rotuloSalvar = "Salvar",
-  largura,
   children,
 }: Props<T>) {
   const [aberto, setAberto] = useState(false);
