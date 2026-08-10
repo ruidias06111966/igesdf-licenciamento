@@ -306,6 +306,60 @@ export type Database = {
           },
         ]
       }
+      ia_modelos: {
+        Row: {
+          conteudo: string
+          created_at: string
+          id: string
+          observacoes: string | null
+          processo_id: string | null
+          tags: string[]
+          tipo: string
+          titulo: string
+          unidade_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          conteudo: string
+          created_at?: string
+          id?: string
+          observacoes?: string | null
+          processo_id?: string | null
+          tags?: string[]
+          tipo?: string
+          titulo: string
+          unidade_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          conteudo?: string
+          created_at?: string
+          id?: string
+          observacoes?: string | null
+          processo_id?: string | null
+          tags?: string[]
+          tipo?: string
+          titulo?: string
+          unidade_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ia_modelos_processo_id_fkey"
+            columns: ["processo_id"]
+            isOneToOne: false
+            referencedRelation: "processos_sei"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "ia_modelos_unidade_id_fkey"
+            columns: ["unidade_id"]
+            isOneToOne: false
+            referencedRelation: "unidades"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ia_uso: {
         Row: {
           acao: string

@@ -27,6 +27,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { unidadesQuery } from "@/lib/queries";
 import { PageHeader } from "@/components/page-header";
+import { BibliotecaModelos, GuardarModelo } from "@/components/modelos-ia";
 import { useEhMaster } from "@/lib/perfil";
 import { cn } from "@/lib/utils";
 
@@ -240,11 +241,20 @@ function PaginaIA() {
         titulo="Assistente IA"
         descricao="Apoio à redação de despachos e processos, interpretação de normativas e análise de documentos de licenciamento."
         acoes={
-          mensagens.length > 0 ? (
-            <Button variant="outline" size="sm" onClick={() => setMensagens([])}>
-              <Trash2 className="mr-2 size-4" aria-hidden="true" /> Nova conversa
-            </Button>
-          ) : undefined
+          <div className="flex flex-wrap gap-2">
+            <BibliotecaModelos
+              onUsar={(conteudo) =>
+                setTexto(
+                  `Usa este documento padrão como base e adapta ao caso que vou indicar:\n\n${conteudo}`,
+                )
+              }
+            />
+            {mensagens.length > 0 && (
+              <Button variant="outline" size="sm" onClick={() => setMensagens([])}>
+                <Trash2 className="mr-2 size-4" aria-hidden="true" /> Nova conversa
+              </Button>
+            )}
+          </div>
         }
       />
 
@@ -356,7 +366,10 @@ function PaginaIA() {
                       <div className="prose prose-sm dark:prose-invert max-w-none [&_table]:block [&_table]:overflow-x-auto">
                         <ReactMarkdown remarkPlugins={[remarkGfm]}>{m.content}</ReactMarkdown>
                       </div>
-                      <BotaoCopiar texto={m.content} />
+                      <div className="flex flex-wrap items-center gap-1">
+                        <BotaoCopiar texto={m.content} />
+                        <GuardarModelo conteudo={m.content} />
+                      </div>
                     </>
                   ) : (
                     <Loader2 className="size-4 animate-spin" aria-hidden="true" />
