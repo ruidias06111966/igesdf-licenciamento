@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { Fragment, useMemo } from "react";
+import { toast } from "sonner";
 import { Download, Pencil, Plus, Search } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState, ErrorState, PageSkeleton } from "@/components/states";
@@ -8,7 +9,7 @@ import { SemaforoBadge } from "@/components/status-badge";
 import { SortableTh, TableScroll } from "@/components/data-table";
 import { useOrdenacao } from "@/lib/use-ordenacao";
 import { ConfirmDelete } from "@/components/confirm-delete";
-import { LicencaForm } from "@/components/forms/licenca-form";
+import { LicencaForm, type ValoresLicenca } from "@/components/forms/licenca-form";
 import { PrintModeToggle } from "@/components/print-mode-toggle";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -25,6 +26,7 @@ import { invalidarDados, licencasQuery, unidadesQuery } from "@/lib/queries";
 import {
   GRUPO_RISCO_INFO,
   ORGAOS,
+  calcularSemaforo,
   grupoRisco,
   orgaoLabel,
   parseCnae,
