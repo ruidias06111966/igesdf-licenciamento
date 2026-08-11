@@ -34,8 +34,12 @@ export const Route = createFileRoute("/api/public/hooks/enviar-alertas")({
         if (!expected || !provided || provided !== expected) {
           return new Response("Unauthorized", { status: 401 });
         }
-        const destinatario = process.env.ALERTAS_EMAIL_DESTINATARIO;
-        if (!destinatario) {
+        // Aceita vários destinatários separados por vírgula ou ponto e vírgula.
+        const destinatarios = (process.env.ALERTAS_EMAIL_DESTINATARIO ?? "")
+          .split(/[,;]/)
+          .map((e) => e.trim())
+          .filter((e) => e.includes("@"));
+        if (destinatarios.length === 0) {
           return Response.json(
             { ok: false, reason: "ALERTAS_EMAIL_DESTINATARIO não configurado" },
             { status: 200 },
@@ -94,20 +98,22 @@ export const Route = createFileRoute("/api/public/hooks/enviar-alertas")({
               const mod = (await import("@lovable.dev/email-js")) as unknown as EmailModule;
               const send = mod.sendLovableEmail ?? mod.default?.sendLovableEmail ?? mod.default;
               if (typeof send !== "function") throw new Error("Módulo de e-mail indisponível");
-              await send(
-                {
-                  apiKey: process.env.LOVABLE_API_KEY!,
-                  from: "IGESDF - Licenciamento <notify@lovable.app>",
-                  to: destinatario,
-                  subject,
-                  html,
-                },
-                {},
-              );
+              for (const to of destinatarios) {
+                await send(
+                  {
+                    apiKey: process.env.LOVABLE_API_KEY!,
+                    from: "IGESDF - Licenciamento <notify@lovable.app>",
+                    to,
+                    subject,
+                    html,
+                  },
+                  {},
+                );
+              }
               await supabaseAdmin.from("notificacoes_vencimento").insert({
                 licenca_id: l.id,
                 dias_antes: dias,
-                destinatario,
+                destinatario: destinatarios.join(", "),
               });
               enviados.push({ licenca: l.id, dias });
             } catch (erro) {
