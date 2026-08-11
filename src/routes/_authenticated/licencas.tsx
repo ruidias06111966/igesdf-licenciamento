@@ -191,6 +191,30 @@ function LicencasPage() {
     void navegar({ search: {}, replace: true });
   }
 
+  /**
+   * Depois de gravar, confirma se o registo continua visível com os filtros
+   * ativos. Alterar a situação (por exemplo para "Dispensada") muda o semáforo
+   * e podia retirar a linha da lista sem qualquer aviso — parecia que a licença
+   * tinha sido apagada.
+   */
+  function avisarSeForaDoFiltro(v: ValoresLicenca) {
+    if (!temFiltro) return;
+    const semaforoNovo = calcularSemaforo({
+      status: v.status,
+      data_vencimento: v.data_vencimento || null,
+    });
+    const foraOrgao = orgao !== "todos" && v.orgao !== orgao;
+    const foraUnidade = unidadeF !== "todos" && v.unidade_id !== unidadeF;
+    const foraSemaforo = semaforo !== "todos" && semaforoNovo !== semaforo;
+    const foraCnae = cnaeF !== "todos" && parseCnae(v.descricao).codigo !== cnaeF;
+    if (!foraOrgao && !foraUnidade && !foraSemaforo && !foraCnae) return;
+    toast.warning("Registro salvo, mas fora dos filtros atuais", {
+      description: "A licença continua cadastrada — apenas não aparece nesta seleção.",
+      duration: 10000,
+      action: { label: "Limpar filtros", onClick: limpar },
+    });
+  }
+
   function exportar() {
     baixarCsv(`licencas-igesdf-${sufixoData()}`, ordenados, COLUNAS_CSV);
   }
@@ -215,6 +239,7 @@ function LicencasPage() {
             <LicencaForm
               unidades={unidades}
               unidadeId={unidades[0]?.id}
+              onSaved={avisarSeForaDoFiltro}
               trigger={
                 <Button>
                   <Plus className="mr-1 size-4" aria-hidden="true" /> Nova licença
@@ -411,6 +436,7 @@ function LicencasPage() {
                             licenca={d}
                             unidades={unidades}
                             unidadeId={d.unidade_id ?? undefined}
+                            onSaved={avisarSeForaDoFiltro}
                             trigger={
                               <Button
                                 size="icon"
