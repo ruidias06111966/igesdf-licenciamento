@@ -17,7 +17,7 @@ import { upsertLicenca } from "@/lib/licencas.functions";
 import { invalidarDados } from "@/lib/queries";
 import type { Licenca, LicencaDashboard, Unidade } from "@/lib/rows";
 
-type Valores = {
+export type ValoresLicenca = {
   id?: string;
   unidade_id: string;
   orgao: Orgao;
@@ -30,6 +30,7 @@ type Valores = {
   data_protocolo: string;
   observacoes: string;
 };
+type Valores = ValoresLicenca;
 
 /** Aceita tanto a linha da tabela como a linha da view do painel. */
 type LicencaEditavel = Licenca | LicencaDashboard;
@@ -60,18 +61,26 @@ export function LicencaForm({
   licenca,
   unidadeId,
   unidades,
+  onSaved,
 }: {
   trigger: ReactNode;
   licenca?: LicencaEditavel;
   unidadeId?: string;
   unidades?: Unidade[];
+  /**
+   * Chamada depois de gravar. A listagem usa-a para avisar quando o registo
+   * gravado deixa de aparecer por causa dos filtros ativos — antes parecia que
+   * a licença tinha desaparecido.
+   */
+  onSaved?: (valores: Valores) => void;
 }) {
   const qc = useQueryClient();
   const salvar = useMutation({
     mutationFn: (valores: Valores) => upsertLicenca({ data: valores }),
-    onSuccess: () => {
+    onSuccess: (_res, valores) => {
       toast.success(licenca ? "Licença atualizada" : "Licença cadastrada");
       invalidarDados(qc);
+      onSaved?.(valores);
     },
     onError: (erro) => toast.error(mensagemErro(erro)),
   });

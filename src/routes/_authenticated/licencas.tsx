@@ -1,6 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { Fragment, useMemo } from "react";
+import { toast } from "sonner";
 import { Download, Pencil, Plus, Search } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
 import { EmptyState, ErrorState, PageSkeleton } from "@/components/states";
@@ -8,7 +9,7 @@ import { SemaforoBadge } from "@/components/status-badge";
 import { SortableTh, TableScroll } from "@/components/data-table";
 import { useOrdenacao } from "@/lib/use-ordenacao";
 import { ConfirmDelete } from "@/components/confirm-delete";
-import { LicencaForm } from "@/components/forms/licenca-form";
+import { LicencaForm, type ValoresLicenca } from "@/components/forms/licenca-form";
 import { PrintModeToggle } from "@/components/print-mode-toggle";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -25,6 +26,7 @@ import { invalidarDados, licencasQuery, unidadesQuery } from "@/lib/queries";
 import {
   GRUPO_RISCO_INFO,
   ORGAOS,
+  calcularSemaforo,
   grupoRisco,
   orgaoLabel,
   parseCnae,
@@ -189,6 +191,30 @@ function LicencasPage() {
     void navegar({ search: {}, replace: true });
   }
 
+  /**
+   * Depois de gravar, confirma se o registo continua visível com os filtros
+   * ativos. Alterar a situação (por exemplo para "Dispensada") muda o semáforo
+   * e podia retirar a linha da lista sem qualquer aviso — parecia que a licença
+   * tinha sido apagada.
+   */
+  function avisarSeForaDoFiltro(v: ValoresLicenca) {
+    if (!temFiltro) return;
+    const semaforoNovo = calcularSemaforo({
+      status: v.status,
+      data_vencimento: v.data_vencimento || null,
+    });
+    const foraOrgao = orgao !== "todos" && v.orgao !== orgao;
+    const foraUnidade = unidadeF !== "todos" && v.unidade_id !== unidadeF;
+    const foraSemaforo = semaforo !== "todos" && semaforoNovo !== semaforo;
+    const foraCnae = cnaeF !== "todos" && parseCnae(v.descricao).codigo !== cnaeF;
+    if (!foraOrgao && !foraUnidade && !foraSemaforo && !foraCnae) return;
+    toast.warning("Registro salvo, mas fora dos filtros atuais", {
+      description: "A licença continua cadastrada — apenas não aparece nesta seleção.",
+      duration: 10000,
+      action: { label: "Limpar filtros", onClick: limpar },
+    });
+  }
+
   function exportar() {
     baixarCsv(`licencas-igesdf-${sufixoData()}`, ordenados, COLUNAS_CSV);
   }
@@ -213,6 +239,7 @@ function LicencasPage() {
             <LicencaForm
               unidades={unidades}
               unidadeId={unidades[0]?.id}
+              onSaved={avisarSeForaDoFiltro}
               trigger={
                 <Button>
                   <Plus className="mr-1 size-4" aria-hidden="true" /> Nova licença
@@ -409,6 +436,7 @@ function LicencasPage() {
                             licenca={d}
                             unidades={unidades}
                             unidadeId={d.unidade_id ?? undefined}
+                            onSaved={avisarSeForaDoFiltro}
                             trigger={
                               <Button
                                 size="icon"
