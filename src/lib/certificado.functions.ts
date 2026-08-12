@@ -1,7 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireEdicao } from "@/lib/acesso-middleware";
-import { STATUS, ORGAO, linhaAplicar } from "@/lib/certificado-schemas";
+import { STATUS, linhaAplicar } from "@/lib/certificado-schemas";
 
 /**
  * Lê o certificado arquivado e devolve o quadro de diferenças face à base.
