@@ -1,9 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { queryOptions, useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
 import { useMemo, useState, Fragment } from "react";
-import { Download, FileCheck2, Upload } from "lucide-react";
+import { Download, FileCheck2, Loader2, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/page-header";
+import { CertificadoAnalise } from "@/components/certificado-analise";
+import type { AnaliseCertificado } from "@/lib/certificado";
+import { analisarCertificado } from "@/lib/certificado.functions";
 import { EmptyState, ErrorState, PageSkeleton } from "@/components/states";
 import { SemaforoBadge } from "@/components/status-badge";
 import { TableScroll } from "@/components/data-table";
@@ -396,6 +399,8 @@ function UploadCertificados({ unidades }: { unidades: Unidade[] }) {
   const [descricao, setDescricao] = useState("");
   const [validade, setValidade] = useState("");
   const [ocupado, setOcupado] = useState(false);
+  const [lendo, setLendo] = useState(false);
+  const [analise, setAnalise] = useState<AnaliseCertificado | null>(null);
 
   async function enviar(e: React.FormEvent) {
     e.preventDefault();
@@ -406,7 +411,7 @@ function UploadCertificados({ unidades }: { unidades: Unidade[] }) {
       formulario.append("arquivo", arquivo);
       formulario.append("prefixo", `certificados/${unidadeId}`);
       const enviado = await enviarArquivo({ data: formulario });
-      await registrarDocumento({
+      const doc = await registrarDocumento({
         data: {
           ...enviado,
           unidade_id: unidadeId,
@@ -416,10 +421,30 @@ function UploadCertificados({ unidades }: { unidades: Unidade[] }) {
         },
       });
       toast.success("Certificado arquivado");
+      const eLegivel =
+        arquivo.type === "application/pdf" || arquivo.type.startsWith("image/");
       setArquivo(null);
       setDescricao("");
       setValidade("");
       invalidarDados(qc);
+      if (eLegivel) {
+        setLendo(true);
+        try {
+          const resultado = await analisarCertificado({
+            data: {
+              unidade_id: unidadeId,
+              storage_path: enviado.storage_path,
+              documento_id: doc.id,
+            },
+          });
+          setAnalise(resultado);
+        } catch (erro) {
+          // A leitura é um extra: falhar aqui não desfaz o arquivamento.
+          toast.error(`Certificado arquivado, mas a leitura falhou: ${mensagemErro(erro)}`);
+        } finally {
+          setLendo(false);
+        }
+      }
     } catch (erro) {
       toast.error(mensagemErro(erro));
     } finally {
@@ -434,8 +459,9 @@ function UploadCertificados({ unidades }: { unidades: Unidade[] }) {
           <FileCheck2 className="size-4" aria-hidden="true" /> Arquivar certificado da unidade
         </CardTitle>
         <p className="text-xs text-muted-foreground">
-          Envie o certificado REDESIM ou equivalente. Fica guardado na unidade com trilha de
-          auditoria e controle de validade.
+          Envie o certificado REDESIM ou equivalente (PDF ou imagem). Fica guardado na unidade com
+          trilha de auditoria e, a seguir, é lido automaticamente: o sistema compara com as licenças
+          registradas e mostra as diferenças para você aprovar. Nada é alterado sem confirmação.
         </p>
       </CardHeader>
       <CardContent>
@@ -491,11 +517,16 @@ function UploadCertificados({ unidades }: { unidades: Unidade[] }) {
             />
           </div>
           <Button type="submit" disabled={ocupado || !arquivo || !unidadeId}>
-            <Upload className="mr-1 size-4" aria-hidden="true" />
-            {ocupado ? "Enviando…" : "Arquivar"}
+            {lendo ? (
+              <Loader2 className="mr-1 size-4 animate-spin" aria-hidden="true" />
+            ) : (
+              <Upload className="mr-1 size-4" aria-hidden="true" />
+            )}
+            {lendo ? "Lendo certificado…" : ocupado ? "Enviando…" : "Arquivar e comparar"}
           </Button>
         </form>
       </CardContent>
+      {analise && <CertificadoAnalise analise={analise} onFechar={() => setAnalise(null)} />}
     </Card>
   );
 }
