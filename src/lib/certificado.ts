@@ -93,9 +93,16 @@ export function resumoAnalise(linhas: LinhaAnalise[]) {
   };
 }
 
+/** Só estes tipos de linha podem ser gravados. */
+export type LinhaAplicavel = Extract<
+  LinhaAnalise,
+  { tipo: "cnae_novo" | "licenca_nova" | "licenca_alterada" }
+>;
+
 /** Linhas que podem ser aplicadas (as "ausentes" nunca são tocadas). */
-export function linhasAplicaveis(linhas: LinhaAnalise[]): LinhaAnalise[] {
+export function linhasAplicaveis(linhas: LinhaAnalise[]): LinhaAplicavel[] {
   return linhas.filter(
-    (l) => l.tipo === "cnae_novo" || l.tipo === "licenca_nova" || l.tipo === "licenca_alterada",
+    (l): l is LinhaAplicavel =>
+      l.tipo === "cnae_novo" || l.tipo === "licenca_nova" || l.tipo === "licenca_alterada",
   );
 }

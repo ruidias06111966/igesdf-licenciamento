@@ -193,8 +193,21 @@ export const aplicarCertificado = createServerFn({ method: "POST" })
         licencasCriadas += 1;
         continue;
       }
-      const patch: Record<string, string | null> = {};
-      for (const c of linha.campos) patch[c.campo] = c.depois;
+      const patch: {
+        status?: (typeof STATUS)[number];
+        numero?: string | null;
+        processo_sei?: string | null;
+        data_emissao?: string | null;
+        data_vencimento?: string | null;
+      } = {};
+      for (const c of linha.campos) {
+        if (c.campo === "status") {
+          const s = STATUS.find((v) => v === c.depois);
+          if (s) patch.status = s;
+        } else {
+          patch[c.campo] = c.depois;
+        }
+      }
       if (Object.keys(patch).length === 0) continue;
       const { error } = await context.supabase
         .from("licencas")
