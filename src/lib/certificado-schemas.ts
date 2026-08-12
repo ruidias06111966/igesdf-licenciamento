@@ -8,7 +8,7 @@ import { CAMPOS_LICENCA } from "@/lib/certificado";
  * as declarações das funções, sob pena de o empacotador remover o que estiver
  * ao lado delas.
  */
-const STATUS = [
+export const STATUS = [
   "nao_iniciado",
   "em_analise",
   "aguardando_orgao",
@@ -21,7 +21,7 @@ const STATUS = [
   "em_estudo",
 ] as const;
 
-const ORGAO = [
+export const ORGAO = [
   "VISA",
   "CBMDF",
   "IBRAM",
@@ -49,7 +49,7 @@ const DATA = z
   .nullable();
 
 
-const linhaAplicar = z.discriminatedUnion("tipo", [
+export const linhaAplicar = z.discriminatedUnion("tipo", [
   z.object({
     tipo: z.literal("cnae_novo"),
     codigo: z.string().trim().min(3).max(30),
