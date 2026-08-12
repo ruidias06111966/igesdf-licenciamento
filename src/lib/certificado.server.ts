@@ -100,7 +100,10 @@ export async function extrairCertificado(
   }
   const bloco =
     mime === "application/pdf"
-      ? { type: "document", source: { type: "base64", media_type: "application/pdf", data: base64(arquivo) } }
+      ? {
+          type: "document",
+          source: { type: "base64", media_type: "application/pdf", data: base64(arquivo) },
+        }
       : { type: "image", source: { type: "base64", media_type: mime, data: base64(arquivo) } };
 
   const controlo = new AbortController();
@@ -280,11 +283,7 @@ export function compararComBase(
     }
 
     const campos: Diferenca[] = [];
-    const comparar = (
-      campo: Diferenca["campo"],
-      antes: string | null,
-      depois: string | null,
-    ) => {
+    const comparar = (campo: Diferenca["campo"], antes: string | null, depois: string | null) => {
       // Valor ausente no certificado nunca apaga o que está na base.
       if (depois === null) return;
       if ((antes ?? "") === depois) return;

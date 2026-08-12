@@ -421,8 +421,7 @@ function UploadCertificados({ unidades }: { unidades: Unidade[] }) {
         },
       });
       toast.success("Certificado arquivado");
-      const eLegivel =
-        arquivo.type === "application/pdf" || arquivo.type.startsWith("image/");
+      const eLegivel = arquivo.type === "application/pdf" || arquivo.type.startsWith("image/");
       setArquivo(null);
       setDescricao("");
       setValidade("");

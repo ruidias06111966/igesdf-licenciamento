@@ -21,9 +21,8 @@ export const analisarCertificado = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
-    const { extrairCertificado, compararComBase, conferirCnpj } = await import(
-      "@/lib/certificado.server"
-    );
+    const { extrairCertificado, compararComBase, conferirCnpj } =
+      await import("@/lib/certificado.server");
 
     const [uni, lics, cnaes] = await Promise.all([
       context.supabase
@@ -40,7 +39,9 @@ export const analisarCertificado = createServerFn({ method: "POST" })
     if (uni.error) throw uni.error;
     if (!uni.data) throw new Error("Unidade não encontrada");
 
-    const baixado = await context.supabase.storage.from("licencas-docs").download(data.storage_path);
+    const baixado = await context.supabase.storage
+      .from("licencas-docs")
+      .download(data.storage_path);
     if (baixado.error || !baixado.data) {
       throw new Error("Não foi possível abrir o certificado arquivado.");
     }

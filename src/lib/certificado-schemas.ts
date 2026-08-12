@@ -48,7 +48,6 @@ const DATA = z
   .regex(/^\d{4}-\d{2}-\d{2}$/)
   .nullable();
 
-
 export const linhaAplicar = z.discriminatedUnion("tipo", [
   z.object({
     tipo: z.literal("cnae_novo"),
@@ -81,4 +80,3 @@ export const linhaAplicar = z.discriminatedUnion("tipo", [
       .min(1),
   }),
 ]);
-
