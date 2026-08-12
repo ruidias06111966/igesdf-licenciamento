@@ -1,47 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireEdicao } from "@/lib/acesso-middleware";
-import { CAMPOS_LICENCA } from "@/lib/certificado";
-
-const STATUS = [
-  "nao_iniciado",
-  "em_analise",
-  "aguardando_orgao",
-  "vigente",
-  "a_vencer",
-  "vencida",
-  "indeferida",
-  "dispensada",
-  "pendente_declaracao",
-  "em_estudo",
-] as const;
-
-const ORGAO = [
-  "VISA",
-  "CBMDF",
-  "IBRAM",
-  "SEOP",
-  "DF_LEGAL",
-  "SUSDEC",
-  "PCDF",
-  "SEAGRI",
-  "SEEDF",
-  "DEFESA_CIVIL",
-  "CNES",
-  "ADM_REGIONAL",
-  "CRM",
-  "COREN",
-  "CRF",
-  "CNEN",
-  "ANVISA",
-  "JUCIS",
-  "OUTRO",
-] as const;
-
-const DATA = z
-  .string()
-  .regex(/^\d{4}-\d{2}-\d{2}$/)
-  .nullable();
+import { STATUS, ORGAO, linhaAplicar } from "@/lib/certificado-schemas";
 
 /**
  * Lê o certificado arquivado e devolve o quadro de diferenças face à base.
@@ -109,39 +69,6 @@ export const analisarCertificado = createServerFn({ method: "POST" })
 
     return analise;
   });
-
-const linhaAplicar = z.discriminatedUnion("tipo", [
-  z.object({
-    tipo: z.literal("cnae_novo"),
-    codigo: z.string().trim().min(3).max(30),
-    descricao: z.string().trim().min(2).max(300),
-  }),
-  z.object({
-    tipo: z.literal("licenca_nova"),
-    orgao: z.enum(ORGAO),
-    descricao: z.string().trim().max(200),
-    valores: z.object({
-      status: z.enum(STATUS),
-      numero: z.string().trim().max(80).nullable().optional(),
-      processo_sei: z.string().trim().max(60).nullable().optional(),
-      data_emissao: DATA.optional(),
-      data_vencimento: DATA.optional(),
-    }),
-    observacoes: z.string().trim().max(2000).nullable().optional(),
-  }),
-  z.object({
-    tipo: z.literal("licenca_alterada"),
-    licenca_id: z.string().uuid(),
-    campos: z
-      .array(
-        z.object({
-          campo: z.enum(CAMPOS_LICENCA),
-          depois: z.string().max(200).nullable(),
-        }),
-      )
-      .min(1),
-  }),
-]);
 
 /**
  * Aplica apenas as linhas aceites, campo a campo.
