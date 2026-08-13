@@ -68,19 +68,19 @@ export function LicencaForm({
   unidadeId?: string;
   unidades?: Unidade[];
   /**
-   * Chamada depois de gravar. A listagem usa-a para avisar quando o registo
-   * gravado deixa de aparecer por causa dos filtros ativos — antes parecia que
-   * a licença tinha desaparecido.
+   * Chamada depois de gravar, com o id do registo gravado. A listagem usa-a
+   * para manter a linha visível mesmo quando os filtros ativos a excluiriam —
+   * antes parecia que a licença tinha desaparecido.
    */
-  onSaved?: (valores: Valores) => void;
+  onSaved?: (valores: Valores, id?: string) => void;
 }) {
   const qc = useQueryClient();
   const salvar = useMutation({
     mutationFn: (valores: Valores) => upsertLicenca({ data: valores }),
-    onSuccess: (_res, valores) => {
+    onSuccess: (res, valores) => {
       toast.success(licenca ? "Licença atualizada" : "Licença cadastrada");
       invalidarDados(qc);
-      onSaved?.(valores);
+      onSaved?.(valores, res?.id ?? valores.id);
     },
     onError: (erro) => toast.error(mensagemErro(erro)),
   });
