@@ -72,7 +72,15 @@ const extracaoSchema = z.object({
     .array(z.object({ codigo: z.string(), descricao: z.string().nullable().optional() }))
     .catch([])
     .default([]),
-  itens: z.array(itemExtraido.catch(() => null as never)).default([]),
+  // Itens irrecuperáveis são descartados em vez de invalidarem a leitura toda.
+  itens: z
+    .array(z.unknown())
+    .default([])
+    .transform((lista) =>
+      lista
+        .map((i) => itemExtraido.safeParse(i))
+        .flatMap((r) => (r.success ? [r.data] : [])),
+    ),
 });
 
 export type Extracao = z.infer<typeof extracaoSchema>;
