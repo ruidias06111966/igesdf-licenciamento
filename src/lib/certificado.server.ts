@@ -28,11 +28,35 @@ const STATUS_VALIDOS = [
 
 const ORGAOS_VALIDOS = ORGAOS.map((o) => o.value) as [Orgao, ...Orgao[]];
 
+/**
+ * Um valor fora da lista não pode fazer falhar a leitura inteira: o órgão
+ * desconhecido entra como "OUTRO" e a situação desconhecida como "em_analise",
+ * ficando visível no quadro de diferenças para correção manual.
+ */
+const orgaoTolerante = z.preprocess((v) => {
+  const t = String(v ?? "").trim().toUpperCase().replace(/[\s-]+/g, "_");
+  const mapa: Record<string, Orgao> = {
+    VISADF: "VISA",
+    VIGILANCIA_SANITARIA: "VISA",
+    BOMBEIROS: "CBMDF",
+    CBM: "CBMDF",
+    DFLEGAL: "DF_LEGAL",
+    DEFESA_CIVIL_DF: "SUSDEC",
+  };
+  if (mapa[t]) return mapa[t];
+  return ORGAOS_VALIDOS.includes(t as Orgao) ? (t as Orgao) : "OUTRO";
+}, z.enum(ORGAOS_VALIDOS));
+
+const situacaoTolerante = z.preprocess((v) => {
+  const t = String(v ?? "").trim().toLowerCase().replace(/[\s-]+/g, "_");
+  return (STATUS_VALIDOS as readonly string[]).includes(t) ? t : "em_analise";
+}, z.enum(STATUS_VALIDOS));
+
 const itemExtraido = z.object({
   codigo_cnae: z.string().nullable().optional(),
   descricao_cnae: z.string().nullable().optional(),
-  orgao: z.enum(ORGAOS_VALIDOS),
-  situacao: z.enum(STATUS_VALIDOS),
+  orgao: orgaoTolerante,
+  situacao: situacaoTolerante,
   numero: z.string().nullable().optional(),
   processo_sei: z.string().nullable().optional(),
   data_emissao: z.string().nullable().optional(),
@@ -46,8 +70,9 @@ const extracaoSchema = z.object({
   emitido_em: z.string().nullable().optional(),
   cnaes: z
     .array(z.object({ codigo: z.string(), descricao: z.string().nullable().optional() }))
+    .catch([])
     .default([]),
-  itens: z.array(itemExtraido).default([]),
+  itens: z.array(itemExtraido.catch(() => null as never)).default([]),
 });
 
 export type Extracao = z.infer<typeof extracaoSchema>;
