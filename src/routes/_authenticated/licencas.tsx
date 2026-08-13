@@ -410,10 +410,21 @@ function LicencasPage() {
               <tbody>
                 {ordenados.map((d) => {
                   const cnae = parseCnae(d.descricao);
+                  const gravadaAgora = Boolean(d.id && recemGravadas.has(d.id));
                   return (
                     <Fragment key={d.id}>
-                      <tr className="print-row border-b hover:bg-muted/30">
+                      <tr
+                        className={cn(
+                          "print-row border-b hover:bg-muted/30",
+                          gravadaAgora && "bg-primary/5",
+                        )}
+                      >
                         <td className="p-3">
+                          {gravadaAgora && (
+                            <span className="mr-2 rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary no-print">
+                              guardada agora
+                            </span>
+                          )}
                           {d.unidade_id ? (
                             <Link
                               to="/unidades/$id"
