@@ -122,15 +122,55 @@ function base64(bytes: Uint8Array): string {
   return btoa(bin);
 }
 
-/** Chama a Anthropic com o PDF e devolve os dados estruturados. */
-export async function extrairCertificado(
-  arquivo: Uint8Array,
-  mime: string,
-): Promise<{ dados: Extracao; tokens: { entrada: number; saida: number } }> {
-  const chave = process.env["ANTHROPIC_API_KEY"];
-  if (!chave) {
-    throw new Error("Leitura automática indisponível: serviço de IA não configurado.");
+type Bruto = { texto: string; tokens: { entrada: number; saida: number } };
+
+const PEDIDO = "Extraia os dados deste certificado em JSON.";
+
+/** Leitura pelo serviço de IA da plataforma (não depende de créditos próprios). */
+async function lerPelaPlataforma(arquivo: Uint8Array, mime: string): Promise<Bruto> {
+  const chave = process.env["LOVABLE_API_KEY"];
+  if (!chave) throw new Error("sem-chave-plataforma");
+  const dataUrl = `data:${mime};base64,${base64(arquivo)}`;
+  const conteudo =
+    mime === "application/pdf"
+      ? [{ type: "file", file: { filename: "certificado.pdf", file_data: dataUrl } }]
+      : [{ type: "image_url", image_url: { url: dataUrl } }];
+
+  const resposta = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+    method: "POST",
+    signal: AbortSignal.timeout(120_000),
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${chave}` },
+    body: JSON.stringify({
+      model: "google/gemini-3.5-flash",
+      max_tokens: 16000,
+      messages: [
+        { role: "system", content: INSTRUCOES },
+        { role: "user", content: [...conteudo, { type: "text", text: PEDIDO }] },
+      ],
+    }),
+  });
+  if (!resposta.ok) {
+    const detalhe = await resposta.text().catch(() => "");
+    console.error(`[certificado] plataforma respondeu ${resposta.status}:`, detalhe.slice(0, 500));
+    throw new Error(`plataforma-${resposta.status}`);
   }
+  const json = (await resposta.json()) as {
+    choices?: Array<{ message?: { content?: string } }>;
+    usage?: { prompt_tokens?: number; completion_tokens?: number };
+  };
+  return {
+    texto: json.choices?.[0]?.message?.content ?? "",
+    tokens: {
+      entrada: json.usage?.prompt_tokens ?? 0,
+      saida: json.usage?.completion_tokens ?? 0,
+    },
+  };
+}
+
+/** Leitura pela conta Anthropic do utilizador (usada como alternativa). */
+async function lerPelaAnthropic(arquivo: Uint8Array, mime: string): Promise<Bruto> {
+  const chave = process.env["ANTHROPIC_API_KEY"];
+  if (!chave) throw new Error("sem-chave-anthropic");
   const bloco =
     mime === "application/pdf"
       ? {
@@ -139,67 +179,78 @@ export async function extrairCertificado(
         }
       : { type: "image", source: { type: "base64", media_type: mime, data: base64(arquivo) } };
 
-  const controlo = new AbortController();
-  const relogio = setTimeout(() => controlo.abort(), 120_000);
-  let resposta: Response;
-  try {
-    resposta = await fetch("https://api.anthropic.com/v1/messages", {
-      method: "POST",
-      signal: controlo.signal,
-      headers: {
-        "Content-Type": "application/json",
-        "x-api-key": chave,
-        "anthropic-version": "2023-06-01",
-      },
-      body: JSON.stringify({
-        model: "claude-sonnet-5",
-        max_tokens: 8000,
-        system: INSTRUCOES,
-        messages: [
-          {
-            role: "user",
-            content: [bloco, { type: "text", text: "Extraia os dados deste certificado em JSON." }],
-          },
-        ],
-      }),
-    });
-  } catch (erro) {
-    clearTimeout(relogio);
-    console.error("[certificado] falha na chamada à Anthropic:", erro);
-    throw new Error("Serviço de leitura temporariamente indisponível. Tente novamente.");
-  }
-  clearTimeout(relogio);
-
+  const resposta = await fetch("https://api.anthropic.com/v1/messages", {
+    method: "POST",
+    signal: AbortSignal.timeout(120_000),
+    headers: {
+      "Content-Type": "application/json",
+      "x-api-key": chave,
+      "anthropic-version": "2023-06-01",
+    },
+    body: JSON.stringify({
+      model: "claude-sonnet-5",
+      max_tokens: 8000,
+      system: INSTRUCOES,
+      messages: [{ role: "user", content: [bloco, { type: "text", text: PEDIDO }] }],
+    }),
+  });
   if (!resposta.ok) {
     const detalhe = await resposta.text().catch(() => "");
-    console.error(`[certificado] Anthropic respondeu ${resposta.status}:`, detalhe);
-    throw new Error("Não foi possível ler o certificado agora. Tente novamente em alguns minutos.");
+    console.error(`[certificado] Anthropic respondeu ${resposta.status}:`, detalhe.slice(0, 500));
+    throw new Error(`anthropic-${resposta.status}`);
   }
-
   const json = (await resposta.json()) as {
     content?: Array<{ type: string; text?: string }>;
     usage?: { input_tokens?: number; output_tokens?: number };
   };
-  const texto = (json.content ?? [])
-    .filter((c) => c.type === "text")
-    .map((c) => c.text ?? "")
-    .join("");
+  return {
+    texto: (json.content ?? [])
+      .filter((c) => c.type === "text")
+      .map((c) => c.text ?? "")
+      .join(""),
+    tokens: { entrada: json.usage?.input_tokens ?? 0, saida: json.usage?.output_tokens ?? 0 },
+  };
+}
+
+/**
+ * Lê o certificado e devolve os dados estruturados.
+ *
+ * A leitura corre primeiro pelo serviço de IA da plataforma; a conta Anthropic
+ * própria só é usada como alternativa. Assim, ficar sem créditos numa delas
+ * deixa de bloquear a leitura de PDFs.
+ */
+export async function extrairCertificado(
+  arquivo: Uint8Array,
+  mime: string,
+): Promise<{ dados: Extracao; tokens: { entrada: number; saida: number } }> {
+  let bruto: Bruto;
+  try {
+    bruto = await lerPelaPlataforma(arquivo, mime);
+  } catch (erro) {
+    console.error("[certificado] leitura pela plataforma falhou:", erro);
+    try {
+      bruto = await lerPelaAnthropic(arquivo, mime);
+    } catch (erro2) {
+      console.error("[certificado] leitura pela Anthropic falhou:", erro2);
+      throw new Error(
+        "Não foi possível ler o documento agora. Verifique se é um PDF ou imagem legível e tente novamente.",
+      );
+    }
+  }
+
+  const texto = bruto.texto;
   const inicio = texto.indexOf("{");
   const fim = texto.lastIndexOf("}");
   if (inicio < 0 || fim <= inicio) {
     throw new Error("O documento não pôde ser interpretado como certificado de licenciamento.");
   }
-  let bruto: unknown;
+  let objeto: unknown;
   try {
-    bruto = JSON.parse(texto.slice(inicio, fim + 1));
+    objeto = JSON.parse(texto.slice(inicio, fim + 1));
   } catch {
     throw new Error("O documento não pôde ser interpretado como certificado de licenciamento.");
   }
-  const dados = extracaoSchema.parse(bruto);
-  return {
-    dados,
-    tokens: { entrada: json.usage?.input_tokens ?? 0, saida: json.usage?.output_tokens ?? 0 },
-  };
+  return { dados: extracaoSchema.parse(objeto), tokens: bruto.tokens };
 }
 
 /** Só os dígitos do CNAE — "8610-1/01", "8610101" e "8610-1/01 " são o mesmo. */
