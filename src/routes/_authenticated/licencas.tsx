@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useQueryClient, useSuspenseQuery } from "@tanstack/react-query";
-import { Fragment, useMemo } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Download, Pencil, Plus, Search } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
@@ -125,6 +125,14 @@ function LicencasPage() {
   const filtros = Route.useSearch();
   const navegar = useNavigate({ from: Route.fullPath });
 
+  /**
+   * Ids gravados nesta sessão de trabalho. Uma licença acabada de gravar fica
+   * sempre visível, mesmo que os filtros ativos (órgão, situação, busca…) a
+   * excluíssem — era isso que dava a impressão de a licença ter desaparecido
+   * depois de uma simples alteração.
+   */
+  const [recemGravadas, setRecemGravadas] = useState<Set<string>>(() => new Set());
+
   // "todos" é apenas o rótulo do seletor; no URL o filtro ausente é omitido.
   const orgao = filtros.orgao ?? "todos";
   const semaforo = filtros.semaforo ?? "todos";
@@ -158,6 +166,7 @@ function LicencasPage() {
   const filtrado = useMemo(() => {
     const termo = busca.trim().toLowerCase();
     return data.filter((d) => {
+      if (d.id && recemGravadas.has(d.id)) return true;
       if (orgao !== "todos" && d.orgao !== orgao) return false;
       if (semaforo !== "todos" && d.semaforo !== semaforo) return false;
       if (unidadeF !== "todos" && d.unidade_id !== unidadeF) return false;
@@ -172,7 +181,7 @@ function LicencasPage() {
       }
       return true;
     });
-  }, [data, orgao, semaforo, unidadeF, cnaeF, busca, grupo]);
+  }, [data, orgao, semaforo, unidadeF, cnaeF, busca, grupo, recemGravadas]);
 
   const { ordenados, ordem, alternar } = useOrdenacao<LicencaDashboard, Coluna>(
     filtrado,
@@ -188,6 +197,7 @@ function LicencasPage() {
   );
 
   function limpar() {
+    setRecemGravadas(new Set());
     void navegar({ search: {}, replace: true });
   }
 
@@ -197,7 +207,8 @@ function LicencasPage() {
    * e podia retirar a linha da lista sem qualquer aviso — parecia que a licença
    * tinha sido apagada.
    */
-  function avisarSeForaDoFiltro(v: ValoresLicenca) {
+  function avisarSeForaDoFiltro(v: ValoresLicenca, id?: string) {
+    if (id) setRecemGravadas((atual) => new Set(atual).add(id));
     if (!temFiltro) return;
     const semaforoNovo = calcularSemaforo({
       status: v.status,
@@ -207,9 +218,18 @@ function LicencasPage() {
     const foraUnidade = unidadeF !== "todos" && v.unidade_id !== unidadeF;
     const foraSemaforo = semaforo !== "todos" && semaforoNovo !== semaforo;
     const foraCnae = cnaeF !== "todos" && parseCnae(v.descricao).codigo !== cnaeF;
-    if (!foraOrgao && !foraUnidade && !foraSemaforo && !foraCnae) return;
-    toast.warning("Registro salvo, mas fora dos filtros atuais", {
-      description: "A licença continua cadastrada — apenas não aparece nesta seleção.",
+    const termo = busca.trim().toLowerCase();
+    const foraBusca =
+      termo.length > 0 &&
+      ![v.descricao, v.numero, v.processo_sei, v.observacoes]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase()
+        .includes(termo);
+    if (!foraOrgao && !foraUnidade && !foraSemaforo && !foraCnae && !foraBusca && !grupo) return;
+    toast.warning("Registro salvo — fora dos filtros atuais", {
+      description:
+        "A licença continua cadastrada e fica assinalada na lista até limpar os filtros.",
       duration: 10000,
       action: { label: "Limpar filtros", onClick: limpar },
     });
