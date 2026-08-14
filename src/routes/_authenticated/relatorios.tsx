@@ -38,6 +38,7 @@ import {
 import { formatDate, formatDaysLeft } from "@/lib/dates";
 import { baixarCsv, sufixoData, type ColunaCsv } from "@/lib/csv";
 import { mensagemErro } from "@/lib/errors";
+import { usePodeEditar } from "@/lib/perfil";
 import type { LicencaDashboard, Unidade } from "@/lib/rows";
 import { cn } from "@/lib/utils";
 
@@ -394,6 +395,7 @@ function RelatoriosPage() {
 /** Arquiva o certificado REDESIM (ou equivalente) com trilha de auditoria. */
 function UploadCertificados({ unidades }: { unidades: Unidade[] }) {
   const qc = useQueryClient();
+  const podeEditar = usePodeEditar();
   const [unidadeId, setUnidadeId] = useState("");
   const [arquivo, setArquivo] = useState<File | null>(null);
   const [descricao, setDescricao] = useState("");
@@ -450,6 +452,10 @@ function UploadCertificados({ unidades }: { unidades: Unidade[] }) {
       setOcupado(false);
     }
   }
+
+  // Quem entra com a senha de consulta não pode arquivar certificados: as
+  // funções de servidor recusam a escrita, por isso o formulário nem aparece.
+  if (!podeEditar) return null;
 
   return (
     <Card className="no-print">
