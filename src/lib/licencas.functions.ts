@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { requireAcesso, requireEdicao } from "@/lib/acesso-middleware";
 import { z } from "zod";
 import { vaziosParaNulo } from "@/lib/sanitize";
+import type { LicencaDashboard } from "@/lib/rows";
 
 export const listUnidades = createServerFn({ method: "GET" })
   .middleware([requireAcesso])
@@ -271,7 +272,7 @@ export const listDashboard = createServerFn({ method: "GET" })
     // continuassem guardadas na base. O segundo critério torna a paginação
     // estável quando várias licenças têm a mesma data (incluindo data nula).
     const pagina = 1000;
-    const todas = [];
+    const todas: LicencaDashboard[] = [];
     for (let inicio = 0; ; inicio += pagina) {
       const { data, error } = await context.supabase
         .from("v_licencas_dashboard")
