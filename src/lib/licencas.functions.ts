@@ -265,12 +265,26 @@ export const listVersoesDocumento = createServerFn({ method: "GET" })
 export const listDashboard = createServerFn({ method: "GET" })
   .middleware([requireAcesso])
   .handler(async ({ context }) => {
-    const { data, error } = await context.supabase
-      .from("v_licencas_dashboard")
-      .select("*")
-      .order("data_vencimento", { ascending: true, nullsFirst: false });
-    if (error) throw error;
-    return data ?? [];
+    // A API da base devolve no máximo 1 000 linhas por pedido. A rede já tem
+    // mais licenças do que esse limite; sem paginação, as últimas linhas
+    // desapareciam simultaneamente da listagem e da matriz, embora
+    // continuassem guardadas na base. O segundo critério torna a paginação
+    // estável quando várias licenças têm a mesma data (incluindo data nula).
+    const pagina = 1000;
+    const todas = [];
+    for (let inicio = 0; ; inicio += pagina) {
+      const { data, error } = await context.supabase
+        .from("v_licencas_dashboard")
+        .select("*")
+        .order("data_vencimento", { ascending: true, nullsFirst: false })
+        .order("id", { ascending: true })
+        .range(inicio, inicio + pagina - 1);
+      if (error) throw error;
+      const linhas = data ?? [];
+      todas.push(...linhas);
+      if (linhas.length < pagina) break;
+    }
+    return todas;
   });
 
 const unidadeSchema = z.object({
