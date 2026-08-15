@@ -22,6 +22,7 @@ import { Route as AuthenticatedMatrizRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedLicencasRouteImport } from './routes/_authenticated/licencas'
 import { Route as AuthenticatedIaRouteImport } from './routes/_authenticated/ia'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedCnpjRouteImport } from './routes/_authenticated/cnpj'
 import { Route as AuthenticatedCalendarioRouteImport } from './routes/_authenticated/calendario'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
@@ -97,6 +98,11 @@ const AuthenticatedIaRoute = AuthenticatedIaRouteImport.update({
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedCnpjRoute = AuthenticatedCnpjRouteImport.update({
+  id: '/cnpj',
+  path: '/cnpj',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedCalendarioRoute = AuthenticatedCalendarioRouteImport.update({
@@ -177,6 +183,7 @@ export interface FileRoutesByFullPath {
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/calendario': typeof AuthenticatedCalendarioRoute
+  '/cnpj': typeof AuthenticatedCnpjRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/ia': typeof AuthenticatedIaRoute
   '/licencas': typeof AuthenticatedLicencasRoute
@@ -203,6 +210,7 @@ export interface FileRoutesByTo {
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/calendario': typeof AuthenticatedCalendarioRoute
+  '/cnpj': typeof AuthenticatedCnpjRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/ia': typeof AuthenticatedIaRoute
   '/licencas': typeof AuthenticatedLicencasRoute
@@ -231,6 +239,7 @@ export interface FileRoutesById {
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/_authenticated/calendario': typeof AuthenticatedCalendarioRoute
+  '/_authenticated/cnpj': typeof AuthenticatedCnpjRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/ia': typeof AuthenticatedIaRoute
   '/_authenticated/licencas': typeof AuthenticatedLicencasRoute
@@ -259,6 +268,7 @@ export interface FileRouteTypes {
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
     | '/calendario'
+    | '/cnpj'
     | '/dashboard'
     | '/ia'
     | '/licencas'
@@ -285,6 +295,7 @@ export interface FileRouteTypes {
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
     | '/calendario'
+    | '/cnpj'
     | '/dashboard'
     | '/ia'
     | '/licencas'
@@ -312,6 +323,7 @@ export interface FileRouteTypes {
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
     | '/_authenticated/calendario'
+    | '/_authenticated/cnpj'
     | '/_authenticated/dashboard'
     | '/_authenticated/ia'
     | '/_authenticated/licencas'
@@ -439,6 +451,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/cnpj': {
+      id: '/_authenticated/cnpj'
+      path: '/cnpj'
+      fullPath: '/cnpj'
+      preLoaderRoute: typeof AuthenticatedCnpjRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/calendario': {
       id: '/_authenticated/calendario'
       path: '/calendario'
@@ -528,6 +547,7 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedCalendarioRoute: typeof AuthenticatedCalendarioRoute
+  AuthenticatedCnpjRoute: typeof AuthenticatedCnpjRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedIaRoute: typeof AuthenticatedIaRoute
   AuthenticatedLicencasRoute: typeof AuthenticatedLicencasRoute
@@ -544,6 +564,7 @@ interface AuthenticatedRouteRouteChildren {
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCalendarioRoute: AuthenticatedCalendarioRoute,
+  AuthenticatedCnpjRoute: AuthenticatedCnpjRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedIaRoute: AuthenticatedIaRoute,
   AuthenticatedLicencasRoute: AuthenticatedLicencasRoute,
