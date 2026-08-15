@@ -7,6 +7,7 @@ import {
   FileCheck2,
   Grid3x3,
   FolderOpen,
+  IdCard,
   Landmark,
   LayoutDashboard,
   LogOut,
@@ -25,6 +26,7 @@ type ItemNav = { to: string; label: string; icon: ComponentType<{ className?: st
 const NAV: ItemNav[] = [
   { to: "/dashboard", label: "Painel", icon: LayoutDashboard },
   { to: "/unidades", label: "Unidades", icon: Building2 },
+  { to: "/cnpj", label: "Cadastro CNPJ", icon: IdCard },
   { to: "/licencas", label: "Licenças", icon: FileCheck2 },
   { to: "/matriz", label: "Matriz", icon: Grid3x3 },
   { to: "/processos", label: "Processos SEI", icon: FolderOpen },
