@@ -22,8 +22,16 @@ export default defineTool({
       .order("ano", { ascending: false, nullsFirst: false })
       .limit(200);
     if (orgao) q = q.ilike("orgao_sigla", `%${orgao}%`);
-    if (procura)
-      q = q.or(`titulo.ilike.%${procura}%,ementa.ilike.%${procura}%,numero.ilike.%${procura}%`);
+    if (procura) {
+      // O texto vai para dentro da sintaxe de filtro do PostgREST; vírgulas,
+      // parênteses e aspas mudariam a lógica da consulta. Escapamos os
+      // curingas e envolvemos o valor em aspas para o tratar como texto puro.
+      const termo = procura.trim().slice(0, 200).replace(/[\\"]/g, "\\$&").replace(/[(),]/g, " ");
+      if (termo)
+        q = q.or(
+          `titulo.ilike."%${termo}%",ementa.ilike."%${termo}%",numero.ilike."%${termo}%"`,
+        );
+    }
     const { data, error } = await q;
     if (error) return { content: [{ type: "text", text: error.message }], isError: true };
     return {
