@@ -1,0 +1,15 @@
+ALTER TABLE public.unidades
+  ADD COLUMN IF NOT EXISTS nome_fantasia text,
+  ADD COLUMN IF NOT EXISTS bairro text,
+  ADD COLUMN IF NOT EXISTS cep text,
+  ADD COLUMN IF NOT EXISTS inicio_atividade date,
+  ADD COLUMN IF NOT EXISTS cnae_principal text,
+  ADD COLUMN IF NOT EXISTS cnae_principal_desc text,
+  ADD COLUMN IF NOT EXISTS cnes text,
+  ADD COLUMN IF NOT EXISTS cnpj_ses text,
+  ADD COLUMN IF NOT EXISTS cnpj_cnes text,
+  ADD COLUMN IF NOT EXISTS titular_cnes text NOT NULL DEFAULT 'sem',
+  ADD COLUMN IF NOT EXISTS codigo_mv text,
+  ADD COLUMN IF NOT EXISTS codigo_mv_nota text,
+  ADD COLUMN IF NOT EXISTS categoria_cnpj text NOT NULL DEFAULT 'apoio',
+  ADD COLUMN IF NOT EXISTS tipo_estabelecimento text NOT NULL DEFAULT 'Filial';

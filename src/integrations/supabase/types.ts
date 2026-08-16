@@ -833,13 +833,25 @@ export type Database = {
       unidades: {
         Row: {
           ativa: boolean
+          bairro: string | null
+          categoria_cnpj: string
+          cep: string | null
           cf_df: string | null
+          cnae_principal: string | null
+          cnae_principal_desc: string | null
           cnaes: string[] | null
+          cnes: string | null
           cnpj: string | null
+          cnpj_cnes: string | null
+          cnpj_ses: string | null
+          codigo_mv: string | null
+          codigo_mv_nota: string | null
           created_at: string
           endereco: string | null
           id: string
+          inicio_atividade: string | null
           nome: string
+          nome_fantasia: string | null
           numero_iges: number | null
           observacoes: string | null
           processo_sei: string | null
@@ -847,17 +859,31 @@ export type Database = {
           servicos_especiais: string[] | null
           situacao_edificacao: string | null
           tipo: Database["public"]["Enums"]["tipo_unidade"]
+          tipo_estabelecimento: string
+          titular_cnes: string
           updated_at: string
         }
         Insert: {
           ativa?: boolean
+          bairro?: string | null
+          categoria_cnpj?: string
+          cep?: string | null
           cf_df?: string | null
+          cnae_principal?: string | null
+          cnae_principal_desc?: string | null
           cnaes?: string[] | null
+          cnes?: string | null
           cnpj?: string | null
+          cnpj_cnes?: string | null
+          cnpj_ses?: string | null
+          codigo_mv?: string | null
+          codigo_mv_nota?: string | null
           created_at?: string
           endereco?: string | null
           id?: string
+          inicio_atividade?: string | null
           nome: string
+          nome_fantasia?: string | null
           numero_iges?: number | null
           observacoes?: string | null
           processo_sei?: string | null
@@ -865,17 +891,31 @@ export type Database = {
           servicos_especiais?: string[] | null
           situacao_edificacao?: string | null
           tipo?: Database["public"]["Enums"]["tipo_unidade"]
+          tipo_estabelecimento?: string
+          titular_cnes?: string
           updated_at?: string
         }
         Update: {
           ativa?: boolean
+          bairro?: string | null
+          categoria_cnpj?: string
+          cep?: string | null
           cf_df?: string | null
+          cnae_principal?: string | null
+          cnae_principal_desc?: string | null
           cnaes?: string[] | null
+          cnes?: string | null
           cnpj?: string | null
+          cnpj_cnes?: string | null
+          cnpj_ses?: string | null
+          codigo_mv?: string | null
+          codigo_mv_nota?: string | null
           created_at?: string
           endereco?: string | null
           id?: string
+          inicio_atividade?: string | null
           nome?: string
+          nome_fantasia?: string | null
           numero_iges?: number | null
           observacoes?: string | null
           processo_sei?: string | null
@@ -883,6 +923,8 @@ export type Database = {
           servicos_especiais?: string[] | null
           situacao_edificacao?: string | null
           tipo?: Database["public"]["Enums"]["tipo_unidade"]
+          tipo_estabelecimento?: string
+          titular_cnes?: string
           updated_at?: string
         }
         Relationships: []
