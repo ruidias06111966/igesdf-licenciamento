@@ -300,6 +300,20 @@ const unidadeSchema = z.object({
   regiao_administrativa: z.string().trim().max(100).nullable().optional(),
   situacao_edificacao: z.string().trim().max(40).nullable().optional(),
   observacoes: z.string().trim().max(2000).nullable().optional(),
+  nome_fantasia: z.string().trim().max(200).nullable().optional(),
+  bairro: z.string().trim().max(120).nullable().optional(),
+  cep: z.string().trim().max(12).nullable().optional(),
+  inicio_atividade: z.string().trim().nullable().optional(),
+  cnae_principal: z.string().trim().max(20).nullable().optional(),
+  cnae_principal_desc: z.string().trim().max(200).nullable().optional(),
+  cnes: z.string().trim().max(20).nullable().optional(),
+  cnpj_ses: z.string().trim().max(20).nullable().optional(),
+  cnpj_cnes: z.string().trim().max(30).nullable().optional(),
+  titular_cnes: z.enum(["proprio", "ses", "sem", "pendente"]).optional(),
+  codigo_mv: z.string().trim().max(20).nullable().optional(),
+  codigo_mv_nota: z.string().trim().max(200).nullable().optional(),
+  categoria_cnpj: z.enum(["hospital", "upa", "apoio"]).optional(),
+  tipo_estabelecimento: z.enum(["Matriz", "Filial"]).optional(),
 });
 
 export const upsertUnidade = createServerFn({ method: "POST" })
