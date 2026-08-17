@@ -51,14 +51,14 @@ git checkout claude/lovable-system-professional-7ox3n8
 
 Os 6 commits, do mais antigo ao mais recente:
 
-| Commit | O quê |
-| --- | --- |
+| Commit    | O quê                                                                                                |
+| --------- | ---------------------------------------------------------------------------------------------------- |
 | `8ff6568` | Reformulação: responsividade, estados de erro, pt-BR, Toaster que nunca fora montado, view do painel |
-| `6d2b760` | Fim do descasamento de hidratação nas rotas protegidas |
-| `0c4afeb` | Entrada por senha única e informação consistente entre painéis |
-| `729aed2` | Estado do Lovable: processos SEI, IA, perfis, MCP (base, não é meu trabalho) |
-| `4e3bb45` | Validação: arquivamento de processos, erro silenciado, lint |
-| `87a4e57` | IA ligada aos dados + matriz de compliance + testes |
+| `6d2b760` | Fim do descasamento de hidratação nas rotas protegidas                                               |
+| `0c4afeb` | Entrada por senha única e informação consistente entre painéis                                       |
+| `729aed2` | Estado do Lovable: processos SEI, IA, perfis, MCP (base, não é meu trabalho)                         |
+| `4e3bb45` | Validação: arquivamento de processos, erro silenciado, lint                                          |
+| `87a4e57` | IA ligada aos dados + matriz de compliance + testes                                                  |
 
 ---
 
@@ -67,13 +67,13 @@ Os 6 commits, do mais antigo ao mais recente:
 Defina estas variáveis de ambiente **no painel do Lovable**, nunca no ficheiro
 `.env` (que está versionado no Git e seria publicado com o código):
 
-| Variável | Para quê |
-| --- | --- |
-| `ACESSO_SENHA` | Senha de edição |
-| `ACESSO_SENHA_LEITURA` | Senha de consulta (opcional) |
-| `ACESSO_SENHA_MASTER` | Senha master, com acesso à IA |
+| Variável                    | Para quê                       |
+| --------------------------- | ------------------------------ |
+| `ACESSO_SENHA`              | Senha de edição                |
+| `ACESSO_SENHA_LEITURA`      | Senha de consulta (opcional)   |
+| `ACESSO_SENHA_MASTER`       | Senha master, com acesso à IA  |
 | `SUPABASE_SERVICE_ROLE_KEY` | Sem ela nenhuma página carrega |
-| `ANTHROPIC_API_KEY` | Só para o assistente de IA |
+| `ANTHROPIC_API_KEY`         | Só para o assistente de IA     |
 
 Opcionais, para os alertas de vencimento por e-mail:
 `ALERTAS_CRON_SECRET`, `ALERTAS_EMAIL_DESTINATARIO`, `LOVABLE_API_KEY`.

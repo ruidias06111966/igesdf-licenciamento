@@ -52,10 +52,7 @@ export const upsertModelo = createServerFn({ method: "POST" })
       observacoes: data.observacoes || null,
     };
     if (data.id) {
-      const { error } = await context.supabase
-        .from("ia_modelos")
-        .update(registo)
-        .eq("id", data.id);
+      const { error } = await context.supabase.from("ia_modelos").update(registo).eq("id", data.id);
       if (error) throw error;
       return { id: data.id };
     }

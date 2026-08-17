@@ -28,9 +28,7 @@ export default defineTool({
       // curingas e envolvemos o valor em aspas para o tratar como texto puro.
       const termo = procura.trim().slice(0, 200).replace(/[\\"]/g, "\\$&").replace(/[(),]/g, " ");
       if (termo)
-        q = q.or(
-          `titulo.ilike."%${termo}%",ementa.ilike."%${termo}%",numero.ilike."%${termo}%"`,
-        );
+        q = q.or(`titulo.ilike."%${termo}%",ementa.ilike."%${termo}%",numero.ilike."%${termo}%"`);
     }
     const { data, error } = await q;
     if (error) return { content: [{ type: "text", text: error.message }], isError: true };
