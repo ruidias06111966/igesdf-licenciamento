@@ -34,7 +34,10 @@ const ORGAOS_VALIDOS = ORGAOS.map((o) => o.value) as [Orgao, ...Orgao[]];
  * ficando visível no quadro de diferenças para correção manual.
  */
 const orgaoTolerante = z.preprocess((v) => {
-  const t = String(v ?? "").trim().toUpperCase().replace(/[\s-]+/g, "_");
+  const t = String(v ?? "")
+    .trim()
+    .toUpperCase()
+    .replace(/[\s-]+/g, "_");
   const mapa: Record<string, Orgao> = {
     VISADF: "VISA",
     VIGILANCIA_SANITARIA: "VISA",
@@ -48,7 +51,10 @@ const orgaoTolerante = z.preprocess((v) => {
 }, z.enum(ORGAOS_VALIDOS));
 
 const situacaoTolerante = z.preprocess((v) => {
-  const t = String(v ?? "").trim().toLowerCase().replace(/[\s-]+/g, "_");
+  const t = String(v ?? "")
+    .trim()
+    .toLowerCase()
+    .replace(/[\s-]+/g, "_");
   return (STATUS_VALIDOS as readonly string[]).includes(t) ? t : "em_analise";
 }, z.enum(STATUS_VALIDOS));
 
@@ -77,9 +83,7 @@ const extracaoSchema = z.object({
     .array(z.unknown())
     .default([])
     .transform((lista) =>
-      lista
-        .map((i) => itemExtraido.safeParse(i))
-        .flatMap((r) => (r.success ? [r.data] : [])),
+      lista.map((i) => itemExtraido.safeParse(i)).flatMap((r) => (r.success ? [r.data] : [])),
     ),
 });
 

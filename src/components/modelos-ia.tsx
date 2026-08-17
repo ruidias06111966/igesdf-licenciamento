@@ -120,7 +120,11 @@ export function GuardarModelo({ conteudo }: { conteudo: string }) {
               </Select>
             </Field>
           </FieldRow>
-          <Field label="Etiquetas" htmlFor="modelo-tags" dica="Separadas por vírgula. Ex.: VISADF, renovação">
+          <Field
+            label="Etiquetas"
+            htmlFor="modelo-tags"
+            dica="Separadas por vírgula. Ex.: VISADF, renovação"
+          >
             <Input
               id="modelo-tags"
               value={v.tags}
@@ -145,7 +149,12 @@ export function GuardarModelo({ conteudo }: { conteudo: string }) {
 function primeiraLinha(conteudo: string) {
   const linha = conteudo
     .split("\n")
-    .map((l) => l.replace(/^#+\s*/, "").replace(/\*\*/g, "").trim())
+    .map((l) =>
+      l
+        .replace(/^#+\s*/, "")
+        .replace(/\*\*/g, "")
+        .trim(),
+    )
     .find((l) => l.length > 3);
   return (linha ?? "Documento do assistente").slice(0, 120);
 }
