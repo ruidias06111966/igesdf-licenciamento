@@ -29,7 +29,7 @@ export const listOrgaos = createServerFn({ method: "GET" })
 
 export const upsertOrgao = createServerFn({ method: "POST" })
   .middleware([requireEdicao])
-  .inputValidator((input: unknown) => orgaoSchema.parse(input))
+  .validator((input: unknown) => orgaoSchema.parse(input))
   .handler(async ({ data, context }) => {
     const clean = vaziosParaNulo(data);
     if (data.id) {
@@ -48,7 +48,7 @@ export const upsertOrgao = createServerFn({ method: "POST" })
 
 export const deleteOrgao = createServerFn({ method: "POST" })
   .middleware([requireEdicao])
-  .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
+  .validator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase.from("orgaos").delete().eq("id", data.id);
     if (error) throw error;
