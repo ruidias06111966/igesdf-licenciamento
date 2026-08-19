@@ -44,3 +44,17 @@ export const requireEdicao = createMiddleware({ type: "function" }).server(async
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   return next({ context: { supabase: supabaseAdmin } });
 });
+
+/**
+ * Exige o perfil master. Usado pelos módulos que produzem documentos oficiais
+ * (assistente de IA, despachos e consolidado da rede), reservados a quem
+ * assina — esconder o menu não bastaria, porque as funções são chamáveis.
+ */
+export const requireMaster = createMiddleware({ type: "function" }).server(async ({ next }) => {
+  const { perfilAtual } = await import("@/lib/acesso.server");
+  if (perfilAtual() !== "master") {
+    throw new Error("Este módulo é reservado ao acesso master.");
+  }
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  return next({ context: { supabase: supabaseAdmin } });
+});
