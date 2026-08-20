@@ -21,6 +21,7 @@ import { Route as AuthenticatedNormativasRouteImport } from './routes/_authentic
 import { Route as AuthenticatedMatrizRouteImport } from './routes/_authenticated/matriz'
 import { Route as AuthenticatedLicencasRouteImport } from './routes/_authenticated/licencas'
 import { Route as AuthenticatedIaRouteImport } from './routes/_authenticated/ia'
+import { Route as AuthenticatedDespachosRouteImport } from './routes/_authenticated/despachos'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedCnpjRouteImport } from './routes/_authenticated/cnpj'
 import { Route as AuthenticatedCalendarioRouteImport } from './routes/_authenticated/calendario'
@@ -93,6 +94,11 @@ const AuthenticatedLicencasRoute = AuthenticatedLicencasRouteImport.update({
 const AuthenticatedIaRoute = AuthenticatedIaRouteImport.update({
   id: '/ia',
   path: '/ia',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedDespachosRoute = AuthenticatedDespachosRouteImport.update({
+  id: '/despachos',
+  path: '/despachos',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
@@ -185,6 +191,7 @@ export interface FileRoutesByFullPath {
   '/calendario': typeof AuthenticatedCalendarioRoute
   '/cnpj': typeof AuthenticatedCnpjRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/despachos': typeof AuthenticatedDespachosRoute
   '/ia': typeof AuthenticatedIaRoute
   '/licencas': typeof AuthenticatedLicencasRoute
   '/matriz': typeof AuthenticatedMatrizRoute
@@ -212,6 +219,7 @@ export interface FileRoutesByTo {
   '/calendario': typeof AuthenticatedCalendarioRoute
   '/cnpj': typeof AuthenticatedCnpjRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/despachos': typeof AuthenticatedDespachosRoute
   '/ia': typeof AuthenticatedIaRoute
   '/licencas': typeof AuthenticatedLicencasRoute
   '/matriz': typeof AuthenticatedMatrizRoute
@@ -241,6 +249,7 @@ export interface FileRoutesById {
   '/_authenticated/calendario': typeof AuthenticatedCalendarioRoute
   '/_authenticated/cnpj': typeof AuthenticatedCnpjRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/despachos': typeof AuthenticatedDespachosRoute
   '/_authenticated/ia': typeof AuthenticatedIaRoute
   '/_authenticated/licencas': typeof AuthenticatedLicencasRoute
   '/_authenticated/matriz': typeof AuthenticatedMatrizRoute
@@ -270,6 +279,7 @@ export interface FileRouteTypes {
     | '/calendario'
     | '/cnpj'
     | '/dashboard'
+    | '/despachos'
     | '/ia'
     | '/licencas'
     | '/matriz'
@@ -297,6 +307,7 @@ export interface FileRouteTypes {
     | '/calendario'
     | '/cnpj'
     | '/dashboard'
+    | '/despachos'
     | '/ia'
     | '/licencas'
     | '/matriz'
@@ -325,6 +336,7 @@ export interface FileRouteTypes {
     | '/_authenticated/calendario'
     | '/_authenticated/cnpj'
     | '/_authenticated/dashboard'
+    | '/_authenticated/despachos'
     | '/_authenticated/ia'
     | '/_authenticated/licencas'
     | '/_authenticated/matriz'
@@ -444,6 +456,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/despachos': {
+      id: '/_authenticated/despachos'
+      path: '/despachos'
+      fullPath: '/despachos'
+      preLoaderRoute: typeof AuthenticatedDespachosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/dashboard': {
       id: '/_authenticated/dashboard'
       path: '/dashboard'
@@ -549,6 +568,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedCalendarioRoute: typeof AuthenticatedCalendarioRoute
   AuthenticatedCnpjRoute: typeof AuthenticatedCnpjRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedDespachosRoute: typeof AuthenticatedDespachosRoute
   AuthenticatedIaRoute: typeof AuthenticatedIaRoute
   AuthenticatedLicencasRoute: typeof AuthenticatedLicencasRoute
   AuthenticatedMatrizRoute: typeof AuthenticatedMatrizRoute
@@ -566,6 +586,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCalendarioRoute: AuthenticatedCalendarioRoute,
   AuthenticatedCnpjRoute: AuthenticatedCnpjRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedDespachosRoute: AuthenticatedDespachosRoute,
   AuthenticatedIaRoute: AuthenticatedIaRoute,
   AuthenticatedLicencasRoute: AuthenticatedLicencasRoute,
   AuthenticatedMatrizRoute: AuthenticatedMatrizRoute,
