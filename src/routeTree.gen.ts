@@ -21,7 +21,9 @@ import { Route as AuthenticatedNormativasRouteImport } from './routes/_authentic
 import { Route as AuthenticatedMatrizRouteImport } from './routes/_authenticated/matriz'
 import { Route as AuthenticatedLicencasRouteImport } from './routes/_authenticated/licencas'
 import { Route as AuthenticatedIaRouteImport } from './routes/_authenticated/ia'
+import { Route as AuthenticatedDespachosRouteImport } from './routes/_authenticated/despachos'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
+import { Route as AuthenticatedConsolidadoRouteImport } from './routes/_authenticated/consolidado'
 import { Route as AuthenticatedCnpjRouteImport } from './routes/_authenticated/cnpj'
 import { Route as AuthenticatedCalendarioRouteImport } from './routes/_authenticated/calendario'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
@@ -95,11 +97,22 @@ const AuthenticatedIaRoute = AuthenticatedIaRouteImport.update({
   path: '/ia',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedDespachosRoute = AuthenticatedDespachosRouteImport.update({
+  id: '/despachos',
+  path: '/despachos',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedDashboardRoute = AuthenticatedDashboardRouteImport.update({
   id: '/dashboard',
   path: '/dashboard',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedConsolidadoRoute =
+  AuthenticatedConsolidadoRouteImport.update({
+    id: '/consolidado',
+    path: '/consolidado',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedCnpjRoute = AuthenticatedCnpjRouteImport.update({
   id: '/cnpj',
   path: '/cnpj',
@@ -184,7 +197,9 @@ export interface FileRoutesByFullPath {
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/calendario': typeof AuthenticatedCalendarioRoute
   '/cnpj': typeof AuthenticatedCnpjRoute
+  '/consolidado': typeof AuthenticatedConsolidadoRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/despachos': typeof AuthenticatedDespachosRoute
   '/ia': typeof AuthenticatedIaRoute
   '/licencas': typeof AuthenticatedLicencasRoute
   '/matriz': typeof AuthenticatedMatrizRoute
@@ -211,7 +226,9 @@ export interface FileRoutesByTo {
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/calendario': typeof AuthenticatedCalendarioRoute
   '/cnpj': typeof AuthenticatedCnpjRoute
+  '/consolidado': typeof AuthenticatedConsolidadoRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
+  '/despachos': typeof AuthenticatedDespachosRoute
   '/ia': typeof AuthenticatedIaRoute
   '/licencas': typeof AuthenticatedLicencasRoute
   '/matriz': typeof AuthenticatedMatrizRoute
@@ -240,7 +257,9 @@ export interface FileRoutesById {
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
   '/_authenticated/calendario': typeof AuthenticatedCalendarioRoute
   '/_authenticated/cnpj': typeof AuthenticatedCnpjRoute
+  '/_authenticated/consolidado': typeof AuthenticatedConsolidadoRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
+  '/_authenticated/despachos': typeof AuthenticatedDespachosRoute
   '/_authenticated/ia': typeof AuthenticatedIaRoute
   '/_authenticated/licencas': typeof AuthenticatedLicencasRoute
   '/_authenticated/matriz': typeof AuthenticatedMatrizRoute
@@ -269,7 +288,9 @@ export interface FileRouteTypes {
     | '/.well-known/oauth-protected-resource'
     | '/calendario'
     | '/cnpj'
+    | '/consolidado'
     | '/dashboard'
+    | '/despachos'
     | '/ia'
     | '/licencas'
     | '/matriz'
@@ -296,7 +317,9 @@ export interface FileRouteTypes {
     | '/.well-known/oauth-protected-resource'
     | '/calendario'
     | '/cnpj'
+    | '/consolidado'
     | '/dashboard'
+    | '/despachos'
     | '/ia'
     | '/licencas'
     | '/matriz'
@@ -324,7 +347,9 @@ export interface FileRouteTypes {
     | '/.well-known/oauth-protected-resource'
     | '/_authenticated/calendario'
     | '/_authenticated/cnpj'
+    | '/_authenticated/consolidado'
     | '/_authenticated/dashboard'
+    | '/_authenticated/despachos'
     | '/_authenticated/ia'
     | '/_authenticated/licencas'
     | '/_authenticated/matriz'
@@ -444,11 +469,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedIaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/despachos': {
+      id: '/_authenticated/despachos'
+      path: '/despachos'
+      fullPath: '/despachos'
+      preLoaderRoute: typeof AuthenticatedDespachosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/dashboard': {
       id: '/_authenticated/dashboard'
       path: '/dashboard'
       fullPath: '/dashboard'
       preLoaderRoute: typeof AuthenticatedDashboardRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/consolidado': {
+      id: '/_authenticated/consolidado'
+      path: '/consolidado'
+      fullPath: '/consolidado'
+      preLoaderRoute: typeof AuthenticatedConsolidadoRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/cnpj': {
@@ -548,7 +587,9 @@ declare module '@tanstack/react-router' {
 interface AuthenticatedRouteRouteChildren {
   AuthenticatedCalendarioRoute: typeof AuthenticatedCalendarioRoute
   AuthenticatedCnpjRoute: typeof AuthenticatedCnpjRoute
+  AuthenticatedConsolidadoRoute: typeof AuthenticatedConsolidadoRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
+  AuthenticatedDespachosRoute: typeof AuthenticatedDespachosRoute
   AuthenticatedIaRoute: typeof AuthenticatedIaRoute
   AuthenticatedLicencasRoute: typeof AuthenticatedLicencasRoute
   AuthenticatedMatrizRoute: typeof AuthenticatedMatrizRoute
@@ -565,7 +606,9 @@ interface AuthenticatedRouteRouteChildren {
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedCalendarioRoute: AuthenticatedCalendarioRoute,
   AuthenticatedCnpjRoute: AuthenticatedCnpjRoute,
+  AuthenticatedConsolidadoRoute: AuthenticatedConsolidadoRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
+  AuthenticatedDespachosRoute: AuthenticatedDespachosRoute,
   AuthenticatedIaRoute: AuthenticatedIaRoute,
   AuthenticatedLicencasRoute: AuthenticatedLicencasRoute,
   AuthenticatedMatrizRoute: AuthenticatedMatrizRoute,
