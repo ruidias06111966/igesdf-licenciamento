@@ -32,7 +32,17 @@ async function copiar(texto: string, html?: string) {
   }
 }
 
-export function AcoesCopiar({ blocos }: { blocos: Bloco[] }) {
+export function AcoesCopiar({
+  blocos,
+  ficheiro = "despacho",
+  rodape,
+}: {
+  blocos: Bloco[];
+  /** Nome do ficheiro PDF, sem extensão. */
+  ficheiro?: string;
+  /** Linha de rodapé do PDF: unidade, processo SEI e data. */
+  rodape?: string;
+}) {
   return (
     <div className="flex flex-wrap gap-2 no-print">
       <Button
@@ -45,6 +55,18 @@ export function AcoesCopiar({ blocos }: { blocos: Bloco[] }) {
       </Button>
       <Button
         type="button"
+        variant="outline"
+        size="sm"
+        onClick={() => {
+          void exportarDespachoPdf(blocos, { ficheiro, rodape })
+            .then(() => toast.success("PDF gerado"))
+            .catch(() => toast.error("Não foi possível gerar o PDF."));
+        }}
+      >
+        <FileDown className="mr-1 size-3.5" aria-hidden="true" /> Exportar PDF
+      </Button>
+      <Button
+        type="button"
         variant="ghost"
         size="sm"
         onClick={() => void copiar(blocosParaTexto(blocos))}
@@ -54,6 +76,7 @@ export function AcoesCopiar({ blocos }: { blocos: Bloco[] }) {
     </div>
   );
 }
+
 
 export function markdownDe(blocos: Bloco[]) {
   return blocosParaMarkdown(blocos);
