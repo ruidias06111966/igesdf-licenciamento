@@ -31,7 +31,6 @@ export function parseCsv(texto: string): string[][] {
     }
     if (c === '"') {
       entreAspas = true;
-petit:
       continue;
     }
     if (c === sep) {
