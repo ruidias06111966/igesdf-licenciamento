@@ -114,9 +114,12 @@ export const registarDespachoGerado = createServerFn({ method: "POST" })
       detalhes: {
         unidade: data.unidade ?? null,
         competencia: data.competencia ?? null,
+        periodo: data.periodo ?? null,
+        unidades: data.unidades ?? null,
         numero: data.numero ?? null,
         processo_sei: data.processo_sei ?? null,
       },
+
     });
     return { ok: true };
   });
