@@ -17,8 +17,8 @@ import { usePodeEditar } from "@/lib/perfil";
 import { unidadesQuery } from "@/lib/queries";
 import type { Unidade } from "@/lib/rows";
 import { cn } from "@/lib/utils";
-import {
 import { SubNav } from "@/components/sub-nav";
+import {
   ROTULO_CATEGORIA,
   ROTULO_TITULAR,
   RAIZ_IGESDF,
