@@ -5,6 +5,7 @@ import {
   CalendarClock,
   FileBarChart2,
   FileCheck2,
+  FileText,
   Grid3x3,
   FolderOpen,
   IdCard,
@@ -12,6 +13,7 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
+  Network,
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
@@ -36,7 +38,11 @@ const NAV: ItemNav[] = [
   { to: "/normativas", label: "Normativas", icon: BookText },
 ];
 
-const NAV_MASTER: ItemNav = { to: "/ia", label: "Assistente IA", icon: Sparkles };
+const NAV_MASTER: ItemNav[] = [
+  { to: "/despachos", label: "Despachos", icon: FileText },
+  { to: "/consolidado", label: "Consolidado da Rede", icon: Network },
+  { to: "/ia", label: "Assistente IA", icon: Sparkles },
+];
 
 function Marca({ compacta }: { compacta?: boolean }) {
   return (
@@ -52,7 +58,7 @@ function Marca({ compacta }: { compacta?: boolean }) {
 
 function ListaNav({ onNavigate }: { onNavigate?: () => void }) {
   const ehMaster = useEhMaster();
-  const itens = ehMaster ? [...NAV, NAV_MASTER] : NAV;
+  const itens = ehMaster ? [...NAV, ...NAV_MASTER] : NAV;
   return (
     <nav aria-label="Navegação principal" className="flex-1 space-y-1 p-3">
       {itens.map(({ to, label, icon: Icone }) => (
