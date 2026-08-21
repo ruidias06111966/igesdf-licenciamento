@@ -6,6 +6,10 @@
 export type ColunaCsv<T> = {
   cabecalho: string;
   valor: (linha: T) => string | number | null | undefined;
+  /** Colore a célula pela situação (vigente, vencida, a vencer…) no Excel/PDF. */
+  situacao?: boolean;
+  /** Largura sugerida da coluna na folha de cálculo, em caracteres. */
+  largura?: number;
 };
 
 function escapar(valor: string | number | null | undefined): string {
