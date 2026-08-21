@@ -108,14 +108,13 @@ export async function baixarPlanilha<T>(
     wch: c.largura ?? Math.min(46, Math.max(12, c.cabecalho.length + 6)),
   }));
   folha["!rows"] = [{ hpt: 26 }, { hpt: 16 }, { hpt: 6 }, { hpt: 24 }];
-  folha["!freeze"] = { xSplit: 0, ySplit: 4 };
   folha["!autofilter"] = {
     ref: XLSX.utils.encode_range(
       { r: 3, c: 0 },
       { r: 3 + linhas.length, c: Math.max(larguraTotal - 1, 0) },
     ),
   };
-  // Impressão: A4 paisagem, ajustado à largura da página, cabeçalho repetido.
+  // Impressão: margens estreitas para caber o quadro completo na folha.
   (folha as Record<string, unknown>)["!margins"] = {
     left: 0.4,
     right: 0.4,
@@ -124,15 +123,9 @@ export async function baixarPlanilha<T>(
     header: 0.2,
     footer: 0.2,
   };
-  (folha as Record<string, unknown>)["!printHeader"] = [4, 4];
 
   const livro = XLSX.utils.book_new();
   XLSX.utils.book_append_sheet(livro, folha, (opcoes.folha ?? "Relatório").slice(0, 31));
-  const wb = livro as unknown as { Workbook?: Record<string, unknown> };
-  wb.Workbook = {
-    ...(wb.Workbook ?? {}),
-    Views: [{ RTL: false }],
-  };
 
   XLSX.writeFile(livro, nomeArquivo.endsWith(".xlsx") ? nomeArquivo : `${nomeArquivo}.xlsx`, {
     bookType: "xlsx",
