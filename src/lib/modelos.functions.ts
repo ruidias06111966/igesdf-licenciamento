@@ -92,14 +92,11 @@ export const restaurarVersaoModelo = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-type ClienteSupabase = Parameters<typeof arquivarVersaoImpl>[0];
+type ClienteSupabase = SupabaseClient<Database>;
 
-async function arquivarVersaoImpl(
-  supabase: {
-    from: (t: "ia_modelo_versoes") => {
-      insert: (v: Record<string, unknown>) => Promise<{ error: unknown }>;
-    };
-  },
+/** Arquiva o estado atual do modelo antes de ser substituído. */
+async function arquivarVersao(
+  supabase: ClienteSupabase,
   modelo: { id: string; versao: number | null; titulo: string; conteudo: string },
   comentario: string | null,
 ) {
@@ -114,11 +111,6 @@ async function arquivarVersaoImpl(
   });
 }
 
-const arquivarVersao = arquivarVersaoImpl as (
-  supabase: ClienteSupabase,
-  modelo: { id: string; versao: number | null; titulo: string; conteudo: string },
-  comentario: string | null,
-) => Promise<void>;
 
 export const upsertModelo = createServerFn({ method: "POST" })
   .middleware([requireEdicao])
