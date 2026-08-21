@@ -51,6 +51,12 @@ export const Route = createFileRoute("/api/public/hooks/enviar-alertas")({
         const alvos = [15, 30, 60, 90];
         const enviados: { licenca: string; dias: number }[] = [];
 
+        // Antes de avisar, põe as situações em dia: uma licença cujo prazo já
+        // passou passa a constar como vencida, sem depender de edição manual.
+        const { error: erroSync } = await supabaseAdmin.rpc("sincronizar_licencas_vencidas");
+        if (erroSync) console.error("[alertas] sincronização de vencidas falhou:", erroSync);
+
+
         for (const dias of alvos) {
           const alvo = new Date();
           alvo.setDate(alvo.getDate() + dias);
