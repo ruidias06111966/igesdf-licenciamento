@@ -5,7 +5,7 @@
  * mostram exatamente o mesmo documento — muda apenas quem o monta.
  */
 import { toast } from "sonner";
-import { Copy, FileText } from "lucide-react";
+import { Copy, FileDown, FileText } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
   blocosParaHtml,
@@ -13,6 +13,7 @@ import {
   blocosParaTexto,
   type Bloco,
 } from "@/lib/despacho/nucleo";
+import { exportarDespachoPdf } from "@/lib/despacho/pdf";
 
 async function copiar(texto: string, html?: string) {
   try {
