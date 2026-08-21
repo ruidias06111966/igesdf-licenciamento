@@ -58,7 +58,7 @@ function Marca({ compacta }: { compacta?: boolean }) {
 
 function ListaNav({ onNavigate }: { onNavigate?: () => void }) {
   const ehMaster = useEhMaster();
-  const itens = ehMaster ? [...NAV, NAV_MASTER] : NAV;
+  const itens = ehMaster ? [...NAV, ...NAV_MASTER] : NAV;
   return (
     <nav aria-label="Navegação principal" className="flex-1 space-y-1 p-3">
       {itens.map(({ to, label, icon: Icone }) => (
