@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import type { Database } from "@/integrations/supabase/types";
 import { requireEdicao } from "@/lib/acesso-middleware";
 import { linhasImportacaoSchema, type LinhaImportacao } from "@/lib/importacao-schema";
 
@@ -149,13 +150,13 @@ export const importarLicencas = createServerFn({ method: "POST" })
 
 /** Só os campos preenchidos entram na gravação: a planilha nunca apaga dados. */
 function camposDaLinha(l: LinhaImportacao) {
-  const registo: Record<string, string | null> = {};
-  if (l.status) registo["status"] = l.status;
-  if (l.numero) registo["numero"] = l.numero;
-  if (l.processo_sei) registo["processo_sei"] = l.processo_sei;
-  if (l.data_emissao) registo["data_emissao"] = l.data_emissao;
-  if (l.data_vencimento) registo["data_vencimento"] = l.data_vencimento;
-  if (l.data_protocolo) registo["data_protocolo"] = l.data_protocolo;
-  if (l.observacoes) registo["observacoes"] = l.observacoes;
+  const registo: Partial<Database["public"]["Tables"]["licencas"]["Update"]> = {};
+  if (l.status) registo.status = l.status;
+  if (l.numero) registo.numero = l.numero;
+  if (l.processo_sei) registo.processo_sei = l.processo_sei;
+  if (l.data_emissao) registo.data_emissao = l.data_emissao;
+  if (l.data_vencimento) registo.data_vencimento = l.data_vencimento;
+  if (l.data_protocolo) registo.data_protocolo = l.data_protocolo;
+  if (l.observacoes) registo.observacoes = l.observacoes;
   return registo;
 }
