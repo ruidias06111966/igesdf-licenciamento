@@ -98,9 +98,12 @@ export const registarDespachoGerado = createServerFn({ method: "POST" })
       unidade_id?: string | null;
       unidade?: string | null;
       competencia?: string | null;
+      periodo?: string | null;
+      unidades?: number | null;
       numero?: string | null;
       processo_sei?: string | null;
     }) => entrada,
+
   )
   .handler(async ({ data, context }) => {
     const { registarAuditoria } = await import("@/lib/auditoria.server");
