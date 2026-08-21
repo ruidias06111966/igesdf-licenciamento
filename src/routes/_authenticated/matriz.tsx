@@ -25,7 +25,8 @@ import {
   tipoUnidadeLabel,
 } from "@/lib/domain";
 import { formatDate } from "@/lib/dates";
-import { baixarCsv, sufixoData, type ColunaCsv } from "@/lib/csv";
+import { sufixoData, type ColunaCsv } from "@/lib/csv";
+import { BotaoExportar } from "@/components/botao-exportar";
 import { montarGrade, temPendencia, type Celula } from "@/lib/matriz";
 import type { Unidade } from "@/lib/rows";
 import { cn } from "@/lib/utils";
@@ -96,14 +97,11 @@ function MatrizPage() {
           const extra = celula.licencas.length > 1 ? ` (${celula.licencas.length} licenças)` : "";
           return `${tom.label}${venc}${extra}`;
         },
+        situacao: true,
       })),
     ],
     [orgaosUsados, grade],
   );
-
-  function exportar() {
-    baixarCsv(`matriz-compliance-igesdf-${sufixoData()}`, linhas, colunasCsv);
-  }
 
   return (
     <div className="print-area space-y-5 p-4 sm:p-6 lg:p-8">
@@ -112,9 +110,15 @@ function MatrizPage() {
         descricao={`${linhas.length} unidade(s) × ${orgaosUsados.length} órgão(s). Cada célula mostra a licença mais urgente do cruzamento.`}
         acoes={
           <>
-            <Button variant="outline" onClick={exportar} disabled={linhas.length === 0}>
-              <Download className="mr-1 size-4" aria-hidden="true" /> Exportar planilha
-            </Button>
+            <BotaoExportar
+              nomeArquivo={`matriz-compliance-igesdf-${sufixoData()}`}
+              titulo="IGESDF — Matriz de compliance"
+              subtitulo={`${linhas.length} unidade(s) × ${orgaosUsados.length} órgão(s)`}
+              folha="Matriz"
+              linhas={linhas}
+              colunas={colunasCsv}
+              rotulo="Exportar planilha"
+            />
             <PrintModeToggle defaultOrientation="landscape" />
           </>
         }

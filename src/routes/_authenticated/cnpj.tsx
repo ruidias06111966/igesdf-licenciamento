@@ -11,7 +11,8 @@ import { UnidadeForm } from "@/components/forms/unidade-form";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { baixarCsv, sufixoData } from "@/lib/csv";
+import { sufixoData, type ColunaCsv } from "@/lib/csv";
+import { BotaoExportar } from "@/components/botao-exportar";
 import { usePodeEditar } from "@/lib/perfil";
 import { unidadesQuery } from "@/lib/queries";
 import type { Unidade } from "@/lib/rows";
@@ -143,26 +144,25 @@ function CnpjPage() {
     });
   }, [unidades, termo, filtro]);
 
-  const exportarCsv = () =>
-    baixarCsv(`unidades-cnpj-igesdf-${sufixoData()}`, visiveis, [
-      { cabecalho: "Código MV", valor: (u) => u.codigo_mv ?? "" },
-      { cabecalho: "CNPJ IGESDF", valor: (u) => cnpjFormatado(u) },
-      { cabecalho: "CNPJ IGESDF (dígitos)", valor: (u) => cnpjDigitos(u) },
-      { cabecalho: "CNPJ SES-DF", valor: (u) => (u.cnpj_ses ? `${RAIZ_SES}/${u.cnpj_ses}` : "") },
-      { cabecalho: "CNPJ SES-DF (dígitos)", valor: (u) => sesDigitos(u.cnpj_ses) ?? "" },
-      { cabecalho: "CNES", valor: (u) => u.cnes ?? "" },
-      { cabecalho: "CNPJ titular do CNES", valor: (u) => u.cnpj_cnes ?? "" },
-      { cabecalho: "Titularidade CNES", valor: (u) => ROTULO_TITULAR[titularDe(u)] },
-      { cabecalho: "Tipo", valor: (u) => u.tipo_estabelecimento },
-      { cabecalho: "Categoria", valor: (u) => ROTULO_CATEGORIA[categoriaDe(u)] },
-      { cabecalho: "Unidade", valor: (u) => u.nome },
-      { cabecalho: "CNAE principal", valor: (u) => u.cnae_principal ?? "" },
-      { cabecalho: "Início da atividade", valor: (u) => inicioFormatado(u) },
-      { cabecalho: "Endereço", valor: (u) => u.endereco ?? "" },
-      { cabecalho: "Bairro", valor: (u) => u.bairro ?? "" },
-      { cabecalho: "CEP", valor: (u) => u.cep ?? "" },
-      { cabecalho: "Situação", valor: (u) => (u.ativa ? "ATIVA" : "INATIVA") },
-    ]);
+  const colunasExport: ColunaCsv<Unidade>[] = [
+    { cabecalho: "Código MV", valor: (u) => u.codigo_mv ?? "" },
+    { cabecalho: "CNPJ IGESDF", valor: (u) => cnpjFormatado(u) },
+    { cabecalho: "CNPJ IGESDF (dígitos)", valor: (u) => cnpjDigitos(u) },
+    { cabecalho: "CNPJ SES-DF", valor: (u) => (u.cnpj_ses ? `${RAIZ_SES}/${u.cnpj_ses}` : "") },
+    { cabecalho: "CNPJ SES-DF (dígitos)", valor: (u) => sesDigitos(u.cnpj_ses) ?? "" },
+    { cabecalho: "CNES", valor: (u) => u.cnes ?? "" },
+    { cabecalho: "CNPJ titular do CNES", valor: (u) => u.cnpj_cnes ?? "" },
+    { cabecalho: "Titularidade CNES", valor: (u) => ROTULO_TITULAR[titularDe(u)] },
+    { cabecalho: "Tipo", valor: (u) => u.tipo_estabelecimento },
+    { cabecalho: "Categoria", valor: (u) => ROTULO_CATEGORIA[categoriaDe(u)] },
+    { cabecalho: "Unidade", valor: (u) => u.nome },
+    { cabecalho: "CNAE principal", valor: (u) => u.cnae_principal ?? "" },
+    { cabecalho: "Início da atividade", valor: (u) => inicioFormatado(u) },
+    { cabecalho: "Endereço", valor: (u) => u.endereco ?? "" },
+    { cabecalho: "Bairro", valor: (u) => u.bairro ?? "" },
+    { cabecalho: "CEP", valor: (u) => u.cep ?? "" },
+    { cabecalho: "Situação", valor: (u) => (u.ativa ? "ATIVA" : "INATIVA"), situacao: true },
+  ];
 
   const copiarTabela = async () => {
     const linhas = visiveis.map((u) =>
@@ -200,9 +200,14 @@ function CnpjPage() {
             <Button variant="outline" onClick={copiarTabela}>
               <Copy className="mr-1 size-4" aria-hidden="true" /> Copiar tabela
             </Button>
-            <Button variant="outline" onClick={exportarCsv}>
-              <Download className="mr-1 size-4" aria-hidden="true" /> Exportar CSV
-            </Button>
+            <BotaoExportar
+              nomeArquivo={`unidades-cnpj-igesdf-${sufixoData()}`}
+              titulo="IGESDF — Cadastro de CNPJ das unidades"
+              subtitulo={`${visiveis.length} unidade(s)`}
+              folha="CNPJ"
+              linhas={visiveis}
+              colunas={colunasExport}
+            />
             <PrintModeToggle defaultOrientation="landscape" />
           </>
         }

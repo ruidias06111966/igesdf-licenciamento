@@ -8,6 +8,15 @@
  * como os restantes documentos oficiais do processo.
  */
 import type { Bloco } from "@/lib/despacho/nucleo";
+import { corSituacao, MARCA } from "@/lib/exportar/paleta";
+
+function rgb(hex: string): [number, number, number] {
+  return [
+    parseInt(hex.slice(0, 2), 16),
+    parseInt(hex.slice(2, 4), 16),
+    parseInt(hex.slice(4, 6), 16),
+  ];
+}
 
 const A4 = { largura: 210, altura: 297 };
 const MARGEM = { esq: 25, dir: 20, topo: 25, base: 20 };
@@ -30,9 +39,23 @@ export async function exportarDespachoPdf(blocos: Bloco[], opcoes: OpcoesPdf) {
 
   let y = MARGEM.topo;
 
+  // Faixa institucional no topo da primeira página.
+  const cabecalho = () => {
+    doc.setFillColor(...rgb(MARCA.fundo));
+    doc.rect(0, 0, A4.largura, 14, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(8);
+    doc.setTextColor(255, 255, 255);
+    doc.text("IGESDF · NÚCLEO DE LICENCIAMENTO", MARGEM.esq, 9);
+    doc.setTextColor(0, 0, 0);
+  };
+  cabecalho();
+  y = Math.max(y, 26);
+
   const novaPagina = () => {
     doc.addPage();
-    y = MARGEM.topo;
+    cabecalho();
+    y = Math.max(MARGEM.topo, 26);
   };
   const garantir = (altura: number) => {
     if (y + altura > A4.altura - MARGEM.base) novaPagina();
@@ -53,10 +76,19 @@ export async function exportarDespachoPdf(blocos: Bloco[], opcoes: OpcoesPdf) {
 
   for (const bloco of blocos) {
     switch (bloco.t) {
-      case "titulo":
-        y += 2;
+      case "titulo": {
+        y += 3;
+        garantir(14);
+        doc.setTextColor(...rgb(MARCA.fundo));
         paragrafo(bloco.texto.toUpperCase(), { negrito: true, tamanho: 12 });
+        doc.setDrawColor(...rgb(MARCA.linha));
+        doc.setLineWidth(0.4);
+        doc.line(MARGEM.esq, y - 1, MARGEM.esq + LARGURA_UTIL, y - 1);
+        doc.setLineWidth(0.2);
+        doc.setTextColor(0, 0, 0);
+        y += 3;
         break;
+      }
       case "p":
         paragrafo(bloco.texto);
         break;
@@ -106,7 +138,9 @@ export async function exportarDespachoPdf(blocos: Bloco[], opcoes: OpcoesPdf) {
     doc.setPage(p);
     doc.setFont("times", "normal");
     doc.setFontSize(8);
-    doc.setTextColor(90);
+    doc.setDrawColor(...rgb(MARCA.linha));
+    doc.line(MARGEM.esq, A4.altura - 15, A4.largura - MARGEM.dir, A4.altura - 15);
+    doc.setTextColor(...rgb(MARCA.cinza));
     if (opcoes.rodape) {
       doc.text(opcoes.rodape, MARGEM.esq, A4.altura - 12, { maxWidth: LARGURA_UTIL - 25 });
     }
@@ -132,15 +166,17 @@ function desenharTabela(
   let y = yInicial + 2;
 
   const desenharCabecalho = () => {
-    doc.setFont("times", "bold");
-    doc.setFontSize(8.5);
+    doc.setFillColor(...rgb(MARCA.fundo));
+    doc.rect(MARGEM.esq, y, LARGURA_UTIL, 7, "F");
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(7.5);
+    doc.setTextColor(255, 255, 255);
     let x = MARGEM.esq;
     for (const c of cabecalho) {
-      doc.text(doc.splitTextToSize(c, larguraCol - 2) as string[], x + 1, y + 4);
+      doc.text(doc.splitTextToSize(c, larguraCol - 2) as string[], x + 1.5, y + 4.5);
       x += larguraCol;
     }
-    doc.setDrawColor(120);
-    doc.line(MARGEM.esq, y + 6, MARGEM.esq + LARGURA_UTIL, y + 6);
+    doc.setTextColor(0, 0, 0);
     y += 8;
   };
 
@@ -149,26 +185,42 @@ function desenharTabela(
 
   doc.setFont("times", "normal");
   doc.setFontSize(8.5);
-  for (const linha of linhas) {
+  linhas.forEach((linha, indice) => {
     const celulas = linha.map(
       (c) => doc.splitTextToSize(String(c ?? ""), larguraCol - 2) as string[],
     );
     const altura = Math.max(...celulas.map((c) => c.length)) * 3.8 + 2.5;
     if (y + altura > A4.altura - MARGEM.base) {
       novaPagina();
-      y = MARGEM.topo;
+      y = Math.max(MARGEM.topo, 26);
       desenharCabecalho();
       doc.setFont("times", "normal");
       doc.setFontSize(8.5);
     }
-    let x = MARGEM.esq;
-    for (const celula of celulas) {
-      doc.text(celula, x + 1, y + 3);
-      x += larguraCol;
+    const par = indice % 2 === 1;
+    if (par) {
+      doc.setFillColor(...rgb(MARCA.zebra));
+      doc.rect(MARGEM.esq, y - 1, LARGURA_UTIL, altura, "F");
     }
+    let x = MARGEM.esq;
+    celulas.forEach((celula, c) => {
+      const cor = corSituacao(String(linha[c] ?? ""));
+      if (cor) {
+        doc.setFillColor(...rgb(cor.fundo));
+        doc.rect(x, y - 1, larguraCol, altura, "F");
+        doc.setTextColor(...rgb(cor.texto));
+        doc.setFont("times", "bold");
+      }
+      doc.text(celula, x + 1.5, y + 3);
+      if (cor) {
+        doc.setTextColor(0, 0, 0);
+        doc.setFont("times", "normal");
+      }
+      x += larguraCol;
+    });
     y += altura;
-    doc.setDrawColor(215);
+    doc.setDrawColor(...rgb(MARCA.linha));
     doc.line(MARGEM.esq, y - 1, MARGEM.esq + LARGURA_UTIL, y - 1);
-  }
+  });
   return y + 3;
 }

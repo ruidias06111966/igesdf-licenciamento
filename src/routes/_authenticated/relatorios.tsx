@@ -36,7 +36,8 @@ import {
   type StatusLicenca,
 } from "@/lib/domain";
 import { formatDate, formatDaysLeft } from "@/lib/dates";
-import { baixarCsv, sufixoData, type ColunaCsv } from "@/lib/csv";
+import { sufixoData, type ColunaCsv } from "@/lib/csv";
+import { BotaoExportar } from "@/components/botao-exportar";
 import { mensagemErro } from "@/lib/errors";
 import { usePodeEditar } from "@/lib/perfil";
 import type { LicencaDashboard, Unidade } from "@/lib/rows";
@@ -84,8 +85,12 @@ function colunasCsv(modo: Modo): ColunaCsv<LicencaDashboard>[] {
     },
     { cabecalho: "CNAE", valor: (d) => parseCnae(d.descricao).codigo },
     { cabecalho: "Atividade", valor: (d) => parseCnae(d.descricao).label },
-    { cabecalho: "Semáforo", valor: (d) => semaforoColor(d.semaforo ?? "").label },
-    { cabecalho: "Situação", valor: (d) => statusLabel(d.status) },
+    {
+      cabecalho: "Semáforo",
+      valor: (d) => semaforoColor(d.semaforo ?? "").label,
+      situacao: true,
+    },
+    { cabecalho: "Situação", valor: (d) => statusLabel(d.status), situacao: true },
     { cabecalho: "Número", valor: (d) => d.numero },
     { cabecalho: "Processo SEI", valor: (d) => d.processo_sei },
     { cabecalho: "Vencimento", valor: (d) => formatDate(d.data_vencimento) },
@@ -157,10 +162,6 @@ function RelatoriosPage() {
     };
   }, [filtrados]);
 
-  function exportar() {
-    baixarCsv(`conformidade-igesdf-${sufixoData()}`, filtrados, colunasCsv(modo));
-  }
-
   return (
     <div className="print-area space-y-6 p-4 sm:p-6 lg:p-8">
       <PageHeader
@@ -168,9 +169,15 @@ function RelatoriosPage() {
         descricao="Situação do licenciamento por unidade ou por órgão, com pendências e prazos de renovação."
         acoes={
           <>
-            <Button variant="outline" onClick={exportar} disabled={filtrados.length === 0}>
-              <Download className="mr-1 size-4" aria-hidden="true" /> Exportar planilha
-            </Button>
+            <BotaoExportar
+              nomeArquivo={`conformidade-igesdf-${sufixoData()}`}
+              titulo="IGESDF — Relatório de conformidade"
+              subtitulo={`Agrupado por ${modo === "unidade" ? "unidade" : "órgão"} · ${filtrados.length} registro(s)`}
+              folha="Conformidade"
+              linhas={filtrados}
+              colunas={colunasCsv(modo)}
+              rotulo="Exportar planilha"
+            />
             <PrintModeToggle defaultOrientation="landscape" />
           </>
         }

@@ -25,7 +25,8 @@ import {
   PERFIL_LABEL,
   valorLegivel,
 } from "@/lib/auditoria-labels";
-import { baixarCsv, sufixoData } from "@/lib/csv";
+import { sufixoData, type ColunaCsv } from "@/lib/csv";
+import { BotaoExportar } from "@/components/botao-exportar";
 
 export const Route = createFileRoute("/_authenticated/auditoria")({
   head: () => ({
@@ -75,37 +76,32 @@ function Auditoria() {
 
   const registos = data ?? [];
 
-  const exportar = () =>
-    baixarCsv(
-      `auditoria-${sufixoData()}`,
-      registos,
-      [
-        { cabecalho: "Data", valor: (r) => dataHora(r.created_at) },
-        { cabecalho: "Área", valor: (r) => ENTIDADE_LABEL[r.entidade] ?? r.entidade },
-        { cabecalho: "Ação", valor: (r) => ACAO_LABEL[r.acao] ?? r.acao },
-        { cabecalho: "Perfil", valor: (r) => (r.perfil ? (PERFIL_LABEL[r.perfil] ?? r.perfil) : "—") },
-        {
-          cabecalho: "Alterações",
-          valor: (r) =>
-            r.alteracoes
-              .map(
-                (a) =>
-                  `${campoLegivel(a.campo)}: ${valorLegivel(a.campo, a.antes)} → ${valorLegivel(a.campo, a.depois)}`,
-              )
-              .join(" | "),
-        },
-        {
-          cabecalho: "Contexto",
-          valor: (r) =>
-            r.detalhes
-              ? Object.entries(r.detalhes)
-                  .filter(([, v]) => v !== null && v !== "")
-                  .map(([k, v]) => `${campoLegivel(k)}: ${valorLegivel(k, v)}`)
-                  .join(" | ")
-              : "",
-        },
-      ],
-    );
+  const colunasExport: ColunaCsv<(typeof registos)[number]>[] = [
+    { cabecalho: "Data", valor: (r) => dataHora(r.created_at) },
+    { cabecalho: "Área", valor: (r) => ENTIDADE_LABEL[r.entidade] ?? r.entidade },
+    { cabecalho: "Ação", valor: (r) => ACAO_LABEL[r.acao] ?? r.acao },
+    { cabecalho: "Perfil", valor: (r) => (r.perfil ? (PERFIL_LABEL[r.perfil] ?? r.perfil) : "—") },
+    {
+      cabecalho: "Alterações",
+      valor: (r) =>
+        r.alteracoes
+          .map(
+            (a) =>
+              `${campoLegivel(a.campo)}: ${valorLegivel(a.campo, a.antes)} → ${valorLegivel(a.campo, a.depois)}`,
+          )
+          .join(" | "),
+    },
+    {
+      cabecalho: "Contexto",
+      valor: (r) =>
+        r.detalhes
+          ? Object.entries(r.detalhes)
+              .filter(([, v]) => v !== null && v !== "")
+              .map(([k, v]) => `${campoLegivel(k)}: ${valorLegivel(k, v)}`)
+              .join(" | ")
+          : "",
+    },
+  ];
 
   return (
     <div className="space-y-5 p-4 sm:p-6">
@@ -115,9 +111,14 @@ function Auditoria() {
         migalhas={[{ label: "Início", to: "/dashboard" }, { label: "Auditoria" }]}
         acoes={
           <>
-            <Button variant="outline" size="sm" onClick={exportar} disabled={registos.length === 0}>
-              <Download className="mr-1 size-3.5" aria-hidden="true" /> Exportar CSV
-            </Button>
+            <BotaoExportar
+              nomeArquivo={`auditoria-${sufixoData()}`}
+              titulo="IGESDF — Registo de auditoria"
+              subtitulo={`${registos.length} evento(s)`}
+              folha="Auditoria"
+              linhas={registos}
+              colunas={colunasExport}
+            />
             <PrintModeToggle />
           </>
         }

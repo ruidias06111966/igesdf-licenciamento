@@ -36,7 +36,8 @@ import {
   type GrupoRisco,
 } from "@/lib/domain";
 import { formatDate, formatDaysLeft } from "@/lib/dates";
-import { baixarCsv, sufixoData, type ColunaCsv } from "@/lib/csv";
+import { sufixoData, type ColunaCsv } from "@/lib/csv";
+import { BotaoExportar } from "@/components/botao-exportar";
 import type { LicencaDashboard } from "@/lib/rows";
 import { cn } from "@/lib/utils";
 
@@ -108,8 +109,12 @@ const COLUNAS_CSV: ColunaCsv<LicencaDashboard>[] = [
   { cabecalho: "Órgão", valor: (d) => orgaoLabel(d.orgao) },
   { cabecalho: "CNAE", valor: (d) => parseCnae(d.descricao).codigo },
   { cabecalho: "Atividade", valor: (d) => parseCnae(d.descricao).label },
-  { cabecalho: "Situação", valor: (d) => statusLabel(d.status) },
-  { cabecalho: "Semáforo", valor: (d) => semaforoColor(d.semaforo ?? "").label },
+  { cabecalho: "Situação", valor: (d) => statusLabel(d.status), situacao: true },
+  {
+    cabecalho: "Semáforo",
+    valor: (d) => semaforoColor(d.semaforo ?? "").label,
+    situacao: true,
+  },
   { cabecalho: "Número", valor: (d) => d.numero },
   { cabecalho: "Processo SEI", valor: (d) => d.processo_sei },
   { cabecalho: "Emissão", valor: (d) => formatDate(d.data_emissao) },
@@ -236,10 +241,6 @@ function LicencasPage() {
     });
   }
 
-  function exportar() {
-    baixarCsv(`licencas-igesdf-${sufixoData()}`, ordenados, COLUNAS_CSV);
-  }
-
   const invalidar = () => invalidarDados(qc);
 
   return (
@@ -253,9 +254,15 @@ function LicencasPage() {
         }
         acoes={
           <>
-            <Button variant="outline" onClick={exportar} disabled={ordenados.length === 0}>
-              <Download className="mr-1 size-4" aria-hidden="true" /> Exportar planilha
-            </Button>
+            <BotaoExportar
+              nomeArquivo={`licencas-igesdf-${sufixoData()}`}
+              titulo="IGESDF — Licenças e alvarás"
+              subtitulo={`${ordenados.length} registro(s) · gerado em ${new Date().toLocaleString("pt-BR")}`}
+              folha="Licenças"
+              linhas={ordenados}
+              colunas={COLUNAS_CSV}
+              rotulo="Exportar planilha"
+            />
             <PrintModeToggle defaultOrientation="landscape" />
             <LicencaForm
               unidades={unidades}
@@ -496,7 +503,6 @@ function LicencasPage() {
                               onDone={invalidar}
                             />
                           )}
-
                         </td>
                       </tr>
                       {d.observacoes && (

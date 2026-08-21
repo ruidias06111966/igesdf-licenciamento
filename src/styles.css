@@ -241,15 +241,33 @@
     table-layout: auto;
     border-collapse: collapse;
   }
+  /* Repeat the header on every printed page and keep the footer at the end. */
+  .print-area thead {
+    display: table-header-group;
+  }
+  .print-area tfoot {
+    display: table-footer-group;
+  }
+  .print-area thead th {
+    background: #1f3864 !important;
+    color: #fff !important;
+    font-weight: 700 !important;
+    border-bottom: 1px solid #1f3864 !important;
+    text-align: left;
+  }
+  .print-area tbody tr:nth-child(even) td {
+    background: #f4f6fb !important;
+  }
   .print-area th,
   .print-area td {
-    padding: 2px 4px !important;
+    padding: 2.5px 4px !important;
     white-space: normal !important;
     word-break: break-word;
     overflow: visible !important;
     text-overflow: clip !important;
     max-width: none !important;
     vertical-align: top;
+    border: 0.4px solid #c9d2e3 !important;
   }
   .print-area .truncate {
     overflow: visible !important;
@@ -271,18 +289,61 @@
   .print-area .grid {
     display: grid !important;
   }
+  /* Typographic hygiene: no orphan/widow lines, headings never end a page. */
+  .print-area p,
+  .print-area li {
+    orphans: 3;
+    widows: 3;
+  }
+  .print-area h1,
+  .print-area h2,
+  .print-area h3 {
+    break-after: avoid-page;
+    page-break-after: avoid;
+    color: #1f3864 !important;
+  }
+  .print-area h1 {
+    border-bottom: 1.5px solid #1f3864;
+    padding-bottom: 2px;
+  }
 
   /* User-controlled zoom for the entire print surface. */
   .print-area {
     zoom: var(--print-scale, 1);
   }
 
-  /* Badges: keep their fill visible when printed */
+  /* Situação/semáforo: cores fixas para o papel e o PDF do navegador. */
   .print-area .badge,
   .print-area [class*="Badge"] {
-    border: 1px solid #999 !important;
+    border: 1px solid rgb(0 0 0 / 15%) !important;
+    border-radius: 3px !important;
+    padding: 0 4px !important;
+    font-weight: 700 !important;
+  }
+  .print-area [class*="bg-destructive"] {
+    background: #f8d7da !important;
+    color: #842029 !important;
+  }
+  .print-area [class*="bg-warning"] {
+    background: #fff3cd !important;
+    color: #7a5b00 !important;
+  }
+  .print-area [class*="bg-success"] {
+    background: #d1e7dd !important;
+    color: #0f5132 !important;
+  }
+  .print-area [class*="bg-muted"] {
+    background: #e9ecef !important;
+    color: #41464b !important;
+  }
+  .print-area [class*="text-destructive"] {
+    color: #842029 !important;
+  }
+  .print-area [class*="text-success"] {
+    color: #0f5132 !important;
   }
 }
+
 .print-only {
   display: none;
 }
