@@ -16,6 +16,8 @@ import {
   LogOut,
   Menu,
   Network,
+  Palette,
+
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
@@ -41,6 +43,8 @@ const NAV: ItemNav[] = [
   { to: "/normativas", label: "Normativas", icon: BookText },
   { to: "/importar", label: "Importar CSV", icon: Upload },
   { to: "/auditoria", label: "Auditoria", icon: History },
+  { to: "/exportacao", label: "Cores das exportações", icon: Palette },
+
 ];
 
 const NAV_MASTER: ItemNav[] = [
