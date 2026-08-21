@@ -16,6 +16,8 @@ import {
   LogOut,
   Menu,
   Network,
+  Palette,
+
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
