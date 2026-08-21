@@ -129,7 +129,80 @@ export async function baixarPlanilha<T>(
   };
 
   const livro = XLSX.utils.book_new();
+
+  // Folha de capa: cabeçalho institucional, metadados SEI e legenda de cores.
+  const meta = linhasMetadados(opcoes.meta);
+  const capaMatriz: unknown[][] = [
+    ["IGESDF — NÚCLEO DE LICENCIAMENTO (NUCON)"],
+    [opcoes.titulo],
+    [opcoes.subtitulo ?? ""],
+    [],
+    ...meta.map((m) => [m.rotulo, m.valor]),
+    ["Registos", linhas.length],
+    [],
+    ["Legenda do semáforo"],
+    ...SITUACOES_LEGENDA.map((s) => [s.rotulo, ""]),
+  ];
+  const capa = XLSX.utils.aoa_to_sheet(capaMatriz);
+  const estiloCapa = (r: number, c: number, s: Record<string, unknown>) => {
+    const ref = XLSX.utils.encode_cell({ r, c });
+    const atual = (capa as Record<string, { s?: unknown }>)[ref];
+    if (!atual) (capa as Record<string, unknown>)[ref] = { v: "", t: "s", s };
+    else atual.s = s;
+  };
+  estiloCapa(0, 0, {
+    font: { name: "Arial", sz: 12, bold: true, color: { rgb: MARCA.texto } },
+    fill: { patternType: "solid", fgColor: { rgb: MARCA.fundo } },
+  });
+  estiloCapa(0, 1, { fill: { patternType: "solid", fgColor: { rgb: MARCA.fundo } } });
+  estiloCapa(1, 0, { font: { name: "Arial", sz: 14, bold: true, color: { rgb: MARCA.fundo } } });
+  estiloCapa(2, 0, { font: { name: "Arial", sz: 9, italic: true, color: { rgb: MARCA.cinza } } });
+  meta.forEach((_, i) => {
+    const r = 4 + i;
+    estiloCapa(r, 0, {
+      font: { name: "Arial", sz: 10, bold: true, color: { rgb: MARCA.fundo } },
+      fill: { patternType: "solid", fgColor: { rgb: MARCA.faixa } },
+      border: BORDAS,
+    });
+    estiloCapa(r, 1, { font: { name: "Arial", sz: 10 }, border: BORDAS });
+  });
+  const rRegistos = 4 + meta.length;
+  estiloCapa(rRegistos, 0, {
+    font: { name: "Arial", sz: 10, bold: true, color: { rgb: MARCA.fundo } },
+    fill: { patternType: "solid", fgColor: { rgb: MARCA.faixa } },
+    border: BORDAS,
+  });
+  estiloCapa(rRegistos, 1, { font: { name: "Arial", sz: 10 }, border: BORDAS });
+  const rLegenda = rRegistos + 2;
+  estiloCapa(rLegenda, 0, {
+    font: { name: "Arial", sz: 11, bold: true, color: { rgb: MARCA.fundo } },
+  });
+  SITUACOES_LEGENDA.forEach((s, i) => {
+    const cor = corSituacao(s.chave) ?? corPadrao(s.chave);
+    estiloCapa(rLegenda + 1 + i, 0, {
+      font: { name: "Arial", sz: 10, bold: true, color: { rgb: cor.texto } },
+      fill: { patternType: "solid", fgColor: { rgb: cor.fundo } },
+      alignment: { horizontal: "center" },
+      border: BORDAS,
+    });
+  });
+  capa["!cols"] = [{ wch: 34 }, { wch: 60 }];
+  capa["!merges"] = [
+    { s: { r: 0, c: 0 }, e: { r: 0, c: 1 } },
+    { s: { r: 1, c: 0 }, e: { r: 1, c: 1 } },
+    { s: { r: 2, c: 0 }, e: { r: 2, c: 1 } },
+  ];
+  XLSX.utils.book_append_sheet(livro, capa, "Capa");
   XLSX.utils.book_append_sheet(livro, folha, (opcoes.folha ?? "Relatório").slice(0, 31));
+
+  livro.Props = {
+    Title: opcoes.titulo,
+    Subject: opcoes.subtitulo ?? "",
+    Author: "IGESDF — Núcleo de Licenciamento",
+    Company: "IGESDF",
+    Keywords: meta.map((m) => `${m.rotulo}: ${m.valor}`).join("; "),
+  };
+
 
   XLSX.writeFile(livro, nomeArquivo.endsWith(".xlsx") ? nomeArquivo : `${nomeArquivo}.xlsx`, {
     bookType: "xlsx",
