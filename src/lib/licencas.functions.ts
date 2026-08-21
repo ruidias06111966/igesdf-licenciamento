@@ -384,10 +384,28 @@ export const upsertLicenca = createServerFn({ method: "POST" })
   .middleware([requireEdicao])
   .inputValidator((input: unknown) => licencaSchema.parse(input))
   .handler(async ({ data, context }) => {
+    const { diferencas, registarAuditoria } = await import("@/lib/auditoria.server");
     const clean = vaziosParaNulo(data);
     if (data.id) {
+      // O estado anterior tem de ser lido antes da escrita: é o que permite
+      // dizer, no histórico, qual era o valor de cada campo alterado.
+      const { data: antes } = await context.supabase
+        .from("licencas")
+        .select("*")
+        .eq("id", data.id)
+        .maybeSingle();
       const { error } = await context.supabase.from("licencas").update(clean).eq("id", data.id);
       if (error) throw error;
+      const mudancas = diferencas(antes, clean as Record<string, unknown>);
+      if (mudancas.length > 0) {
+        await registarAuditoria(context.supabase, {
+          entidade: "licencas",
+          entidade_id: data.id,
+          acao: "atualizar",
+          alteracoes: mudancas,
+          detalhes: { unidade_id: data.unidade_id, orgao: data.orgao, descricao: data.descricao },
+        });
+      }
       return { id: data.id };
     }
     const { data: ins, error } = await context.supabase
@@ -396,6 +414,13 @@ export const upsertLicenca = createServerFn({ method: "POST" })
       .select("id")
       .single();
     if (error) throw error;
+    await registarAuditoria(context.supabase, {
+      entidade: "licencas",
+      entidade_id: ins.id,
+      acao: "criar",
+      alteracoes: diferencas(null, clean as Record<string, unknown>),
+      detalhes: { unidade_id: data.unidade_id, orgao: data.orgao, descricao: data.descricao },
+    });
     return { id: ins.id };
   });
 
@@ -403,10 +428,31 @@ export const deleteLicenca = createServerFn({ method: "POST" })
   .middleware([requireEdicao])
   .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
+    const { registarAuditoria } = await import("@/lib/auditoria.server");
+    const { data: antes } = await context.supabase
+      .from("licencas")
+      .select("*")
+      .eq("id", data.id)
+      .maybeSingle();
     const { error } = await context.supabase.from("licencas").delete().eq("id", data.id);
     if (error) throw error;
+    await registarAuditoria(context.supabase, {
+      entidade: "licencas",
+      entidade_id: data.id,
+      acao: "excluir",
+      detalhes: antes
+        ? {
+            unidade_id: antes.unidade_id,
+            orgao: antes.orgao,
+            descricao: antes.descricao,
+            status: antes.status,
+            data_vencimento: antes.data_vencimento,
+          }
+        : {},
+    });
     return { ok: true };
   });
+
 
 const rtSchema = z.object({
   id: z.string().uuid().optional(),
