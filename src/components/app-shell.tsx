@@ -4,20 +4,15 @@ import {
   History,
   Upload,
   Building2,
-  CalendarClock,
   FileBarChart2,
   FileCheck2,
   FileText,
-  Grid3x3,
   FolderOpen,
-  IdCard,
   Landmark,
   LayoutDashboard,
   LogOut,
   Menu,
-  Network,
   Palette,
-
   ShieldCheck,
   Sparkles,
 } from "lucide-react";
@@ -30,26 +25,26 @@ import { usePodeEditar, useEhMaster } from "@/lib/perfil";
 
 type ItemNav = { to: string; label: string; icon: ComponentType<{ className?: string }> };
 
+/**
+ * Entradas de topo: uma por matéria. As vistas alternativas de cada matéria
+ * (Cadastro CNPJ, Matriz, Vencimentos, Consolidado) vivem agora dentro da
+ * respetiva página, na barra de vistas — ver `SubNav`.
+ */
 const NAV: ItemNav[] = [
   { to: "/dashboard", label: "Painel", icon: LayoutDashboard },
   { to: "/unidades", label: "Unidades", icon: Building2 },
-  { to: "/cnpj", label: "Cadastro CNPJ", icon: IdCard },
   { to: "/licencas", label: "Licenças", icon: FileCheck2 },
-  { to: "/matriz", label: "Matriz", icon: Grid3x3 },
   { to: "/processos", label: "Processos SEI", icon: FolderOpen },
-  { to: "/calendario", label: "Vencimentos", icon: CalendarClock },
   { to: "/relatorios", label: "Relatórios", icon: FileBarChart2 },
   { to: "/orgaos", label: "Órgãos", icon: Landmark },
   { to: "/normativas", label: "Normativas", icon: BookText },
   { to: "/importar", label: "Importar CSV", icon: Upload },
   { to: "/auditoria", label: "Auditoria", icon: History },
   { to: "/exportacao", label: "Cores das exportações", icon: Palette },
-
 ];
 
 const NAV_MASTER: ItemNav[] = [
   { to: "/despachos", label: "Despachos", icon: FileText },
-  { to: "/consolidado", label: "Consolidado da Rede", icon: Network },
   { to: "/ia", label: "Assistente IA", icon: Sparkles },
 ];
 

@@ -1050,6 +1050,7 @@ export type Database = {
         Returns: boolean
       }
       set_versao_vigente: { Args: { _doc_id: string }; Returns: undefined }
+      sincronizar_licencas_vencidas: { Args: never; Returns: number }
     }
     Enums: {
       app_role: "admin" | "analista" | "viewer"

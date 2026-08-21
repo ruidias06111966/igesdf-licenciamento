@@ -40,6 +40,7 @@ import { sufixoData, type ColunaCsv } from "@/lib/csv";
 import { BotaoExportar } from "@/components/botao-exportar";
 import type { LicencaDashboard } from "@/lib/rows";
 import { cn } from "@/lib/utils";
+import { SubNav } from "@/components/sub-nav";
 
 /**
  * Filtros no URL, e não em `useState`.
@@ -277,6 +278,7 @@ function LicencasPage() {
           </>
         }
       />
+      <SubNav grupo="licencas" />
 
       {grupo && (
         <div className="flex flex-wrap items-center gap-2 rounded-md border bg-muted/40 p-3 text-sm no-print">

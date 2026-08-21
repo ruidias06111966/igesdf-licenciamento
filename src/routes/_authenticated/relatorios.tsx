@@ -42,6 +42,8 @@ import { mensagemErro } from "@/lib/errors";
 import { usePodeEditar } from "@/lib/perfil";
 import type { LicencaDashboard, Unidade } from "@/lib/rows";
 import { cn } from "@/lib/utils";
+import { SubNav } from "@/components/sub-nav";
+import { RelerCertificados } from "@/components/reler-certificados";
 
 export const Route = createFileRoute("/_authenticated/relatorios")({
   loader: ({ context }) =>
@@ -182,8 +184,10 @@ function RelatoriosPage() {
           </>
         }
       />
+      <SubNav grupo="relatorios" />
 
       <UploadCertificados unidades={unidades} />
+      <RelerCertificados />
 
       <Card className="no-print">
         <CardContent className="grid gap-3 p-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">

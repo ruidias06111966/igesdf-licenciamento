@@ -30,6 +30,7 @@ import { BotaoExportar } from "@/components/botao-exportar";
 import { montarGrade, temPendencia, type Celula } from "@/lib/matriz";
 import type { Unidade } from "@/lib/rows";
 import { cn } from "@/lib/utils";
+import { SubNav } from "@/components/sub-nav";
 
 export const Route = createFileRoute("/_authenticated/matriz")({
   loader: ({ context }) =>
@@ -123,6 +124,7 @@ function MatrizPage() {
           </>
         }
       />
+      <SubNav grupo="licencas" />
 
       <div className="flex flex-wrap items-center gap-3 no-print">
         <Select value={tipoF} onValueChange={setTipoF}>

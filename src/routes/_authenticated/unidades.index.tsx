@@ -21,6 +21,7 @@ import { deleteUnidade } from "@/lib/licencas.functions";
 import { invalidarDados, unidadesQuery } from "@/lib/queries";
 import { TIPO_UNIDADE_LABEL, situacaoEdificacaoLabel, tipoUnidadeLabel } from "@/lib/domain";
 import type { Unidade } from "@/lib/rows";
+import { SubNav } from "@/components/sub-nav";
 
 export const Route = createFileRoute("/_authenticated/unidades/")({
   loader: ({ context }) => context.queryClient.ensureQueryData(unidadesQuery),
@@ -85,6 +86,7 @@ function UnidadesPage() {
           />
         }
       />
+      <SubNav grupo="unidades" />
 
       <div className="flex flex-col gap-3 sm:flex-row">
         <div className="relative max-w-md flex-1">
