@@ -192,7 +192,7 @@ function desenharTabela(
     const altura = Math.max(...celulas.map((c) => c.length)) * 3.8 + 2.5;
     if (y + altura > A4.altura - MARGEM.base) {
       novaPagina();
-      y = MARGEM.topo;
+      y = Math.max(MARGEM.topo, 26);
       desenharCabecalho();
       doc.setFont("times", "normal");
       doc.setFontSize(8.5);
@@ -221,6 +221,6 @@ function desenharTabela(
     y += altura;
     doc.setDrawColor(...rgb(MARCA.linha));
     doc.line(MARGEM.esq, y - 1, MARGEM.esq + LARGURA_UTIL, y - 1);
-  }
+  });
   return y + 3;
 }
