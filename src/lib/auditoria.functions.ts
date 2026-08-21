@@ -11,6 +11,8 @@ const filtroSchema = z.object({
   limite: z.number().int().min(1).max(1000).default(300),
 });
 
+export type ValorAuditado = string | number | boolean | null;
+
 export type RegistoAuditoria = {
   id: string;
   created_at: string;
@@ -18,8 +20,8 @@ export type RegistoAuditoria = {
   entidade_id: string | null;
   acao: string;
   perfil: string | null;
-  alteracoes: { campo: string; antes: unknown; depois: unknown }[];
-  detalhes: Record<string, unknown> | null;
+  alteracoes: { campo: string; antes: ValorAuditado; depois: ValorAuditado }[];
+  detalhes: Record<string, ValorAuditado> | null;
 };
 
 export const listAuditoria = createServerFn({ method: "POST" })
