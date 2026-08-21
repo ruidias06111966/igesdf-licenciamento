@@ -7,7 +7,8 @@
  * congelados, zebra e as situações destacadas com a mesma paleta do PDF.
  */
 import type { ColunaCsv } from "@/lib/csv";
-import { corSituacao, MARCA } from "@/lib/exportar/paleta";
+import { corSituacao, MARCA, SITUACOES_LEGENDA, corPadrao } from "@/lib/exportar/paleta";
+import { linhasMetadados, type MetaExport } from "@/lib/exportar/metadados";
 
 export type OpcoesPlanilha = {
   /** Título apresentado na primeira linha da folha. */
@@ -16,7 +17,10 @@ export type OpcoesPlanilha = {
   subtitulo?: string;
   /** Nome do separador da folha. */
   folha?: string;
+  /** Metadados de arquivo (competência, unidade, órgão, processo SEI). */
+  meta?: MetaExport;
 };
+
 
 const BORDA = { style: "thin", color: { rgb: "D0D5DD" } } as const;
 const BORDAS = { top: BORDA, bottom: BORDA, left: BORDA, right: BORDA };
