@@ -11,7 +11,8 @@ import { UnidadeForm } from "@/components/forms/unidade-form";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { baixarCsv, sufixoData } from "@/lib/csv";
+import { sufixoData, type ColunaCsv } from "@/lib/csv";
+import { BotaoExportar } from "@/components/botao-exportar";
 import { usePodeEditar } from "@/lib/perfil";
 import { unidadesQuery } from "@/lib/queries";
 import type { Unidade } from "@/lib/rows";
@@ -143,8 +144,7 @@ function CnpjPage() {
     });
   }, [unidades, termo, filtro]);
 
-  const exportarCsv = () =>
-    baixarCsv(`unidades-cnpj-igesdf-${sufixoData()}`, visiveis, [
+  const colunasExport: ColunaCsv<Unidade>[] = [
       { cabecalho: "Código MV", valor: (u) => u.codigo_mv ?? "" },
       { cabecalho: "CNPJ IGESDF", valor: (u) => cnpjFormatado(u) },
       { cabecalho: "CNPJ IGESDF (dígitos)", valor: (u) => cnpjDigitos(u) },
@@ -200,9 +200,14 @@ function CnpjPage() {
             <Button variant="outline" onClick={copiarTabela}>
               <Copy className="mr-1 size-4" aria-hidden="true" /> Copiar tabela
             </Button>
-            <Button variant="outline" onClick={exportarCsv}>
-              <Download className="mr-1 size-4" aria-hidden="true" /> Exportar CSV
-            </Button>
+            <BotaoExportar
+              nomeArquivo={`unidades-cnpj-igesdf-${sufixoData()}`}
+              titulo="IGESDF — Cadastro de CNPJ das unidades"
+              subtitulo={`${visiveis.length} unidade(s)`}
+              folha="CNPJ"
+              linhas={visiveis}
+              colunas={colunasExport}
+            />
             <PrintModeToggle defaultOrientation="landscape" />
           </>
         }
