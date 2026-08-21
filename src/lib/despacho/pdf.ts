@@ -117,11 +117,7 @@ export async function exportarDespachoPdf(blocos: Bloco[], opcoes: OpcoesPdf) {
   doc.save(`${opcoes.ficheiro}.pdf`);
 }
 
-type Doc = Awaited<ReturnType<typeof importarJsPdf>>;
-async function importarJsPdf() {
-  const { jsPDF } = await import("jspdf");
-  return new jsPDF();
-}
+type Doc = import("jspdf").jsPDF;
 
 function desenharTabela(
   doc: Doc,
