@@ -1,7 +1,9 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/integrations/supabase/types";
 import { requireEdicao } from "@/lib/acesso-middleware";
-import { ORGAO_VALUES } from "@/lib/orgaos-schema";
+import { modeloSchema } from "@/lib/modelos-schema";
 
 /**
  * Biblioteca de documentos padrão gerados pelo assistente de IA
@@ -11,31 +13,7 @@ import { ORGAO_VALUES } from "@/lib/orgaos-schema";
  * chega depressa ao modelo certo — e guarda o histórico de versões: gravar por
  * cima arquiva a versão anterior em vez de a perder.
  */
-const TIPOS = [
-  "despacho",
-  "oficio",
-  "relatorio",
-  "memorando",
-  "checklist",
-  "parecer",
-  "outro",
-] as const;
 
-const TIPOS_UNIDADE = ["hospital", "upa", "administrativo", "laboratorio", "outro"] as const;
-
-const modeloSchema = z.object({
-  id: z.string().uuid().optional(),
-  titulo: z.string().trim().min(3).max(200),
-  tipo: z.enum(TIPOS),
-  conteudo: z.string().trim().min(1).max(200_000),
-  tags: z.array(z.string().trim().max(40)).max(20).default([]),
-  orgao: z.enum(ORGAO_VALUES).nullable().optional(),
-  tipo_unidade: z.enum(TIPOS_UNIDADE).nullable().optional(),
-  unidade_id: z.string().uuid().nullable().optional(),
-  processo_id: z.string().uuid().nullable().optional(),
-  observacoes: z.string().trim().max(2000).nullable().optional(),
-  comentario_versao: z.string().trim().max(300).nullable().optional(),
-});
 
 export const listModelos = createServerFn({ method: "GET" })
   .middleware([requireEdicao])
