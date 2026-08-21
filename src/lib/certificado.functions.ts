@@ -166,3 +166,31 @@ export const aplicarCertificado = createServerFn({ method: "POST" })
 
     return { cnaesCriados, licencasCriadas, licencasAtualizadas };
   });
+
+/**
+ * Lista os certificados já arquivados, para poderem ser relidos.
+ *
+ * Serve o recadastro: documentos arquivados antes de a leitura passar a
+ * trazer condicionantes podem ser reprocessados sem novo upload.
+ */
+export const listarCertificados = createServerFn({ method: "GET" })
+  .middleware([requireEdicao])
+  .handler(async ({ context }) => {
+    const { data, error } = await context.supabase
+      .from("documentos")
+      .select("id, nome, storage_path, mime_type, created_at, unidade_id, unidades(nome)")
+      .eq("categoria", "certificado")
+      .eq("ativo", true)
+      .order("created_at", { ascending: false })
+      .limit(500);
+    if (error) throw error;
+    return (data ?? []).map((d) => ({
+      id: d.id,
+      nome: d.nome,
+      storage_path: d.storage_path,
+      mime_type: d.mime_type,
+      created_at: d.created_at,
+      unidade_id: d.unidade_id,
+      unidade_nome: (d.unidades as { nome: string } | null)?.nome ?? "—",
+    }));
+  });
