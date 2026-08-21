@@ -19,10 +19,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { unidadesQuery, invalidarDados } from "@/lib/queries";
-import { dadosDespachoUnidade } from "@/lib/despachos.functions";
+import { dadosDespachoUnidade, registarDespachoGerado } from "@/lib/despachos.functions";
 import { upsertLicenca } from "@/lib/licencas.functions";
 import { upsertModelo } from "@/lib/modelos.functions";
 import { mensagemErro } from "@/lib/errors";
+import { nomeFicheiro } from "@/lib/exportar-documento";
 import { parseCnae, orgaoLabel, type Orgao, type StatusLicenca } from "@/lib/domain";
 import {
   CLASSE_LABEL,
@@ -381,7 +382,11 @@ function Editor({ unidadeId }: { unidadeId: string }) {
       </Card>
 
       <div className="flex flex-wrap items-center gap-2">
-        <AcoesCopiar blocos={blocos} />
+        <AcoesCopiar
+          blocos={blocos}
+          ficheiro={`despacho-${nomeFicheiro(data.unidade.nome)}-${new Date().toISOString().slice(0, 10)}`}
+          rodape={`${data.unidade.nome} — Processo SEI ${campos.processo_sei || (data.processos[0]?.numero ?? "—")} — ${new Date().toLocaleDateString("pt-BR")}`}
+        />
         <Button
           type="button"
           variant="outline"
