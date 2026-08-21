@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { queryOptions } from "@tanstack/react-query";
 import { toast } from "sonner";
-import { BookMarked, Download, FileDown, Paperclip, Save, Trash2 } from "lucide-react";
+import { BookMarked, Download, FileDown, History, Paperclip, Save, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -30,28 +30,50 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { anexarModelo, deleteModelo, listModelos, upsertModelo } from "@/lib/modelos.functions";
+import {
+  anexarModelo,
+  deleteModelo,
+  listModelos,
+  listVersoesModelo,
+  restaurarVersaoModelo,
+  upsertModelo,
+} from "@/lib/modelos.functions";
+import {
+  ORGAO_VALUES,
+  TIPOS_MODELO,
+  TIPOS_UNIDADE_MODELO,
+  type TipoModelo,
+} from "@/lib/modelos-schema";
+import { orgaoLabel } from "@/lib/domain";
 import { exportarDocumento, FORMATOS, type Formato } from "@/lib/exportar-documento";
 import { mensagemErro } from "@/lib/errors";
 import { processosQuery, unidadesQuery } from "@/lib/queries";
+import { dataHora, PERFIL_LABEL } from "@/lib/auditoria-labels";
 
 export const modelosQuery = queryOptions({
   queryKey: ["ia-modelos"],
   queryFn: () => listModelos(),
 });
 
-const TIPOS = [
-  ["despacho", "Despacho"],
-  ["oficio", "Ofício"],
-  ["relatorio", "Relatório"],
-  ["memorando", "Memorando"],
-  ["checklist", "Checklist"],
-  ["parecer", "Parecer"],
-  ["outro", "Outro"],
-] as const;
+const TODOS = "__todos__";
+const NENHUM = "__nenhum__";
 
-type Tipo = (typeof TIPOS)[number][0];
-type Valores = { titulo: string; tipo: Tipo; conteudo: string; tags: string };
+const TIPO_UNIDADE_LABEL: Record<string, string> = {
+  hospital: "Hospital",
+  upa: "UPA",
+  administrativo: "Administrativo",
+  laboratorio: "Laboratório",
+  outro: "Outro",
+};
+
+type Valores = {
+  titulo: string;
+  tipo: TipoModelo;
+  conteudo: string;
+  tags: string;
+  orgao: string;
+  tipo_unidade: string;
+};
 
 /** Guarda a resposta do assistente na biblioteca de documentos padrão. */
 export function GuardarModelo({ conteudo }: { conteudo: string }) {
@@ -63,6 +85,11 @@ export function GuardarModelo({ conteudo }: { conteudo: string }) {
           titulo: v.titulo,
           tipo: v.tipo,
           conteudo: v.conteudo,
+          orgao: v.orgao === NENHUM ? null : (v.orgao as (typeof ORGAO_VALUES)[number]),
+          tipo_unidade:
+            v.tipo_unidade === NENHUM
+              ? null
+              : (v.tipo_unidade as (typeof TIPOS_UNIDADE_MODELO)[number]),
           tags: v.tags
             .split(",")
             .map((t) => t.trim())
@@ -88,9 +115,11 @@ export function GuardarModelo({ conteudo }: { conteudo: string }) {
       }
       valorInicial={() => ({
         titulo: primeiraLinha(conteudo),
-        tipo: "despacho" as Tipo,
+        tipo: "despacho" as TipoModelo,
         conteudo,
         tags: "",
+        orgao: NENHUM,
+        tipo_unidade: NENHUM,
       })}
       podeSalvar={(v) => v.titulo.trim().length >= 3 && v.conteudo.trim().length > 0}
       onSubmit={(v) => guardar.mutateAsync(v)}
@@ -106,14 +135,56 @@ export function GuardarModelo({ conteudo }: { conteudo: string }) {
               />
             </Field>
             <Field label="Tipo de documento" htmlFor="modelo-tipo">
-              <Select value={v.tipo} onValueChange={(valor) => definir("tipo", valor as Tipo)}>
+              <Select
+                value={v.tipo}
+                onValueChange={(valor) => definir("tipo", valor as TipoModelo)}
+              >
                 <SelectTrigger id="modelo-tipo">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {TIPOS.map(([chave, rotulo]) => (
+                  {TIPOS_MODELO.map(([chave, rotulo]) => (
                     <SelectItem key={chave} value={chave}>
                       {rotulo}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+          </FieldRow>
+          <FieldRow>
+            <Field
+              label="Órgão"
+              htmlFor="modelo-orgao"
+              dica="Classifica o modelo para o encontrar depressa."
+            >
+              <Select value={v.orgao} onValueChange={(valor) => definir("orgao", valor)}>
+                <SelectTrigger id="modelo-orgao">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NENHUM}>Sem órgão específico</SelectItem>
+                  {ORGAO_VALUES.map((o) => (
+                    <SelectItem key={o} value={o}>
+                      {orgaoLabel(o)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Field>
+            <Field label="Tipo de unidade" htmlFor="modelo-tipo-unidade">
+              <Select
+                value={v.tipo_unidade}
+                onValueChange={(valor) => definir("tipo_unidade", valor)}
+              >
+                <SelectTrigger id="modelo-tipo-unidade">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NENHUM}>Qualquer unidade</SelectItem>
+                  {TIPOS_UNIDADE_MODELO.map((t) => (
+                    <SelectItem key={t} value={t}>
+                      {TIPO_UNIDADE_LABEL[t]}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -186,6 +257,83 @@ function MenuExportar({ titulo, conteudo }: { titulo: string; conteudo: string }
         ))}
       </DropdownMenuContent>
     </DropdownMenu>
+  );
+}
+
+/** Histórico de versões de um modelo, com reposição de uma versão anterior. */
+function VersoesModelo({ id, versao }: { id: string; versao: number }) {
+  const [aberto, setAberto] = useState(false);
+  const qc = useQueryClient();
+  const { data, isLoading } = useQuery({
+    queryKey: ["ia-modelo-versoes", id],
+    queryFn: () => listVersoesModelo({ data: { modelo_id: id } }),
+    enabled: aberto,
+  });
+
+  const repor = useMutation({
+    mutationFn: (versao_id: string) =>
+      restaurarVersaoModelo({ data: { modelo_id: id, versao_id } }),
+    onSuccess: () => {
+      toast.success("Versão reposta");
+      setAberto(false);
+      void qc.invalidateQueries({ queryKey: modelosQuery.queryKey });
+      void qc.invalidateQueries({ queryKey: ["ia-modelo-versoes", id] });
+    },
+    onError: (erro) => toast.error(mensagemErro(erro)),
+  });
+
+  return (
+    <Dialog open={aberto} onOpenChange={setAberto}>
+      <DialogTrigger asChild>
+        <Button type="button" variant="outline" size="sm">
+          <History className="mr-1 size-3.5" aria-hidden="true" /> v{versao}
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Versões do modelo</DialogTitle>
+          <DialogDescription className="text-xs">
+            Gravar por cima arquiva a versão anterior. Pode repor qualquer uma — a atual fica
+            também guardada.
+          </DialogDescription>
+        </DialogHeader>
+        {isLoading && <p className="text-sm text-muted-foreground">A carregar…</p>}
+        {data && data.length === 0 && (
+          <p className="text-sm text-muted-foreground">
+            Ainda não há versões anteriores: este modelo nunca foi alterado.
+          </p>
+        )}
+        <ul className="space-y-2">
+          {(data ?? []).map((v) => (
+            <li key={v.id} className="rounded-lg border p-3">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium">
+                    v{v.versao} — {v.titulo}
+                  </p>
+                  <p className="text-xs text-muted-foreground">
+                    {dataHora(v.created_at)}
+                    {v.perfil ? ` · Perfil ${PERFIL_LABEL[v.perfil] ?? v.perfil}` : ""}
+                    {v.comentario ? ` · ${v.comentario}` : ""}
+                  </p>
+                </div>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={repor.isPending}
+                  onClick={() => repor.mutate(v.id)}
+                >
+                  Repor esta versão
+                </Button>
+              </div>
+              <p className="mt-2 line-clamp-3 text-xs text-muted-foreground">
+                {v.conteudo.replace(/[#*]/g, "").slice(0, 300)}
+              </p>
+            </li>
+          ))}
+        </ul>
+      </DialogContent>
+    </Dialog>
   );
 }
 
@@ -263,8 +411,25 @@ function AnexarModelo({ id }: { id: string }) {
 /** Biblioteca de documentos padrão guardados a partir do assistente. */
 export function BibliotecaModelos({ onUsar }: { onUsar: (conteudo: string) => void }) {
   const [aberto, setAberto] = useState(false);
+  const [busca, setBusca] = useState("");
+  const [tipo, setTipo] = useState(TODOS);
+  const [orgao, setOrgao] = useState(TODOS);
+  const [tipoUnidade, setTipoUnidade] = useState(TODOS);
   const { data: modelos, isLoading } = useQuery({ ...modelosQuery, enabled: aberto });
   const qc = useQueryClient();
+
+  const lista = useMemo(() => {
+    const termo = busca.trim().toLowerCase();
+    return (modelos ?? []).filter((m) => {
+      if (tipo !== TODOS && m.tipo !== tipo) return false;
+      if (orgao !== TODOS && m.orgao !== orgao) return false;
+      if (tipoUnidade !== TODOS && m.tipo_unidade !== tipoUnidade) return false;
+      if (!termo) return true;
+      return `${m.titulo} ${(m.tags ?? []).join(" ")} ${m.conteudo}`
+        .toLowerCase()
+        .includes(termo);
+    });
+  }, [modelos, busca, tipo, orgao, tipoUnidade]);
 
   const apagar = useMutation({
     mutationFn: (id: string) => deleteModelo({ data: { id } }),
@@ -286,19 +451,68 @@ export function BibliotecaModelos({ onUsar }: { onUsar: (conteudo: string) => vo
         <DialogHeader className="border-b p-4 pr-12 text-left">
           <DialogTitle>Documentos padrão</DialogTitle>
           <DialogDescription className="text-xs">
-            Despachos, ofícios e relatórios guardados do assistente. Reutilize no chat, exporte em
-            PDF/Word/texto ou anexe a uma unidade ou processo.
+            Despachos, ofícios e relatórios guardados do assistente, classificados por órgão e tipo
+            de unidade, com histórico de versões.
           </DialogDescription>
         </DialogHeader>
+
+        <div className="grid gap-2 border-b p-3 sm:grid-cols-2 lg:grid-cols-4">
+          <Input
+            placeholder="Procurar por título, etiqueta ou texto…"
+            value={busca}
+            onChange={(e) => setBusca(e.target.value)}
+            aria-label="Procurar modelos"
+          />
+          <Select value={tipo} onValueChange={setTipo}>
+            <SelectTrigger aria-label="Filtrar por tipo">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={TODOS}>Todos os tipos</SelectItem>
+              {TIPOS_MODELO.map(([chave, rotulo]) => (
+                <SelectItem key={chave} value={chave}>
+                  {rotulo}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={orgao} onValueChange={setOrgao}>
+            <SelectTrigger aria-label="Filtrar por órgão">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={TODOS}>Todos os órgãos</SelectItem>
+              {ORGAO_VALUES.map((o) => (
+                <SelectItem key={o} value={o}>
+                  {orgaoLabel(o)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={tipoUnidade} onValueChange={setTipoUnidade}>
+            <SelectTrigger aria-label="Filtrar por tipo de unidade">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value={TODOS}>Todas as unidades</SelectItem>
+              {TIPOS_UNIDADE_MODELO.map((t) => (
+                <SelectItem key={t} value={t}>
+                  {TIPO_UNIDADE_LABEL[t]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
         <div className="min-h-0 flex-1 space-y-3 overflow-y-auto p-4">
           {isLoading && <p className="text-sm text-muted-foreground">A carregar…</p>}
-          {!isLoading && (modelos ?? []).length === 0 && (
+          {!isLoading && lista.length === 0 && (
             <p className="py-10 text-center text-sm text-muted-foreground">
-              Ainda não há documentos guardados. Use “Guardar como modelo” numa resposta do
+              Nenhum modelo corresponde a estes filtros. Use “Guardar como modelo” numa resposta do
               assistente.
             </p>
           )}
-          {(modelos ?? []).map((m) => (
+          {lista.map((m) => (
             <article key={m.id} className="rounded-lg border p-3">
               <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-3">
                 <div className="min-w-0 space-y-1">
@@ -307,6 +521,16 @@ export function BibliotecaModelos({ onUsar }: { onUsar: (conteudo: string) => vo
                     <Badge variant="secondary" className="text-[10px] capitalize">
                       {m.tipo}
                     </Badge>
+                    {m.orgao && (
+                      <Badge variant="outline" className="text-[10px]">
+                        {orgaoLabel(m.orgao)}
+                      </Badge>
+                    )}
+                    {m.tipo_unidade && (
+                      <Badge variant="outline" className="text-[10px]">
+                        {TIPO_UNIDADE_LABEL[m.tipo_unidade] ?? m.tipo_unidade}
+                      </Badge>
+                    )}
                     {(m.tags ?? []).map((t) => (
                       <Badge key={t} variant="outline" className="text-[10px]">
                         {t}
@@ -327,6 +551,7 @@ export function BibliotecaModelos({ onUsar }: { onUsar: (conteudo: string) => vo
                   >
                     Usar no chat
                   </Button>
+                  <VersoesModelo id={m.id} versao={m.versao ?? 1} />
                   <MenuExportar titulo={m.titulo} conteudo={m.conteudo} />
                   <AnexarModelo id={m.id} />
                   <ConfirmDelete

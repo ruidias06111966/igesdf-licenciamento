@@ -19,10 +19,11 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { unidadesQuery, invalidarDados } from "@/lib/queries";
-import { dadosDespachoUnidade } from "@/lib/despachos.functions";
+import { dadosDespachoUnidade, registarDespachoGerado } from "@/lib/despachos.functions";
 import { upsertLicenca } from "@/lib/licencas.functions";
 import { upsertModelo } from "@/lib/modelos.functions";
 import { mensagemErro } from "@/lib/errors";
+import { nomeFicheiro } from "@/lib/exportar-documento";
 import { parseCnae, orgaoLabel, type Orgao, type StatusLicenca } from "@/lib/domain";
 import {
   CLASSE_LABEL,
@@ -200,19 +201,33 @@ function Editor({ unidadeId }: { unidadeId: string }) {
   });
 
   const guardar = useMutation({
-    mutationFn: () =>
-      upsertModelo({
+    mutationFn: async () => {
+      await upsertModelo({
         data: {
           titulo: `Despacho — ${data?.unidade.nome ?? "unidade"}${campos.numero ? ` nº ${campos.numero}` : ""}`,
           tipo: "despacho",
           conteudo: markdownDe(blocos),
           tags: ["despacho", "licenciamento"],
+          orgao: null,
+          tipo_unidade: (data?.unidade.tipo ?? null) as "hospital" | null,
           unidade_id: unidadeId,
         },
-      }),
+      });
+      // Fica na auditoria quem emitiu o despacho, para que unidade e quando.
+      await registarDespachoGerado({
+        data: {
+          tipo: "despacho",
+          unidade_id: unidadeId,
+          unidade: data?.unidade.nome ?? null,
+          numero: campos.numero || null,
+          processo_sei: campos.processo_sei || (data?.processos[0]?.numero ?? null),
+        },
+      });
+    },
     onSuccess: () => toast.success("Despacho guardado na biblioteca de modelos"),
     onError: (e) => toast.error(mensagemErro(e)),
   });
+
 
   if (isLoading) return <p className="text-sm text-muted-foreground">A carregar dados…</p>;
   if (error) return <ErrorState error={error} />;
@@ -367,7 +382,11 @@ function Editor({ unidadeId }: { unidadeId: string }) {
       </Card>
 
       <div className="flex flex-wrap items-center gap-2">
-        <AcoesCopiar blocos={blocos} />
+        <AcoesCopiar
+          blocos={blocos}
+          ficheiro={`despacho-${nomeFicheiro(data.unidade.nome)}-${new Date().toISOString().slice(0, 10)}`}
+          rodape={`${data.unidade.nome} — Processo SEI ${campos.processo_sei || (data.processos[0]?.numero ?? "—")} — ${new Date().toLocaleDateString("pt-BR")}`}
+        />
         <Button
           type="button"
           variant="outline"

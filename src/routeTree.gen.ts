@@ -20,12 +20,14 @@ import { Route as AuthenticatedOrgaosRouteImport } from './routes/_authenticated
 import { Route as AuthenticatedNormativasRouteImport } from './routes/_authenticated/normativas'
 import { Route as AuthenticatedMatrizRouteImport } from './routes/_authenticated/matriz'
 import { Route as AuthenticatedLicencasRouteImport } from './routes/_authenticated/licencas'
+import { Route as AuthenticatedImportarRouteImport } from './routes/_authenticated/importar'
 import { Route as AuthenticatedIaRouteImport } from './routes/_authenticated/ia'
 import { Route as AuthenticatedDespachosRouteImport } from './routes/_authenticated/despachos'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedConsolidadoRouteImport } from './routes/_authenticated/consolidado'
 import { Route as AuthenticatedCnpjRouteImport } from './routes/_authenticated/cnpj'
 import { Route as AuthenticatedCalendarioRouteImport } from './routes/_authenticated/calendario'
+import { Route as AuthenticatedAuditoriaRouteImport } from './routes/_authenticated/auditoria'
 import { Route as Char91DotwellKnownChar93OauthProtectedResourceRouteImport } from './routes/[.well-known]/oauth-protected-resource'
 import { Route as Char91DotmcpChar93ListToolsRouteImport } from './routes/[.mcp]/list-tools'
 import { Route as AuthenticatedUnidadesIndexRouteImport } from './routes/_authenticated/unidades.index'
@@ -92,6 +94,11 @@ const AuthenticatedLicencasRoute = AuthenticatedLicencasRouteImport.update({
   path: '/licencas',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedImportarRoute = AuthenticatedImportarRouteImport.update({
+  id: '/importar',
+  path: '/importar',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedIaRoute = AuthenticatedIaRouteImport.update({
   id: '/ia',
   path: '/ia',
@@ -121,6 +128,11 @@ const AuthenticatedCnpjRoute = AuthenticatedCnpjRouteImport.update({
 const AuthenticatedCalendarioRoute = AuthenticatedCalendarioRouteImport.update({
   id: '/calendario',
   path: '/calendario',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedAuditoriaRoute = AuthenticatedAuditoriaRouteImport.update({
+  id: '/auditoria',
+  path: '/auditoria',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const Char91DotwellKnownChar93OauthProtectedResourceRoute =
@@ -195,12 +207,14 @@ export interface FileRoutesByFullPath {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  '/auditoria': typeof AuthenticatedAuditoriaRoute
   '/calendario': typeof AuthenticatedCalendarioRoute
   '/cnpj': typeof AuthenticatedCnpjRoute
   '/consolidado': typeof AuthenticatedConsolidadoRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/despachos': typeof AuthenticatedDespachosRoute
   '/ia': typeof AuthenticatedIaRoute
+  '/importar': typeof AuthenticatedImportarRoute
   '/licencas': typeof AuthenticatedLicencasRoute
   '/matriz': typeof AuthenticatedMatrizRoute
   '/normativas': typeof AuthenticatedNormativasRoute
@@ -224,12 +238,14 @@ export interface FileRoutesByTo {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  '/auditoria': typeof AuthenticatedAuditoriaRoute
   '/calendario': typeof AuthenticatedCalendarioRoute
   '/cnpj': typeof AuthenticatedCnpjRoute
   '/consolidado': typeof AuthenticatedConsolidadoRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/despachos': typeof AuthenticatedDespachosRoute
   '/ia': typeof AuthenticatedIaRoute
+  '/importar': typeof AuthenticatedImportarRoute
   '/licencas': typeof AuthenticatedLicencasRoute
   '/matriz': typeof AuthenticatedMatrizRoute
   '/normativas': typeof AuthenticatedNormativasRoute
@@ -255,12 +271,14 @@ export interface FileRoutesById {
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
+  '/_authenticated/auditoria': typeof AuthenticatedAuditoriaRoute
   '/_authenticated/calendario': typeof AuthenticatedCalendarioRoute
   '/_authenticated/cnpj': typeof AuthenticatedCnpjRoute
   '/_authenticated/consolidado': typeof AuthenticatedConsolidadoRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/despachos': typeof AuthenticatedDespachosRoute
   '/_authenticated/ia': typeof AuthenticatedIaRoute
+  '/_authenticated/importar': typeof AuthenticatedImportarRoute
   '/_authenticated/licencas': typeof AuthenticatedLicencasRoute
   '/_authenticated/matriz': typeof AuthenticatedMatrizRoute
   '/_authenticated/normativas': typeof AuthenticatedNormativasRoute
@@ -286,12 +304,14 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
+    | '/auditoria'
     | '/calendario'
     | '/cnpj'
     | '/consolidado'
     | '/dashboard'
     | '/despachos'
     | '/ia'
+    | '/importar'
     | '/licencas'
     | '/matriz'
     | '/normativas'
@@ -315,12 +335,14 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
+    | '/auditoria'
     | '/calendario'
     | '/cnpj'
     | '/consolidado'
     | '/dashboard'
     | '/despachos'
     | '/ia'
+    | '/importar'
     | '/licencas'
     | '/matriz'
     | '/normativas'
@@ -345,12 +367,14 @@ export interface FileRouteTypes {
     | '/sitemap.xml'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
+    | '/_authenticated/auditoria'
     | '/_authenticated/calendario'
     | '/_authenticated/cnpj'
     | '/_authenticated/consolidado'
     | '/_authenticated/dashboard'
     | '/_authenticated/despachos'
     | '/_authenticated/ia'
+    | '/_authenticated/importar'
     | '/_authenticated/licencas'
     | '/_authenticated/matriz'
     | '/_authenticated/normativas'
@@ -462,6 +486,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedLicencasRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/importar': {
+      id: '/_authenticated/importar'
+      path: '/importar'
+      fullPath: '/importar'
+      preLoaderRoute: typeof AuthenticatedImportarRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/ia': {
       id: '/_authenticated/ia'
       path: '/ia'
@@ -502,6 +533,13 @@ declare module '@tanstack/react-router' {
       path: '/calendario'
       fullPath: '/calendario'
       preLoaderRoute: typeof AuthenticatedCalendarioRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/auditoria': {
+      id: '/_authenticated/auditoria'
+      path: '/auditoria'
+      fullPath: '/auditoria'
+      preLoaderRoute: typeof AuthenticatedAuditoriaRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/.well-known/oauth-protected-resource': {
@@ -585,12 +623,14 @@ declare module '@tanstack/react-router' {
 }
 
 interface AuthenticatedRouteRouteChildren {
+  AuthenticatedAuditoriaRoute: typeof AuthenticatedAuditoriaRoute
   AuthenticatedCalendarioRoute: typeof AuthenticatedCalendarioRoute
   AuthenticatedCnpjRoute: typeof AuthenticatedCnpjRoute
   AuthenticatedConsolidadoRoute: typeof AuthenticatedConsolidadoRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedDespachosRoute: typeof AuthenticatedDespachosRoute
   AuthenticatedIaRoute: typeof AuthenticatedIaRoute
+  AuthenticatedImportarRoute: typeof AuthenticatedImportarRoute
   AuthenticatedLicencasRoute: typeof AuthenticatedLicencasRoute
   AuthenticatedMatrizRoute: typeof AuthenticatedMatrizRoute
   AuthenticatedNormativasRoute: typeof AuthenticatedNormativasRoute
@@ -604,12 +644,14 @@ interface AuthenticatedRouteRouteChildren {
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedAuditoriaRoute: AuthenticatedAuditoriaRoute,
   AuthenticatedCalendarioRoute: AuthenticatedCalendarioRoute,
   AuthenticatedCnpjRoute: AuthenticatedCnpjRoute,
   AuthenticatedConsolidadoRoute: AuthenticatedConsolidadoRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedDespachosRoute: AuthenticatedDespachosRoute,
   AuthenticatedIaRoute: AuthenticatedIaRoute,
+  AuthenticatedImportarRoute: AuthenticatedImportarRoute,
   AuthenticatedLicencasRoute: AuthenticatedLicencasRoute,
   AuthenticatedMatrizRoute: AuthenticatedMatrizRoute,
   AuthenticatedNormativasRoute: AuthenticatedNormativasRoute,

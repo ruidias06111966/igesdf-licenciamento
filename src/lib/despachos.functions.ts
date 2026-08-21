@@ -83,3 +83,43 @@ export const dadosConsolidado = createServerFn({ method: "POST" })
 
     return { unidades: unidades.data ?? [], licencas };
   });
+
+/**
+ * Regista no histórico que um despacho ou consolidado foi gerado.
+ *
+ * Fica na auditoria com a unidade, a competência e a data, para depois se
+ * conseguir dizer quem emitiu o quê e quando.
+ */
+export const registarDespachoGerado = createServerFn({ method: "POST" })
+  .middleware([requireMaster])
+  .inputValidator(
+    (entrada: {
+      tipo: "despacho" | "consolidado";
+      unidade_id?: string | null;
+      unidade?: string | null;
+      competencia?: string | null;
+      periodo?: string | null;
+      unidades?: number | null;
+      numero?: string | null;
+      processo_sei?: string | null;
+    }) => entrada,
+
+  )
+  .handler(async ({ data, context }) => {
+    const { registarAuditoria } = await import("@/lib/auditoria.server");
+    await registarAuditoria(context.supabase, {
+      entidade: data.tipo === "consolidado" ? "consolidado" : "despachos",
+      entidade_id: data.unidade_id ?? null,
+      acao: "gerar",
+      detalhes: {
+        unidade: data.unidade ?? null,
+        competencia: data.competencia ?? null,
+        periodo: data.periodo ?? null,
+        unidades: data.unidades ?? null,
+        numero: data.numero ?? null,
+        processo_sei: data.processo_sei ?? null,
+      },
+
+    });
+    return { ok: true };
+  });

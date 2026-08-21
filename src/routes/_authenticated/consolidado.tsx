@@ -19,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { dadosConsolidado } from "@/lib/despachos.functions";
+import { dadosConsolidado, registarDespachoGerado } from "@/lib/despachos.functions";
 import { upsertModelo } from "@/lib/modelos.functions";
 import { mensagemErro } from "@/lib/errors";
 import { ORGAOS, TIPO_UNIDADE_LABEL, orgaoLabel, tipoUnidadeLabel } from "@/lib/domain";
@@ -121,15 +121,24 @@ function ConsolidadoPage() {
   );
 
   const guardar = useMutation({
-    mutationFn: () =>
-      upsertModelo({
+    mutationFn: async () => {
+      await upsertModelo({
         data: {
           titulo: `Consolidado da rede — ${competenciaLabel(campos.competencia)}`,
           tipo: "relatorio",
           conteudo: markdownDe(blocos),
           tags: ["consolidado", "licenciamento", campos.periodo],
         },
-      }),
+      });
+      await registarDespachoGerado({
+        data: {
+          tipo: "consolidado",
+          competencia: campos.competencia,
+          periodo: campos.periodo,
+          unidades: resumos.length,
+        },
+      });
+    },
     onSuccess: () => toast.success("Consolidado guardado na biblioteca de modelos"),
     onError: (e) => toast.error(mensagemErro(e)),
   });
@@ -321,7 +330,11 @@ function ConsolidadoPage() {
           </Card>
 
           <div className="flex flex-wrap items-center gap-2">
-            <AcoesCopiar blocos={blocos} />
+            <AcoesCopiar
+              blocos={blocos}
+              ficheiro={`consolidado-rede-${campos.competencia}`}
+              rodape={`Consolidado da rede — ${competenciaLabel(campos.competencia)} — ${resumos.length} unidades`}
+            />
             <Button
               type="button"
               variant="outline"

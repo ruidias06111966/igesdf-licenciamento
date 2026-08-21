@@ -9,6 +9,7 @@ import { SemaforoBadge } from "@/components/status-badge";
 import { SortableTh, TableScroll } from "@/components/data-table";
 import { useOrdenacao } from "@/lib/use-ordenacao";
 import { ConfirmDelete } from "@/components/confirm-delete";
+import { HistoricoEntidade } from "@/components/historico-entidade";
 import { LicencaForm, type ValoresLicenca } from "@/components/forms/licenca-form";
 import { PrintModeToggle } from "@/components/print-mode-toggle";
 import { Button } from "@/components/ui/button";
@@ -480,6 +481,13 @@ function LicencasPage() {
                             }
                           />
                           {d.id && (
+                            <HistoricoEntidade
+                              entidade="licencas"
+                              entidadeId={d.id}
+                              titulo={`${orgaoLabel(d.orgao)} — ${d.unidade_nome ?? ""}`}
+                            />
+                          )}
+                          {d.id && (
                             <ConfirmDelete
                               titulo="Excluir licença"
                               descricao="O registro da licença e o seu checklist são removidos definitivamente. Os documentos anexados permanecem na unidade."
@@ -488,6 +496,7 @@ function LicencasPage() {
                               onDone={invalidar}
                             />
                           )}
+
                         </td>
                       </tr>
                       {d.observacoes && (
