@@ -17,29 +17,35 @@ export type Database = {
       atividade_log: {
         Row: {
           acao: string
+          alteracoes: Json | null
           created_at: string
           detalhes: Json | null
           entidade: string
           entidade_id: string | null
           id: string
+          perfil: string | null
           user_id: string | null
         }
         Insert: {
           acao: string
+          alteracoes?: Json | null
           created_at?: string
           detalhes?: Json | null
           entidade: string
           entidade_id?: string | null
           id?: string
+          perfil?: string | null
           user_id?: string | null
         }
         Update: {
           acao?: string
+          alteracoes?: Json | null
           created_at?: string
           detalhes?: Json | null
           entidade?: string
           entidade_id?: string | null
           id?: string
+          perfil?: string | null
           user_id?: string | null
         }
         Relationships: []
@@ -306,42 +312,92 @@ export type Database = {
           },
         ]
       }
+      ia_modelo_versoes: {
+        Row: {
+          comentario: string | null
+          conteudo: string
+          created_at: string
+          id: string
+          modelo_id: string
+          perfil: string | null
+          titulo: string
+          versao: number
+        }
+        Insert: {
+          comentario?: string | null
+          conteudo: string
+          created_at?: string
+          id?: string
+          modelo_id: string
+          perfil?: string | null
+          titulo: string
+          versao: number
+        }
+        Update: {
+          comentario?: string | null
+          conteudo?: string
+          created_at?: string
+          id?: string
+          modelo_id?: string
+          perfil?: string | null
+          titulo?: string
+          versao?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ia_modelo_versoes_modelo_id_fkey"
+            columns: ["modelo_id"]
+            isOneToOne: false
+            referencedRelation: "ia_modelos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ia_modelos: {
         Row: {
           conteudo: string
           created_at: string
           id: string
           observacoes: string | null
+          orgao: Database["public"]["Enums"]["orgao_licenciador"] | null
           processo_id: string | null
           tags: string[]
           tipo: string
+          tipo_unidade: Database["public"]["Enums"]["tipo_unidade"] | null
           titulo: string
           unidade_id: string | null
           updated_at: string
+          versao: number
         }
         Insert: {
           conteudo: string
           created_at?: string
           id?: string
           observacoes?: string | null
+          orgao?: Database["public"]["Enums"]["orgao_licenciador"] | null
           processo_id?: string | null
           tags?: string[]
           tipo?: string
+          tipo_unidade?: Database["public"]["Enums"]["tipo_unidade"] | null
           titulo: string
           unidade_id?: string | null
           updated_at?: string
+          versao?: number
         }
         Update: {
           conteudo?: string
           created_at?: string
           id?: string
           observacoes?: string | null
+          orgao?: Database["public"]["Enums"]["orgao_licenciador"] | null
           processo_id?: string | null
           tags?: string[]
           tipo?: string
+          tipo_unidade?: Database["public"]["Enums"]["tipo_unidade"] | null
           titulo?: string
           unidade_id?: string | null
           updated_at?: string
+          versao?: number
         }
         Relationships: [
           {
