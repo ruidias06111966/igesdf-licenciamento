@@ -200,19 +200,33 @@ function Editor({ unidadeId }: { unidadeId: string }) {
   });
 
   const guardar = useMutation({
-    mutationFn: () =>
-      upsertModelo({
+    mutationFn: async () => {
+      await upsertModelo({
         data: {
           titulo: `Despacho — ${data?.unidade.nome ?? "unidade"}${campos.numero ? ` nº ${campos.numero}` : ""}`,
           tipo: "despacho",
           conteudo: markdownDe(blocos),
           tags: ["despacho", "licenciamento"],
+          orgao: null,
+          tipo_unidade: (data?.unidade.tipo ?? null) as "hospital" | null,
           unidade_id: unidadeId,
         },
-      }),
+      });
+      // Fica na auditoria quem emitiu o despacho, para que unidade e quando.
+      await registarDespachoGerado({
+        data: {
+          tipo: "despacho",
+          unidade_id: unidadeId,
+          unidade: data?.unidade.nome ?? null,
+          numero: campos.numero || null,
+          processo_sei: campos.processo_sei || (data?.processos[0]?.numero ?? null),
+        },
+      });
+    },
     onSuccess: () => toast.success("Despacho guardado na biblioteca de modelos"),
     onError: (e) => toast.error(mensagemErro(e)),
   });
+
 
   if (isLoading) return <p className="text-sm text-muted-foreground">A carregar dados…</p>;
   if (error) return <ErrorState error={error} />;
