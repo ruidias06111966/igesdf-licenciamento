@@ -18,6 +18,7 @@ import { unidadesQuery } from "@/lib/queries";
 import type { Unidade } from "@/lib/rows";
 import { cn } from "@/lib/utils";
 import {
+import { SubNav } from "@/components/sub-nav";
   ROTULO_CATEGORIA,
   ROTULO_TITULAR,
   RAIZ_IGESDF,
@@ -212,6 +213,7 @@ function CnpjPage() {
           </>
         }
       />
+      <SubNav grupo="unidades" />
 
       <div className="flex flex-col gap-3 no-print sm:flex-row sm:items-center">
         <div className="relative max-w-md flex-1">

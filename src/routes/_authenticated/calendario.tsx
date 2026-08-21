@@ -19,6 +19,7 @@ import { licencasQuery, unidadesQuery } from "@/lib/queries";
 import { ORGAOS, orgaoLabel, parseCnae, statusLabel } from "@/lib/domain";
 import { formatDate, formatDaysLeft, formatMonth, toIsoDate, today } from "@/lib/dates";
 import type { LicencaDashboard } from "@/lib/rows";
+import { SubNav } from "@/components/sub-nav";
 
 export const Route = createFileRoute("/_authenticated/calendario")({
   loader: ({ context }) =>
@@ -132,6 +133,7 @@ function Calendario() {
         descricao={`${futuras.length} vencimento(s) futuro(s) e ${vencidas.length} em atraso.`}
         acoes={<PrintModeToggle defaultOrientation="landscape" />}
       />
+      <SubNav grupo="painel" />
 
       <div className="flex items-start gap-2 rounded-md border border-warning/40 bg-warning/10 p-3 text-xs no-print">
         <Info className="mt-0.5 size-4 shrink-0" aria-hidden="true" />

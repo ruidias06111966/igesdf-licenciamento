@@ -31,6 +31,7 @@ import {
   type CamposConsolidado,
 } from "@/lib/despacho/consolidado";
 import { AcoesCopiar, FolhaDespacho, markdownDe } from "@/lib/despacho/folha";
+import { SubNav } from "@/components/sub-nav";
 
 export const Route = createFileRoute("/_authenticated/consolidado")({
   component: ConsolidadoPage,
@@ -172,6 +173,7 @@ function ConsolidadoPage() {
         descricao="Despacho mensal ou trimestral do licenciamento de todas as unidades."
         acoes={<PrintModeToggle defaultOrientation="portrait" />}
       />
+      <SubNav grupo="relatorios" />
 
       {isLoading && <p className="text-sm text-muted-foreground">A carregar a rede…</p>}
       {error && <ErrorState error={error} />}

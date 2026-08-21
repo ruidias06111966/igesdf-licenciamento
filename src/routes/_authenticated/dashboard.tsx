@@ -41,6 +41,7 @@ import {
 import { formatDate, formatDaysLeft } from "@/lib/dates";
 import type { LicencaDashboard, ProximoPasso } from "@/lib/rows";
 import { cn } from "@/lib/utils";
+import { SubNav } from "@/components/sub-nav";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   loader: ({ context }) =>
@@ -177,6 +178,7 @@ function Dashboard() {
         }
         acoes={<PrintModeToggle defaultOrientation="landscape" />}
       />
+      <SubNav grupo="painel" />
 
       <div className="print-only mb-4">
         <h2 className="text-xl font-semibold">Painel de licenciamento — IGESDF</h2>
