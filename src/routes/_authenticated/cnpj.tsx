@@ -145,24 +145,24 @@ function CnpjPage() {
   }, [unidades, termo, filtro]);
 
   const colunasExport: ColunaCsv<Unidade>[] = [
-      { cabecalho: "Código MV", valor: (u) => u.codigo_mv ?? "" },
-      { cabecalho: "CNPJ IGESDF", valor: (u) => cnpjFormatado(u) },
-      { cabecalho: "CNPJ IGESDF (dígitos)", valor: (u) => cnpjDigitos(u) },
-      { cabecalho: "CNPJ SES-DF", valor: (u) => (u.cnpj_ses ? `${RAIZ_SES}/${u.cnpj_ses}` : "") },
-      { cabecalho: "CNPJ SES-DF (dígitos)", valor: (u) => sesDigitos(u.cnpj_ses) ?? "" },
-      { cabecalho: "CNES", valor: (u) => u.cnes ?? "" },
-      { cabecalho: "CNPJ titular do CNES", valor: (u) => u.cnpj_cnes ?? "" },
-      { cabecalho: "Titularidade CNES", valor: (u) => ROTULO_TITULAR[titularDe(u)] },
-      { cabecalho: "Tipo", valor: (u) => u.tipo_estabelecimento },
-      { cabecalho: "Categoria", valor: (u) => ROTULO_CATEGORIA[categoriaDe(u)] },
-      { cabecalho: "Unidade", valor: (u) => u.nome },
-      { cabecalho: "CNAE principal", valor: (u) => u.cnae_principal ?? "" },
-      { cabecalho: "Início da atividade", valor: (u) => inicioFormatado(u) },
-      { cabecalho: "Endereço", valor: (u) => u.endereco ?? "" },
-      { cabecalho: "Bairro", valor: (u) => u.bairro ?? "" },
-      { cabecalho: "CEP", valor: (u) => u.cep ?? "" },
-      { cabecalho: "Situação", valor: (u) => (u.ativa ? "ATIVA" : "INATIVA") },
-    ]);
+    { cabecalho: "Código MV", valor: (u) => u.codigo_mv ?? "" },
+    { cabecalho: "CNPJ IGESDF", valor: (u) => cnpjFormatado(u) },
+    { cabecalho: "CNPJ IGESDF (dígitos)", valor: (u) => cnpjDigitos(u) },
+    { cabecalho: "CNPJ SES-DF", valor: (u) => (u.cnpj_ses ? `${RAIZ_SES}/${u.cnpj_ses}` : "") },
+    { cabecalho: "CNPJ SES-DF (dígitos)", valor: (u) => sesDigitos(u.cnpj_ses) ?? "" },
+    { cabecalho: "CNES", valor: (u) => u.cnes ?? "" },
+    { cabecalho: "CNPJ titular do CNES", valor: (u) => u.cnpj_cnes ?? "" },
+    { cabecalho: "Titularidade CNES", valor: (u) => ROTULO_TITULAR[titularDe(u)] },
+    { cabecalho: "Tipo", valor: (u) => u.tipo_estabelecimento },
+    { cabecalho: "Categoria", valor: (u) => ROTULO_CATEGORIA[categoriaDe(u)] },
+    { cabecalho: "Unidade", valor: (u) => u.nome },
+    { cabecalho: "CNAE principal", valor: (u) => u.cnae_principal ?? "" },
+    { cabecalho: "Início da atividade", valor: (u) => inicioFormatado(u) },
+    { cabecalho: "Endereço", valor: (u) => u.endereco ?? "" },
+    { cabecalho: "Bairro", valor: (u) => u.bairro ?? "" },
+    { cabecalho: "CEP", valor: (u) => u.cep ?? "" },
+    { cabecalho: "Situação", valor: (u) => (u.ativa ? "ATIVA" : "INATIVA"), situacao: true },
+  ];
 
   const copiarTabela = async () => {
     const linhas = visiveis.map((u) =>

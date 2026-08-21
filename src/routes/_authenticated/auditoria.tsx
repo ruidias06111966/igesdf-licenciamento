@@ -77,32 +77,31 @@ function Auditoria() {
   const registos = data ?? [];
 
   const colunasExport: ColunaCsv<(typeof registos)[number]>[] = [
-        { cabecalho: "Data", valor: (r) => dataHora(r.created_at) },
-        { cabecalho: "Área", valor: (r) => ENTIDADE_LABEL[r.entidade] ?? r.entidade },
-        { cabecalho: "Ação", valor: (r) => ACAO_LABEL[r.acao] ?? r.acao },
-        { cabecalho: "Perfil", valor: (r) => (r.perfil ? (PERFIL_LABEL[r.perfil] ?? r.perfil) : "—") },
-        {
-          cabecalho: "Alterações",
-          valor: (r) =>
-            r.alteracoes
-              .map(
-                (a) =>
-                  `${campoLegivel(a.campo)}: ${valorLegivel(a.campo, a.antes)} → ${valorLegivel(a.campo, a.depois)}`,
-              )
-              .join(" | "),
-        },
-        {
-          cabecalho: "Contexto",
-          valor: (r) =>
-            r.detalhes
-              ? Object.entries(r.detalhes)
-                  .filter(([, v]) => v !== null && v !== "")
-                  .map(([k, v]) => `${campoLegivel(k)}: ${valorLegivel(k, v)}`)
-                  .join(" | ")
-              : "",
-        },
-      ],
-    );
+    { cabecalho: "Data", valor: (r) => dataHora(r.created_at) },
+    { cabecalho: "Área", valor: (r) => ENTIDADE_LABEL[r.entidade] ?? r.entidade },
+    { cabecalho: "Ação", valor: (r) => ACAO_LABEL[r.acao] ?? r.acao },
+    { cabecalho: "Perfil", valor: (r) => (r.perfil ? (PERFIL_LABEL[r.perfil] ?? r.perfil) : "—") },
+    {
+      cabecalho: "Alterações",
+      valor: (r) =>
+        r.alteracoes
+          .map(
+            (a) =>
+              `${campoLegivel(a.campo)}: ${valorLegivel(a.campo, a.antes)} → ${valorLegivel(a.campo, a.depois)}`,
+          )
+          .join(" | "),
+    },
+    {
+      cabecalho: "Contexto",
+      valor: (r) =>
+        r.detalhes
+          ? Object.entries(r.detalhes)
+              .filter(([, v]) => v !== null && v !== "")
+              .map(([k, v]) => `${campoLegivel(k)}: ${valorLegivel(k, v)}`)
+              .join(" | ")
+          : "",
+    },
+  ];
 
   return (
     <div className="space-y-5 p-4 sm:p-6">

@@ -503,7 +503,6 @@ function LicencasPage() {
                               onDone={invalidar}
                             />
                           )}
-
                         </td>
                       </tr>
                       {d.observacoes && (
