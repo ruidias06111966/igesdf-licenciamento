@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import { useState, type ComponentType } from "react";
 import { Button } from "@/components/ui/button";
+import { AlertasVencimento } from "@/components/alertas-vencimento";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
 import { usePodeEditar, useEhMaster } from "@/lib/perfil";
@@ -118,8 +119,9 @@ export function AppShell({ onLogout }: { onLogout: () => void }) {
   return (
     <div className="min-h-screen bg-background lg:grid lg:grid-cols-[260px_1fr]">
       <aside className="hidden flex-col bg-sidebar text-sidebar-foreground lg:sticky lg:top-0 lg:flex lg:h-screen">
-        <div className="border-b border-sidebar-border p-5">
+        <div className="flex items-center justify-between gap-2 border-b border-sidebar-border p-5">
           <Marca />
+          <AlertasVencimento />
         </div>
         <ListaNav />
         <Rodape onLogout={onLogout} />
@@ -159,6 +161,9 @@ export function AppShell({ onLogout }: { onLogout: () => void }) {
             </SheetContent>
           </Sheet>
           <Marca compacta />
+          <div className="ml-auto">
+            <AlertasVencimento />
+          </div>
         </header>
 
         <main className="min-w-0 flex-1">
