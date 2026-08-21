@@ -1,10 +1,15 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireEdicao } from "@/lib/acesso-middleware";
+import { ORGAO_VALUES } from "@/lib/orgaos-schema";
 
 /**
  * Biblioteca de documentos padrão gerados pelo assistente de IA
  * (despachos, ofícios, relatórios, checklists) para reutilização posterior.
+ *
+ * Cada modelo é classificado por órgão e tipo de unidade — é assim que se
+ * chega depressa ao modelo certo — e guarda o histórico de versões: gravar por
+ * cima arquiva a versão anterior em vez de a perder.
  */
 const TIPOS = [
   "despacho",
@@ -16,15 +21,20 @@ const TIPOS = [
   "outro",
 ] as const;
 
+const TIPOS_UNIDADE = ["hospital", "upa", "administrativo", "laboratorio", "outro"] as const;
+
 const modeloSchema = z.object({
   id: z.string().uuid().optional(),
   titulo: z.string().trim().min(3).max(200),
   tipo: z.enum(TIPOS),
   conteudo: z.string().trim().min(1).max(200_000),
   tags: z.array(z.string().trim().max(40)).max(20).default([]),
+  orgao: z.enum(ORGAO_VALUES).nullable().optional(),
+  tipo_unidade: z.enum(TIPOS_UNIDADE).nullable().optional(),
   unidade_id: z.string().uuid().nullable().optional(),
   processo_id: z.string().uuid().nullable().optional(),
   observacoes: z.string().trim().max(2000).nullable().optional(),
+  comentario_versao: z.string().trim().max(300).nullable().optional(),
 });
 
 export const listModelos = createServerFn({ method: "GET" })
@@ -38,6 +48,78 @@ export const listModelos = createServerFn({ method: "GET" })
     return data ?? [];
   });
 
+export const listVersoesModelo = createServerFn({ method: "POST" })
+  .middleware([requireEdicao])
+  .inputValidator((input: unknown) => z.object({ modelo_id: z.string().uuid() }).parse(input))
+  .handler(async ({ data, context }) => {
+    const { data: linhas, error } = await context.supabase
+      .from("ia_modelo_versoes")
+      .select("id, versao, titulo, conteudo, comentario, perfil, created_at")
+      .eq("modelo_id", data.modelo_id)
+      .order("versao", { ascending: false });
+    if (error) throw error;
+    return linhas ?? [];
+  });
+
+/** Repõe o conteúdo de uma versão antiga, arquivando a versão atual. */
+export const restaurarVersaoModelo = createServerFn({ method: "POST" })
+  .middleware([requireEdicao])
+  .inputValidator((input: unknown) =>
+    z.object({ modelo_id: z.string().uuid(), versao_id: z.string().uuid() }).parse(input),
+  )
+  .handler(async ({ data, context }) => {
+    const [{ data: modelo }, { data: versao }] = await Promise.all([
+      context.supabase.from("ia_modelos").select("*").eq("id", data.modelo_id).maybeSingle(),
+      context.supabase
+        .from("ia_modelo_versoes")
+        .select("*")
+        .eq("id", data.versao_id)
+        .maybeSingle(),
+    ]);
+    if (!modelo) throw new Error("Modelo não encontrado.");
+    if (!versao || versao.modelo_id !== data.modelo_id) throw new Error("Versão não encontrada.");
+
+    await arquivarVersao(context.supabase, modelo, "Substituída ao repor versão anterior");
+    const { error } = await context.supabase
+      .from("ia_modelos")
+      .update({
+        titulo: versao.titulo,
+        conteudo: versao.conteudo,
+        versao: (modelo.versao ?? 1) + 1,
+      })
+      .eq("id", data.modelo_id);
+    if (error) throw error;
+    return { ok: true };
+  });
+
+type ClienteSupabase = Parameters<typeof arquivarVersaoImpl>[0];
+
+async function arquivarVersaoImpl(
+  supabase: {
+    from: (t: "ia_modelo_versoes") => {
+      insert: (v: Record<string, unknown>) => Promise<{ error: unknown }>;
+    };
+  },
+  modelo: { id: string; versao: number | null; titulo: string; conteudo: string },
+  comentario: string | null,
+) {
+  const { perfilAtual } = await import("@/lib/acesso.server");
+  await supabase.from("ia_modelo_versoes").insert({
+    modelo_id: modelo.id,
+    versao: modelo.versao ?? 1,
+    titulo: modelo.titulo,
+    conteudo: modelo.conteudo,
+    comentario,
+    perfil: perfilAtual(),
+  });
+}
+
+const arquivarVersao = arquivarVersaoImpl as (
+  supabase: ClienteSupabase,
+  modelo: { id: string; versao: number | null; titulo: string; conteudo: string },
+  comentario: string | null,
+) => Promise<void>;
+
 export const upsertModelo = createServerFn({ method: "POST" })
   .middleware([requireEdicao])
   .inputValidator((input: unknown) => modeloSchema.parse(input))
@@ -47,12 +129,30 @@ export const upsertModelo = createServerFn({ method: "POST" })
       tipo: data.tipo,
       conteudo: data.conteudo,
       tags: data.tags,
+      orgao: data.orgao || null,
+      tipo_unidade: data.tipo_unidade || null,
       unidade_id: data.unidade_id || null,
       processo_id: data.processo_id || null,
       observacoes: data.observacoes || null,
     };
     if (data.id) {
-      const { error } = await context.supabase.from("ia_modelos").update(registo).eq("id", data.id);
+      const { data: atual } = await context.supabase
+        .from("ia_modelos")
+        .select("*")
+        .eq("id", data.id)
+        .maybeSingle();
+      if (atual) {
+        // Gravar por cima nunca apaga: a versão anterior fica arquivada.
+        await arquivarVersao(
+          context.supabase as unknown as ClienteSupabase,
+          atual,
+          data.comentario_versao ?? null,
+        );
+      }
+      const { error } = await context.supabase
+        .from("ia_modelos")
+        .update({ ...registo, versao: (atual?.versao ?? 1) + 1 })
+        .eq("id", data.id);
       if (error) throw error;
       return { id: data.id };
     }
@@ -73,6 +173,7 @@ export const deleteModelo = createServerFn({ method: "POST" })
     if (error) throw error;
     return { ok: true };
   });
+
 
 /** Nome de ficheiro seguro a partir do título do modelo. */
 function slug(titulo: string) {
