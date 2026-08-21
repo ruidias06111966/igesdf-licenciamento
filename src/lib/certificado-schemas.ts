@@ -74,7 +74,7 @@ export const linhaAplicar = z.discriminatedUnion("tipo", [
       .array(
         z.object({
           campo: z.enum(CAMPOS_LICENCA),
-          depois: z.string().max(200).nullable(),
+          depois: z.string().max(2000).nullable(),
         }),
       )
       .min(1),

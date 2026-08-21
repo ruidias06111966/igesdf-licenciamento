@@ -293,6 +293,7 @@ type LicencaExistente = {
   status: string;
   data_emissao: string | null;
   data_vencimento: string | null;
+  observacoes?: string | null;
 };
 
 /**
@@ -382,6 +383,14 @@ export function compararComBase(
     comparar("processo_sei", existente.processo_sei, proposto.processo_sei);
     comparar("data_emissao", existente.data_emissao, proposto.data_emissao);
     comparar("data_vencimento", existente.data_vencimento, proposto.data_vencimento);
+    // Condicionantes e restrições do certificado: se a base ainda não as tem,
+    // acrescentam-se ao que lá está em vez de substituir o texto escrito à mão.
+    const obsCert = limpar(item.observacao);
+    if (obsCert) {
+      const obsBase = limpar(existente.observacoes ?? null);
+      if (!obsBase) comparar("observacoes", null, obsCert);
+      else if (!obsBase.includes(obsCert)) comparar("observacoes", obsBase, `${obsBase}\n${obsCert}`);
+    }
 
     linhas.push(
       campos.length > 0
