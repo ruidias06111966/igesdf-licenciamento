@@ -186,6 +186,7 @@ function RelatoriosPage() {
       <SubNav grupo="relatorios" />
 
       <UploadCertificados unidades={unidades} />
+      <RelerCertificados />
 
       <Card className="no-print">
         <CardContent className="grid gap-3 p-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
