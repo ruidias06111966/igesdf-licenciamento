@@ -293,6 +293,7 @@ type LicencaExistente = {
   status: string;
   data_emissao: string | null;
   data_vencimento: string | null;
+  observacoes?: string | null;
 };
 
 /**

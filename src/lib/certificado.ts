@@ -14,6 +14,7 @@ export const CAMPOS_LICENCA = [
   "processo_sei",
   "data_emissao",
   "data_vencimento",
+  "observacoes",
 ] as const;
 
 export type CampoLicenca = (typeof CAMPOS_LICENCA)[number];
@@ -24,6 +25,7 @@ export const CAMPO_LABEL: Record<CampoLicenca, string> = {
   processo_sei: "Processo SEI",
   data_emissao: "Emissão",
   data_vencimento: "Vencimento",
+  observacoes: "Observações / condicionantes",
 };
 
 export type ValoresLicenca = Partial<Record<CampoLicenca, string | null>>;
