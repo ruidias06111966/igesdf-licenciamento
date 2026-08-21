@@ -43,6 +43,7 @@ import { usePodeEditar } from "@/lib/perfil";
 import type { LicencaDashboard, Unidade } from "@/lib/rows";
 import { cn } from "@/lib/utils";
 import { SubNav } from "@/components/sub-nav";
+import { RelerCertificados } from "@/components/reler-certificados";
 
 export const Route = createFileRoute("/_authenticated/relatorios")({
   loader: ({ context }) =>
