@@ -32,7 +32,9 @@ export const analisarCertificado = createServerFn({ method: "POST" })
         .maybeSingle(),
       context.supabase
         .from("licencas")
-        .select("id, orgao, descricao, numero, processo_sei, status, data_emissao, data_vencimento")
+        .select(
+          "id, orgao, descricao, numero, processo_sei, status, data_emissao, data_vencimento, observacoes",
+        )
         .eq("unidade_id", data.unidade_id),
       context.supabase.from("cnaes_unidade").select("codigo").eq("unidade_id", data.unidade_id),
     ]);
@@ -127,6 +129,7 @@ export const aplicarCertificado = createServerFn({ method: "POST" })
         processo_sei?: string | null;
         data_emissao?: string | null;
         data_vencimento?: string | null;
+        observacoes?: string | null;
       } = {};
       for (const c of linha.campos) {
         if (c.campo === "status") {
