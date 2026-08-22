@@ -15,7 +15,9 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiIaRouteImport } from './routes/api/ia'
+import { Route as AuthenticatedRotinaRouteImport } from './routes/_authenticated/rotina'
 import { Route as AuthenticatedRelatoriosRouteImport } from './routes/_authenticated/relatorios'
+import { Route as AuthenticatedRelatorioMensalRouteImport } from './routes/_authenticated/relatorio-mensal'
 import { Route as AuthenticatedOrgaosRouteImport } from './routes/_authenticated/orgaos'
 import { Route as AuthenticatedNormativasRouteImport } from './routes/_authenticated/normativas'
 import { Route as AuthenticatedMatrizRouteImport } from './routes/_authenticated/matriz'
@@ -70,11 +72,22 @@ const ApiIaRoute = ApiIaRouteImport.update({
   path: '/api/ia',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedRotinaRoute = AuthenticatedRotinaRouteImport.update({
+  id: '/rotina',
+  path: '/rotina',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
 const AuthenticatedRelatoriosRoute = AuthenticatedRelatoriosRouteImport.update({
   id: '/relatorios',
   path: '/relatorios',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedRelatorioMensalRoute =
+  AuthenticatedRelatorioMensalRouteImport.update({
+    id: '/relatorio-mensal',
+    path: '/relatorio-mensal',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedOrgaosRoute = AuthenticatedOrgaosRouteImport.update({
   id: '/orgaos',
   path: '/orgaos',
@@ -226,7 +239,9 @@ export interface FileRoutesByFullPath {
   '/matriz': typeof AuthenticatedMatrizRoute
   '/normativas': typeof AuthenticatedNormativasRoute
   '/orgaos': typeof AuthenticatedOrgaosRoute
+  '/relatorio-mensal': typeof AuthenticatedRelatorioMensalRoute
   '/relatorios': typeof AuthenticatedRelatoriosRoute
+  '/rotina': typeof AuthenticatedRotinaRoute
   '/api/ia': typeof ApiIaRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -258,7 +273,9 @@ export interface FileRoutesByTo {
   '/matriz': typeof AuthenticatedMatrizRoute
   '/normativas': typeof AuthenticatedNormativasRoute
   '/orgaos': typeof AuthenticatedOrgaosRoute
+  '/relatorio-mensal': typeof AuthenticatedRelatorioMensalRoute
   '/relatorios': typeof AuthenticatedRelatoriosRoute
+  '/rotina': typeof AuthenticatedRotinaRoute
   '/api/ia': typeof ApiIaRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -292,7 +309,9 @@ export interface FileRoutesById {
   '/_authenticated/matriz': typeof AuthenticatedMatrizRoute
   '/_authenticated/normativas': typeof AuthenticatedNormativasRoute
   '/_authenticated/orgaos': typeof AuthenticatedOrgaosRoute
+  '/_authenticated/relatorio-mensal': typeof AuthenticatedRelatorioMensalRoute
   '/_authenticated/relatorios': typeof AuthenticatedRelatoriosRoute
+  '/_authenticated/rotina': typeof AuthenticatedRotinaRoute
   '/api/ia': typeof ApiIaRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -326,7 +345,9 @@ export interface FileRouteTypes {
     | '/matriz'
     | '/normativas'
     | '/orgaos'
+    | '/relatorio-mensal'
     | '/relatorios'
+    | '/rotina'
     | '/api/ia'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
@@ -358,7 +379,9 @@ export interface FileRouteTypes {
     | '/matriz'
     | '/normativas'
     | '/orgaos'
+    | '/relatorio-mensal'
     | '/relatorios'
+    | '/rotina'
     | '/api/ia'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
@@ -391,7 +414,9 @@ export interface FileRouteTypes {
     | '/_authenticated/matriz'
     | '/_authenticated/normativas'
     | '/_authenticated/orgaos'
+    | '/_authenticated/relatorio-mensal'
     | '/_authenticated/relatorios'
+    | '/_authenticated/rotina'
     | '/api/ia'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
@@ -463,11 +488,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ApiIaRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated/rotina': {
+      id: '/_authenticated/rotina'
+      path: '/rotina'
+      fullPath: '/rotina'
+      preLoaderRoute: typeof AuthenticatedRotinaRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/relatorios': {
       id: '/_authenticated/relatorios'
       path: '/relatorios'
       fullPath: '/relatorios'
       preLoaderRoute: typeof AuthenticatedRelatoriosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/relatorio-mensal': {
+      id: '/_authenticated/relatorio-mensal'
+      path: '/relatorio-mensal'
+      fullPath: '/relatorio-mensal'
+      preLoaderRoute: typeof AuthenticatedRelatorioMensalRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/orgaos': {
@@ -655,7 +694,9 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedMatrizRoute: typeof AuthenticatedMatrizRoute
   AuthenticatedNormativasRoute: typeof AuthenticatedNormativasRoute
   AuthenticatedOrgaosRoute: typeof AuthenticatedOrgaosRoute
+  AuthenticatedRelatorioMensalRoute: typeof AuthenticatedRelatorioMensalRoute
   AuthenticatedRelatoriosRoute: typeof AuthenticatedRelatoriosRoute
+  AuthenticatedRotinaRoute: typeof AuthenticatedRotinaRoute
   AuthenticatedProcessosIdRoute: typeof AuthenticatedProcessosIdRoute
   AuthenticatedUnidadesIdRoute: typeof AuthenticatedUnidadesIdRoute
   AuthenticatedProcessosIndexRoute: typeof AuthenticatedProcessosIndexRoute
@@ -677,7 +718,9 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedMatrizRoute: AuthenticatedMatrizRoute,
   AuthenticatedNormativasRoute: AuthenticatedNormativasRoute,
   AuthenticatedOrgaosRoute: AuthenticatedOrgaosRoute,
+  AuthenticatedRelatorioMensalRoute: AuthenticatedRelatorioMensalRoute,
   AuthenticatedRelatoriosRoute: AuthenticatedRelatoriosRoute,
+  AuthenticatedRotinaRoute: AuthenticatedRotinaRoute,
   AuthenticatedProcessosIdRoute: AuthenticatedProcessosIdRoute,
   AuthenticatedUnidadesIdRoute: AuthenticatedUnidadesIdRoute,
   AuthenticatedProcessosIndexRoute: AuthenticatedProcessosIndexRoute,

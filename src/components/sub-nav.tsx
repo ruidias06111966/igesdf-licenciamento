@@ -30,6 +30,7 @@ const GRUPOS: Record<string, Vista[]> = {
   ],
   relatorios: [
     { to: "/relatorios", label: "Conformidade" },
+    { to: "/relatorio-mensal", label: "Mensal por órgão" },
     { to: "/consolidado", label: "Consolidado da rede", master: true },
   ],
 };
