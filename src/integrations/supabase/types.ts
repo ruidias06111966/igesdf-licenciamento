@@ -206,6 +206,39 @@ export type Database = {
           },
         ]
       }
+      config_rotina: {
+        Row: {
+          ativo: boolean
+          fuso: string
+          hora: number
+          id: string
+          minuto: number
+          ultima_execucao: string | null
+          ultimo_total: number | null
+          updated_at: string
+        }
+        Insert: {
+          ativo?: boolean
+          fuso?: string
+          hora?: number
+          id: string
+          minuto?: number
+          ultima_execucao?: string | null
+          ultimo_total?: number | null
+          updated_at?: string
+        }
+        Update: {
+          ativo?: boolean
+          fuso?: string
+          hora?: number
+          id?: string
+          minuto?: number
+          ultima_execucao?: string | null
+          ultimo_total?: number | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       documentos: {
         Row: {
           ativo: boolean
@@ -1042,6 +1075,7 @@ export type Database = {
       }
     }
     Functions: {
+      agendar_sincronizacao: { Args: never; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -1050,7 +1084,10 @@ export type Database = {
         Returns: boolean
       }
       set_versao_vigente: { Args: { _doc_id: string }; Returns: undefined }
-      sincronizar_licencas_vencidas: { Args: never; Returns: number }
+      sincronizar_licencas_vencidas: {
+        Args: { _origem?: string }
+        Returns: number
+      }
     }
     Enums: {
       app_role: "admin" | "analista" | "viewer"
