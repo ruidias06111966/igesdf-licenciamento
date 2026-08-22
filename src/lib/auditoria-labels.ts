@@ -27,6 +27,9 @@ export const CAMPO_LABEL: Record<string, string> = {
   prazo: "Prazo",
   ativo: "Ativo",
   ativa: "Ativa",
+  horario_rotina: "Horário da correção automática",
+  expressao_cron: "Agendamento (UTC)",
+  origem: "Origem",
 };
 
 export const ENTIDADE_LABEL: Record<string, string> = {
@@ -40,6 +43,7 @@ export const ENTIDADE_LABEL: Record<string, string> = {
   despachos: "Despachos",
   consolidado: "Consolidado da rede",
   orgaos: "Órgãos",
+  rotina: "Rotina automática",
 };
 
 export const ACAO_LABEL: Record<string, string> = {
@@ -49,12 +53,15 @@ export const ACAO_LABEL: Record<string, string> = {
   gerar: "Emissão",
   importar: "Importação",
   restaurar: "Reposição de versão",
+  sincronizar: "Correção automática de vencidas",
 };
 
 export const PERFIL_LABEL: Record<string, string> = {
   master: "Master",
   edicao: "Edição",
   leitura: "Consulta",
+  sistema: "Rotina automática",
+  sistema_manual: "Execução manual da rotina",
 };
 
 const DATAS = new Set(["data_emissao", "data_vencimento", "data_protocolo", "prazo", "validade"]);
