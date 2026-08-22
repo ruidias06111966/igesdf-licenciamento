@@ -1,6 +1,7 @@
 import { Link, Outlet } from "@tanstack/react-router";
 import {
   BookText,
+  Clock,
   History,
   Upload,
   Building2,
@@ -40,6 +41,7 @@ const NAV: ItemNav[] = [
   { to: "/normativas", label: "Normativas", icon: BookText },
   { to: "/importar", label: "Importar CSV", icon: Upload },
   { to: "/auditoria", label: "Auditoria", icon: History },
+  { to: "/rotina", label: "Correção automática", icon: Clock },
   { to: "/exportacao", label: "Cores das exportações", icon: Palette },
 ];
 
