@@ -232,8 +232,8 @@ function RelatorioMensal() {
               <SelectContent>
                 <SelectItem value="todos">Todos os órgãos</SelectItem>
                 {ORGAOS.map((o) => (
-                  <SelectItem key={o} value={o}>
-                    {orgaoLabel(o)}
+                  <SelectItem key={o.value} value={o.value}>
+                    {o.label}
                   </SelectItem>
                 ))}
               </SelectContent>
