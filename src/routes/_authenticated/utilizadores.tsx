@@ -4,6 +4,7 @@ import { ShieldCheck, UserCheck, UserX } from "lucide-react";
 import { toast } from "sonner";
 import { definirPerfilUtilizador, listarUtilizadores } from "@/lib/acesso.functions";
 import { mensagemErro } from "@/lib/errors";
+import { usePerfil } from "@/lib/perfil";
 import { PageHeader } from "@/components/page-header";
 import { SubNav } from "@/components/sub-nav";
 import { Badge } from "@/components/ui/badge";
