@@ -21,13 +21,13 @@ export const Route = createFileRoute("/_authenticated/utilizadores")({
   component: Pagina,
   head: () => ({
     meta: [
-      { title: "Utilizadores · IGESDF Licenciamento" },
+      { title: "Acesso · IGESDF Licenciamento" },
       {
         name: "description",
         content:
           "Autorização de contas do sistema de licenciamento do IGESDF: perfis de consulta, edição e master, com suspensão de acesso.",
       },
-      { property: "og:title", content: "Utilizadores · IGESDF Licenciamento" },
+      { property: "og:title", content: "Acesso · IGESDF Licenciamento" },
       {
         property: "og:description",
         content: "Quem entra no sistema e com que perfil — autorizado pelo master.",
@@ -128,12 +128,12 @@ function Pagina() {
   return (
     <div className="space-y-5 p-4 sm:p-6 lg:p-8">
       <PageHeader
-        titulo="Utilizadores"
+        titulo="Acesso"
         descricao="Contas cadastradas e o que cada uma pode fazer. Só o master autoriza."
         migalhas={[
           { label: "Início", to: "/dashboard" },
           { label: "Configurações", to: "/configuracoes" },
-          { label: "Utilizadores" },
+          { label: "Acesso" },
         ]}
       />
       <SubNav grupo="configuracoes" />
