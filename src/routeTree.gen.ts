@@ -28,6 +28,7 @@ import { Route as AuthenticatedExportacaoRouteImport } from './routes/_authentic
 import { Route as AuthenticatedDespachosRouteImport } from './routes/_authenticated/despachos'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedConsolidadoRouteImport } from './routes/_authenticated/consolidado'
+import { Route as AuthenticatedConfiguracoesRouteImport } from './routes/_authenticated/configuracoes'
 import { Route as AuthenticatedCnpjRouteImport } from './routes/_authenticated/cnpj'
 import { Route as AuthenticatedCalendarioRouteImport } from './routes/_authenticated/calendario'
 import { Route as AuthenticatedAuditoriaRouteImport } from './routes/_authenticated/auditoria'
@@ -139,6 +140,12 @@ const AuthenticatedConsolidadoRoute =
     path: '/consolidado',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AuthenticatedConfiguracoesRoute =
+  AuthenticatedConfiguracoesRouteImport.update({
+    id: '/configuracoes',
+    path: '/configuracoes',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedCnpjRoute = AuthenticatedCnpjRouteImport.update({
   id: '/cnpj',
   path: '/cnpj',
@@ -229,6 +236,7 @@ export interface FileRoutesByFullPath {
   '/auditoria': typeof AuthenticatedAuditoriaRoute
   '/calendario': typeof AuthenticatedCalendarioRoute
   '/cnpj': typeof AuthenticatedCnpjRoute
+  '/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/consolidado': typeof AuthenticatedConsolidadoRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/despachos': typeof AuthenticatedDespachosRoute
@@ -263,6 +271,7 @@ export interface FileRoutesByTo {
   '/auditoria': typeof AuthenticatedAuditoriaRoute
   '/calendario': typeof AuthenticatedCalendarioRoute
   '/cnpj': typeof AuthenticatedCnpjRoute
+  '/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/consolidado': typeof AuthenticatedConsolidadoRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/despachos': typeof AuthenticatedDespachosRoute
@@ -299,6 +308,7 @@ export interface FileRoutesById {
   '/_authenticated/auditoria': typeof AuthenticatedAuditoriaRoute
   '/_authenticated/calendario': typeof AuthenticatedCalendarioRoute
   '/_authenticated/cnpj': typeof AuthenticatedCnpjRoute
+  '/_authenticated/configuracoes': typeof AuthenticatedConfiguracoesRoute
   '/_authenticated/consolidado': typeof AuthenticatedConsolidadoRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/despachos': typeof AuthenticatedDespachosRoute
@@ -335,6 +345,7 @@ export interface FileRouteTypes {
     | '/auditoria'
     | '/calendario'
     | '/cnpj'
+    | '/configuracoes'
     | '/consolidado'
     | '/dashboard'
     | '/despachos'
@@ -369,6 +380,7 @@ export interface FileRouteTypes {
     | '/auditoria'
     | '/calendario'
     | '/cnpj'
+    | '/configuracoes'
     | '/consolidado'
     | '/dashboard'
     | '/despachos'
@@ -404,6 +416,7 @@ export interface FileRouteTypes {
     | '/_authenticated/auditoria'
     | '/_authenticated/calendario'
     | '/_authenticated/cnpj'
+    | '/_authenticated/configuracoes'
     | '/_authenticated/consolidado'
     | '/_authenticated/dashboard'
     | '/_authenticated/despachos'
@@ -579,6 +592,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedConsolidadoRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/configuracoes': {
+      id: '/_authenticated/configuracoes'
+      path: '/configuracoes'
+      fullPath: '/configuracoes'
+      preLoaderRoute: typeof AuthenticatedConfiguracoesRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/cnpj': {
       id: '/_authenticated/cnpj'
       path: '/cnpj'
@@ -684,6 +704,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedAuditoriaRoute: typeof AuthenticatedAuditoriaRoute
   AuthenticatedCalendarioRoute: typeof AuthenticatedCalendarioRoute
   AuthenticatedCnpjRoute: typeof AuthenticatedCnpjRoute
+  AuthenticatedConfiguracoesRoute: typeof AuthenticatedConfiguracoesRoute
   AuthenticatedConsolidadoRoute: typeof AuthenticatedConsolidadoRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedDespachosRoute: typeof AuthenticatedDespachosRoute
@@ -708,6 +729,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedAuditoriaRoute: AuthenticatedAuditoriaRoute,
   AuthenticatedCalendarioRoute: AuthenticatedCalendarioRoute,
   AuthenticatedCnpjRoute: AuthenticatedCnpjRoute,
+  AuthenticatedConfiguracoesRoute: AuthenticatedConfiguracoesRoute,
   AuthenticatedConsolidadoRoute: AuthenticatedConsolidadoRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedDespachosRoute: AuthenticatedDespachosRoute,

@@ -33,6 +33,13 @@ const GRUPOS: Record<string, Vista[]> = {
     { to: "/relatorio-mensal", label: "Mensal por órgão" },
     { to: "/consolidado", label: "Consolidado da rede", master: true },
   ],
+  configuracoes: [
+    { to: "/configuracoes", label: "Geral" },
+    { to: "/rotina", label: "Correção automática" },
+    { to: "/importar", label: "Importar CSV" },
+    { to: "/auditoria", label: "Auditoria" },
+    { to: "/exportacao", label: "Cores das exportações" },
+  ],
 };
 
 export function SubNav({ grupo }: { grupo: keyof typeof GRUPOS }) {
