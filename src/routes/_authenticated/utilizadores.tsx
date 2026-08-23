@@ -4,6 +4,7 @@ import { ShieldCheck, UserCheck, UserX } from "lucide-react";
 import { toast } from "sonner";
 import { definirPerfilUtilizador, listarUtilizadores } from "@/lib/acesso.functions";
 import { mensagemErro } from "@/lib/errors";
+import { usePerfil } from "@/lib/perfil";
 import { PageHeader } from "@/components/page-header";
 import { SubNav } from "@/components/sub-nav";
 import { Badge } from "@/components/ui/badge";
@@ -50,6 +51,7 @@ function dataCurta(valor: string | null) {
 
 function Pagina() {
   const queryClient = useQueryClient();
+  const { data: perfil } = usePerfil();
   const { data: utilizadores, isLoading } = useQuery({
     queryKey: ["utilizadores"],
     queryFn: () => listarUtilizadores(),
@@ -70,6 +72,9 @@ function Pagina() {
   const suspensos = (utilizadores ?? []).filter((u) => u.suspenso);
 
   function Linha({ u }: { u: NonNullable<typeof utilizadores>[number] }) {
+    // A própria conta master não se pode rebaixar nem suspender — ficaria o
+    // sistema sem quem autorize os restantes.
+    const euMesmo = !!perfil?.email && perfil.email === u.email;
     return (
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border p-3">
         <div className="min-w-0">
@@ -81,6 +86,7 @@ function Pagina() {
         </div>
         <div className="flex items-center gap-2">
           <Select
+            disabled={euMesmo}
             value={u.perfil ?? ""}
             onValueChange={(perfil) =>
               guardar.mutate({
@@ -101,7 +107,9 @@ function Pagina() {
               ))}
             </SelectContent>
           </Select>
-          {u.suspenso ? (
+          {euMesmo ? (
+            <span className="text-xs text-muted-foreground">A sua conta (master)</span>
+          ) : u.suspenso ? (
             <Button
               variant="outline"
               size="sm"
