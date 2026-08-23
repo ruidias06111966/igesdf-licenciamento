@@ -85,6 +85,7 @@ function Pagina() {
         </div>
         <div className="flex items-center gap-2">
           <Select
+            disabled={euMesmo}
             value={u.perfil ?? ""}
             onValueChange={(perfil) =>
               guardar.mutate({
