@@ -50,6 +50,7 @@ function dataCurta(valor: string | null) {
 
 function Pagina() {
   const queryClient = useQueryClient();
+  const { data: perfil } = usePerfil();
   const { data: utilizadores, isLoading } = useQuery({
     queryKey: ["utilizadores"],
     queryFn: () => listarUtilizadores(),
