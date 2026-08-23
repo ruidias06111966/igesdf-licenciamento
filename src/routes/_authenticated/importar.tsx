@@ -5,6 +5,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
 import { Download, Upload } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
+import { SubNav } from "@/components/sub-nav";
 import { ErrorState } from "@/components/states";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -153,6 +154,8 @@ function Importar() {
           </Button>
         }
       />
+
+      <SubNav grupo="configuracoes" />
 
       <Card>
         <CardHeader className="pb-3">

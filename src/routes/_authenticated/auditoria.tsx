@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Download, History } from "lucide-react";
 import { PageHeader } from "@/components/page-header";
+import { SubNav } from "@/components/sub-nav";
 import { PrintModeToggle } from "@/components/print-mode-toggle";
 import { ListaHistorico } from "@/components/historico-entidade";
 import { EmptyState, ErrorState } from "@/components/states";
@@ -123,6 +124,8 @@ function Auditoria() {
           </>
         }
       />
+
+      <SubNav grupo="configuracoes" />
 
       <Card className="no-print">
         <CardContent className="grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-4">

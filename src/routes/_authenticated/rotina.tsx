@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Clock, Loader2, Play, Save } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/page-header";
+import { SubNav } from "@/components/sub-nav";
 import { ErrorState } from "@/components/states";
 import { ListaHistorico } from "@/components/historico-entidade";
 import { Button } from "@/components/ui/button";
@@ -122,6 +123,8 @@ function RotinaPage() {
         descricao="Todos os dias o sistema marca como vencida qualquer licença cujo prazo tenha passado. Aqui define quando isso acontece e pode reprocessar em lote."
         migalhas={[{ label: "Início", to: "/dashboard" }, { label: "Correção automática" }]}
       />
+
+      <SubNav grupo="configuracoes" />
 
       {isLoading && <p className="text-sm text-muted-foreground">A carregar configuração…</p>}
       {error && <ErrorState error={error} />}
