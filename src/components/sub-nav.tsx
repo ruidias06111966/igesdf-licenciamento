@@ -39,6 +39,7 @@ const GRUPOS: Record<string, Vista[]> = {
     { to: "/importar", label: "Importar CSV" },
     { to: "/auditoria", label: "Auditoria" },
     { to: "/exportacao", label: "Cores das exportações" },
+    { to: "/utilizadores", label: "Utilizadores", master: true },
   ],
 };
 

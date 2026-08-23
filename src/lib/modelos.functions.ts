@@ -78,14 +78,14 @@ async function arquivarVersao(
   modelo: { id: string; versao: number | null; titulo: string; conteudo: string },
   comentario: string | null,
 ) {
-  const { perfilAtual } = await import("@/lib/acesso.server");
+  const { autorAtual } = await import("@/lib/acesso.server");
   await supabase.from("ia_modelo_versoes").insert({
     modelo_id: modelo.id,
     versao: modelo.versao ?? 1,
     titulo: modelo.titulo,
     conteudo: modelo.conteudo,
     comentario,
-    perfil: perfilAtual(),
+    perfil: await autorAtual(),
   });
 }
 

@@ -1,8 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Clock, History, Palette, Upload } from "lucide-react";
+import { Clock, History, Palette, Upload, Users } from "lucide-react";
 import type { ComponentType } from "react";
 import { PageHeader } from "@/components/page-header";
 import { SubNav } from "@/components/sub-nav";
+import { useEhMaster } from "@/lib/perfil";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export const Route = createFileRoute("/_authenticated/configuracoes")({
@@ -31,7 +32,15 @@ const ATALHOS: {
   titulo: string;
   descricao: string;
   icon: ComponentType<{ className?: string }>;
+  master?: boolean;
 }[] = [
+  {
+    to: "/utilizadores",
+    titulo: "Utilizadores",
+    descricao: "Autorize quem entra no sistema e defina o perfil: consulta, edição ou master.",
+    icon: Users,
+    master: true,
+  },
   {
     to: "/rotina",
     titulo: "Correção automática",
@@ -59,6 +68,7 @@ const ATALHOS: {
 ];
 
 function Pagina() {
+  const ehMaster = useEhMaster();
   return (
     <div className="space-y-5 p-4 sm:p-6 lg:p-8">
       <PageHeader
@@ -69,7 +79,7 @@ function Pagina() {
       <SubNav grupo="configuracoes" />
 
       <div className="grid gap-4 sm:grid-cols-2">
-        {ATALHOS.map(({ to, titulo, descricao, icon: Icone }) => (
+        {ATALHOS.filter((a) => !a.master || ehMaster).map(({ to, titulo, descricao, icon: Icone }) => (
           <Link key={to} to={to} className="block">
             <Card className="h-full transition-colors hover:border-primary/40 hover:bg-muted/40">
               <CardHeader className="pb-2">

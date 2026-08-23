@@ -191,9 +191,17 @@ function PaginaIA() {
     setOcupado(true);
 
     try {
+      // O endpoint valida o perfil master a partir do token da conta.
+      const { supabase } = await import("@/integrations/supabase/client");
+      const { data: sessao } = await supabase.auth.getSession();
       const res = await fetch("/api/ia", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers: {
+          "Content-Type": "application/json",
+          ...(sessao.session?.access_token
+            ? { Authorization: `Bearer ${sessao.session.access_token}` }
+            : {}),
+        },
         body: JSON.stringify({
           mensagens: historico,
           modelo,

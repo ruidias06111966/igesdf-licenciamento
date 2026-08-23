@@ -2,12 +2,12 @@ import { useQuery } from "@tanstack/react-query";
 import { verificarAcesso } from "@/lib/acesso.functions";
 
 /**
- * Perfil da sessão, lido do servidor (o cookie é HttpOnly).
+ * Perfil da sessão, lido do servidor a partir do token da conta.
  *
- * Serve apenas para esconder os controlos de escrita a quem entrou com a senha
- * de consulta — a barreira real está nas funções de servidor (`requireEdicao`).
+ * Serve para esconder os controlos de escrita a quem só tem consulta — a
+ * barreira real está nas funções de servidor (`requireEdicao`/`requireMaster`).
  */
-function usePerfil() {
+export function usePerfil() {
   return useQuery({
     queryKey: ["perfil-acesso"],
     queryFn: () => verificarAcesso(),
@@ -25,7 +25,7 @@ export function useSomenteConsulta(): boolean {
   return !usePodeEditar();
 }
 
-/** Só o perfil master vê e usa o assistente de IA. */
+/** Só o perfil master vê a IA, os despachos e a gestão de utilizadores. */
 export function useEhMaster(): boolean {
   const { data } = usePerfil();
   return data?.perfil === "master";

@@ -1,14 +1,17 @@
 import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
 import { useQueryClient } from "@tanstack/react-query";
-import { sair, verificarAcesso } from "@/lib/acesso.functions";
+import { supabase } from "@/integrations/supabase/client";
+import { verificarAcesso } from "@/lib/acesso.functions";
 import { AppShell } from "@/components/app-shell";
 
 export const Route = createFileRoute("/_authenticated")({
-  // O cookie de acesso é HttpOnly, logo só o servidor o consegue ler. O guarda
-  // pergunta ao servidor em vez de inspecionar o navegador.
+  // A sessão vive no navegador (localStorage), por isso o guarda só corre no
+  // cliente; o perfil em si é sempre confirmado no servidor.
+  ssr: false,
   beforeLoad: async () => {
-    const { autorizado } = await verificarAcesso();
-    if (!autorizado) throw redirect({ to: "/auth" });
+    const estado = await verificarAcesso();
+    if (!estado.sessao) throw redirect({ to: "/auth" });
+    if (!estado.autorizado) throw redirect({ to: "/pendente" });
   },
   component: AuthedLayout,
 });
@@ -18,12 +21,13 @@ function AuthedLayout() {
   const queryClient = useQueryClient();
 
   async function logout() {
-    await sair();
     // Sem isto os dados ficariam no cache e apareceriam brevemente para a
     // próxima pessoa a usar o mesmo navegador.
+    await queryClient.cancelQueries();
     queryClient.clear();
+    await supabase.auth.signOut();
     await router.invalidate();
-    await router.navigate({ to: "/auth" });
+    await router.navigate({ to: "/auth", replace: true });
   }
 
   return <AppShell onLogout={logout} />;

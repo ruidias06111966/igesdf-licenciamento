@@ -51,12 +51,12 @@ export async function registarAuditoria(
   registo: Registo,
 ): Promise<void> {
   try {
-    const { perfilAtual } = await import("@/lib/acesso.server");
+    const { autorAtual } = await import("@/lib/acesso.server");
     await supabase.from("atividade_log").insert({
       entidade: registo.entidade,
       entidade_id: registo.entidade_id ?? null,
       acao: registo.acao,
-      perfil: perfilAtual(),
+      perfil: await autorAtual(),
       alteracoes: (registo.alteracoes ?? []) as unknown as Database["public"]["Tables"]["atividade_log"]["Insert"]["alteracoes"],
       detalhes: (registo.detalhes ?? null) as unknown as Database["public"]["Tables"]["atividade_log"]["Insert"]["detalhes"],
     });

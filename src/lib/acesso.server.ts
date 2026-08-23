@@ -1,238 +1,164 @@
-import { createHmac, timingSafeEqual, randomUUID } from "node:crypto";
-import { getCookie, setCookie, deleteCookie, getRequest } from "@tanstack/react-start/server";
+import { getRequest } from "@tanstack/react-start/server";
 
 /**
- * Acesso por senha única partilhada, sem cadastro nem contas individuais.
+ * Acesso por conta individual.
  *
- * Como funciona: a senha é comparada no servidor com `ACESSO_SENHA` e, se
- * confere, é emitido um cookie assinado (HttpOnly) com prazo de validade. Toda
- * a leitura e escrita de dados exige esse cookie.
+ * Cada pessoa cria a sua conta (e-mail + senha), confirma o e-mail e fica
+ * pendente até o utilizador master lhe atribuir um perfil. A identidade vem do
+ * token da sessão (validado aqui no servidor); o perfil vem da tabela
+ * `perfis_acesso`.
  *
- * Por que a senha tem de ser verificada no servidor e o acesso aos dados passar
- * pela service role: a chave publicável do Supabase viaja no pacote enviado ao
- * navegador. Se as tabelas aceitassem o papel `anon`, qualquer pessoa poderia
- * falar diretamente com a API REST do Supabase e ignorar a senha por completo —
- * a barreira não protegeria nada. Mantendo as políticas RLS fechadas ao `anon`
- * e servindo os dados apenas através das funções de servidor, a senha passa a
- * ser a única porta de entrada.
- *
- * A chave do HMAC é a própria senha: trocar `ACESSO_SENHA` invalida
- * imediatamente todas as sessões já abertas.
+ * O acesso aos dados continua a ser feito com a service role dentro das funções
+ * de servidor: as políticas RLS estão fechadas ao papel `anon`/`authenticated`,
+ * portanto a chave publicável que viaja no navegador não lê nem escreve nada
+ * diretamente na API REST — tudo passa por aqui, onde o perfil é conferido.
  */
 
-const COOKIE = "igesdf_acesso";
-const VALIDADE_DIAS = 30;
-
-/**
- * Perfis de acesso: quem pode alterar dados, quem só consulta/imprime e o
- * perfil master (edição + assistente de IA).
- */
 export type Perfil = "edicao" | "leitura" | "master";
 
-function senhaConfigurada(): string {
-  const senha = process.env.ACESSO_SENHA;
-  if (!senha || senha.trim().length < 4) {
-    throw new Error(
-      "ACESSO_SENHA não está configurada no ambiente. Defina uma senha de acesso " +
-        "com pelo menos 4 caracteres nas variáveis de ambiente do projeto.",
-    );
-  }
-  return senha;
+export type Sessao = {
+  userId: string;
+  email: string;
+  nome: string | null;
+  /** `null` significa conta confirmada mas ainda sem autorização do master. */
+  perfil: Perfil | null;
+  suspenso: boolean;
+};
+
+/** Conta que é sempre master — a do responsável pelo sistema. */
+function emailMaster(): string {
+  return (process.env.ACESSO_MASTER_EMAIL || "qidominio@gmail.com").toLowerCase().trim();
 }
 
-/**
- * Senha de consulta (opcional). Quando não está definida, existe apenas o
- * perfil de edição — o sistema continua a funcionar como antes.
- */
-function senhaLeitura(): string | null {
-  const senha = process.env.ACESSO_SENHA_LEITURA;
-  if (!senha || senha.trim().length < 4) return null;
-  return senha;
-}
-
-/** Senha do utilizador master (opcional). Dá acesso ao assistente de IA. */
-function senhaMaster(): string | null {
-  const senha = process.env.ACESSO_SENHA_MASTER;
-  if (!senha || senha.trim().length < 4) return null;
-  return senha;
-}
-
-function assinar(payload: string, senha: string): string {
-  return createHmac("sha256", senha).update(payload).digest("hex");
-}
-
-function iguais(a: string, b: string): boolean {
-  const ba = Buffer.from(a);
-  const bb = Buffer.from(b);
-  // timingSafeEqual exige o mesmo comprimento; comparar tamanhos primeiro não
-  // vaza informação útil sobre o conteúdo.
-  if (ba.length !== bb.length) return false;
-  return timingSafeEqual(ba, bb);
-}
-
-/**
- * O sistema é aberto dentro de um iframe (pré-visualização do editor e alguns
- * portais internos). Nesse contexto o pedido é "cross-site" para o navegador,
- * e um cookie `SameSite=Lax` simplesmente não é reenviado — a senha era aceite
- * mas o guarda de rota continuava a ver a sessão como fechada, devolvendo o
- * utilizador ao ecrã de acesso. Em HTTPS usamos `SameSite=None; Secure`, que é
- * a única combinação que o navegador aceita em iframe; em HTTP local mantemos
- * `Lax`, porque `None` sem `Secure` é rejeitado.
- */
-function ligacaoSegura(): boolean {
+function tokenDoPedido(): string | null {
   try {
     const req = getRequest();
-    if (req?.headers.get("x-forwarded-proto")?.split(",")[0]?.trim() === "https") return true;
-    if (req?.url?.startsWith("https://")) return true;
+    const header = req?.headers.get("authorization") ?? "";
+    if (!header.startsWith("Bearer ")) return null;
+    const token = header.slice(7).trim();
+    return token && token.split(".").length === 3 ? token : null;
   } catch {
-    /* fora de um pedido */
-  }
-  return false;
-}
-
-/** Emite o cookie de acesso após uma senha correta, gravando o perfil. */
-export function abrirSessao(perfil: Perfil = "edicao"): void {
-  const senha = senhaConfigurada();
-  const expiraEm = Date.now() + VALIDADE_DIAS * 86_400_000;
-  // O identificador aleatório só serve para os cookies não serem todos iguais.
-  const payload = `${expiraEm}.${randomUUID()}.${perfil}`;
-  const valor = `${payload}.${assinar(payload, senha)}`;
-  const seguro = ligacaoSegura();
-  setCookie(COOKIE, valor, {
-    httpOnly: true,
-    sameSite: seguro ? "none" : "lax",
-    secure: seguro,
-    path: "/",
-    maxAge: VALIDADE_DIAS * 86_400,
-  });
-}
-
-export function fecharSessao(): void {
-  const seguro = ligacaoSegura();
-  deleteCookie(COOKIE, { path: "/", sameSite: seguro ? "none" : "lax", secure: seguro });
-}
-
-/**
- * Limite de tentativas por origem.
- *
- * Uma senha curta e numérica cai rapidamente a força bruta se o servidor
- * aceitar pedidos sem limite — só o atraso por tentativa não basta, porque nada
- * impede milhares de pedidos em paralelo. Aqui a origem é bloqueada por 15
- * minutos após 8 tentativas erradas.
- *
- * O estado é em memória: num ambiente com várias instâncias o limite aplica-se
- * por instância, não globalmente. Continua a elevar muito o custo do ataque,
- * mas não substitui uma senha longa.
- */
-const TENTATIVAS_MAX = 8;
-const JANELA_MS = 15 * 60_000;
-const tentativas = new Map<string, { contagem: number; expira: number }>();
-
-function origem(): string {
-  const req = getRequest();
-  return (
-    req?.headers.get("cf-connecting-ip") ??
-    req?.headers.get("x-real-ip") ??
-    req?.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
-    "desconhecida"
-  );
-}
-
-/** Erro atirado quando a origem excedeu o limite de tentativas. */
-export class TentativasExcedidas extends Error {
-  constructor(public readonly minutos: number) {
-    super(`Muitas tentativas de acesso. Aguarde ${minutos} minuto(s) antes de tentar novamente.`);
-    this.name = "TentativasExcedidas";
-  }
-}
-
-function verificarLimite(): void {
-  const chave = origem();
-  const registo = tentativas.get(chave);
-  if (registo && registo.expira > Date.now() && registo.contagem >= TENTATIVAS_MAX) {
-    throw new TentativasExcedidas(Math.ceil((registo.expira - Date.now()) / 60_000));
-  }
-}
-
-function registarFalha(): void {
-  const chave = origem();
-  const agora = Date.now();
-  const registo = tentativas.get(chave);
-  if (!registo || registo.expira <= agora) {
-    tentativas.set(chave, { contagem: 1, expira: agora + JANELA_MS });
-  } else {
-    registo.contagem += 1;
-  }
-  // Limpeza oportunista para o mapa não crescer indefinidamente.
-  if (tentativas.size > 5_000) {
-    for (const [k, v] of tentativas) if (v.expira <= agora) tentativas.delete(k);
-  }
-}
-
-/**
- * Confere a senha recebida, em tempo constante, aplicando o limite de
- * tentativas. Devolve o perfil correspondente ou `null` se não confere.
- * As duas comparações correm sempre, para não distinguir os casos pelo tempo.
- */
-export function perfilDaSenha(tentativa: string): Perfil | null {
-  verificarLimite();
-  const edicao = iguais(tentativa, senhaConfigurada());
-  const leitura = (() => {
-    const s = senhaLeitura();
-    return s ? iguais(tentativa, s) : false;
-  })();
-  const master = (() => {
-    const s = senhaMaster();
-    return s ? iguais(tentativa, s) : false;
-  })();
-  const perfil: Perfil | null = master ? "master" : edicao ? "edicao" : leitura ? "leitura" : null;
-  if (perfil) tentativas.delete(origem());
-  else registarFalha();
-  return perfil;
-}
-
-/**
- * Perfil da sessão atual, ou `null` quando não há cookie válido.
- *
- * Cookies antigos (sem o segmento de perfil) continuam válidos e são tratados
- * como perfil de edição, para não expulsar quem já estava dentro.
- */
-export function perfilAtual(): Perfil | null {
-  const bruto = getCookie(COOKIE);
-  if (!bruto) return null;
-  const partes = bruto.split(".");
-  if (partes.length !== 3 && partes.length !== 4) return null;
-  const assinatura = partes[partes.length - 1]!;
-  const payload = partes.slice(0, -1).join(".");
-  const gravado = partes.length === 4 ? partes[2] : "edicao";
-  const perfil: Perfil =
-    gravado === "leitura" ? "leitura" : gravado === "master" ? "master" : "edicao";
-
-  let senha: string;
-  try {
-    senha = senhaConfigurada();
-  } catch {
-    // Sem senha configurada não há sessão válida possível.
     return null;
   }
-
-  if (!iguais(assinatura, assinar(payload, senha))) return null;
-  const prazo = Number(partes[0]);
-  return Number.isFinite(prazo) && prazo > Date.now() ? perfil : null;
 }
 
-/** Verdadeiro quando o pedido traz um cookie de acesso válido e não expirado. */
-export function temAcesso(): boolean {
-  return perfilAtual() !== null;
+/** Valida o token da sessão e devolve a identidade, ou `null`. */
+async function identidade(): Promise<{ userId: string; email: string; nome: string | null } | null> {
+  const token = tokenDoPedido();
+  if (!token) return null;
+
+  const url = process.env.SUPABASE_URL;
+  const key = process.env.SUPABASE_PUBLISHABLE_KEY;
+  if (!url || !key) return null;
+
+  const resposta = await fetch(`${url}/auth/v1/user`, {
+    headers: { apikey: key, Authorization: `Bearer ${token}` },
+  });
+  if (!resposta.ok) return null;
+  const user = (await resposta.json()) as {
+    id?: string;
+    email?: string;
+    email_confirmed_at?: string | null;
+    user_metadata?: { nome?: string; full_name?: string };
+  };
+  if (!user.id || !user.email) return null;
+  // Sem e-mail confirmado não há entrada: a confirmação é o que prova que o
+  // endereço pertence mesmo a quem se cadastrou.
+  if (!user.email_confirmed_at) return null;
+  return {
+    userId: user.id,
+    email: user.email.toLowerCase(),
+    nome: user.user_metadata?.nome ?? user.user_metadata?.full_name ?? null,
+  };
 }
 
-/** Verdadeiro quando a sessão pode criar, alterar e excluir dados. */
-export function podeEditar(): boolean {
-  const p = perfilAtual();
+/**
+ * Sessão atual: identidade validada + perfil atribuído.
+ *
+ * Na primeira entrada de cada conta é criado o respetivo registo em
+ * `perfis_acesso` (pendente), para o master a poder autorizar. A conta do
+ * responsável é promovida a master automaticamente.
+ */
+export async function sessaoAtual(): Promise<Sessao | null> {
+  const eu = await identidade();
+  if (!eu) return null;
+
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data } = await supabaseAdmin
+    .from("perfis_acesso")
+    .select("user_id, email, nome, perfil, suspenso")
+    .eq("user_id", eu.userId)
+    .maybeSingle();
+
+  const ehResponsavel = eu.email === emailMaster();
+
+  if (!data) {
+    const perfilInicial: Perfil | null = ehResponsavel ? "master" : null;
+    await supabaseAdmin.from("perfis_acesso").insert({
+      user_id: eu.userId,
+      email: eu.email,
+      nome: eu.nome,
+      perfil: perfilInicial,
+      autorizado_em: perfilInicial ? new Date().toISOString() : null,
+      ultimo_acesso: new Date().toISOString(),
+    });
+    return {
+      userId: eu.userId,
+      email: eu.email,
+      nome: eu.nome,
+      perfil: perfilInicial,
+      suspenso: false,
+    };
+  }
+
+  // A conta do responsável nunca pode ficar sem acesso ao próprio sistema.
+  if (ehResponsavel && (data.perfil !== "master" || data.suspenso)) {
+    await supabaseAdmin
+      .from("perfis_acesso")
+      .update({ perfil: "master", suspenso: false })
+      .eq("user_id", eu.userId);
+    data.perfil = "master";
+    data.suspenso = false;
+  }
+
+  await supabaseAdmin
+    .from("perfis_acesso")
+    .update({ ultimo_acesso: new Date().toISOString(), email: eu.email })
+    .eq("user_id", eu.userId);
+
+  return {
+    userId: eu.userId,
+    email: eu.email,
+    nome: data.nome ?? eu.nome,
+    perfil: data.suspenso ? null : ((data.perfil as Perfil | null) ?? null),
+    suspenso: data.suspenso,
+  };
+}
+
+/** Perfil da sessão, ou `null` quando não há sessão autorizada. */
+export async function perfilAtual(): Promise<Perfil | null> {
+  return (await sessaoAtual())?.perfil ?? null;
+}
+
+/**
+ * Rótulo de quem fez a ação, para a trilha de auditoria: o e-mail da conta,
+ * com o perfil entre parêntesis.
+ */
+export async function autorAtual(): Promise<string | null> {
+  const s = await sessaoAtual();
+  if (!s) return null;
+  return s.perfil ? `${s.email} (${s.perfil})` : s.email;
+}
+
+export async function temAcesso(): Promise<boolean> {
+  return (await perfilAtual()) !== null;
+}
+
+export async function podeEditar(): Promise<boolean> {
+  const p = await perfilAtual();
   return p === "edicao" || p === "master";
 }
 
-/** Verdadeiro apenas para o utilizador master (assistente de IA). */
-export function ehMaster(): boolean {
-  return perfilAtual() === "master";
+export async function ehMaster(): Promise<boolean> {
+  return (await perfilAtual()) === "master";
 }

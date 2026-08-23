@@ -1,8 +1,7 @@
 import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
-import { Eye, EyeOff, ShieldCheck, TriangleAlert } from "lucide-react";
-import { acessoConfigurado, entrar } from "@/lib/acesso.functions";
+import { Eye, EyeOff, MailCheck, ShieldCheck } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 import { mensagemErro } from "@/lib/errors";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,37 +30,73 @@ export const Route = createFileRoute("/auth")({
   }),
 });
 
+type Modo = "entrar" | "criar" | "recuperar";
+
 function AuthPage() {
   const navegar = useNavigate();
   const router = useRouter();
+  const [modo, setModo] = useState<Modo>("entrar");
+  const [nome, setNome] = useState("");
+  const [email, setEmail] = useState("");
   const [senha, setSenha] = useState("");
   const [verSenha, setVerSenha] = useState(false);
   const [ocupado, setOcupado] = useState(false);
   const [erro, setErro] = useState<string | null>(null);
-
-  const { data: config } = useQuery({
-    queryKey: ["acesso-configurado"],
-    queryFn: () => acessoConfigurado(),
-    staleTime: 60_000,
-  });
+  const [aviso, setAviso] = useState<string | null>(null);
 
   async function submeter(e: React.FormEvent) {
     e.preventDefault();
     setOcupado(true);
     setErro(null);
+    setAviso(null);
     try {
-      const res = await entrar({ data: { senha } });
-      if (!res.ok) {
+      if (modo === "criar") {
+        if (senha.length < 8) {
+          setErro("A senha tem de ter pelo menos 8 caracteres.");
+          return;
+        }
+        const { error } = await supabase.auth.signUp({
+          email: email.trim(),
+          password: senha,
+          options: {
+            data: { nome: nome.trim() },
+            emailRedirectTo: `${window.location.origin}/auth`,
+          },
+        });
+        if (error) throw error;
+        setAviso(
+          "Conta criada. Enviámos um e-mail de confirmação para " +
+            email.trim() +
+            ". Confirme o endereço e depois entre — o acesso ainda terá de ser autorizado pelo utilizador master.",
+        );
+        setSenha("");
+        setModo("entrar");
+        return;
+      }
+
+      if (modo === "recuperar") {
+        const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+          redirectTo: `${window.location.origin}/auth`,
+        });
+        if (error) throw error;
+        setAviso("Se este e-mail estiver registado, receberá um link para definir nova senha.");
+        setModo("entrar");
+        return;
+      }
+
+      const { error } = await supabase.auth.signInWithPassword({
+        email: email.trim(),
+        password: senha,
+      });
+      if (error) {
         setErro(
-          res.motivo === "limite"
-            ? (res.mensagem ?? "Muitas tentativas. Aguarde alguns minutos.")
-            : "Senha incorreta.",
+          error.message.toLowerCase().includes("not confirmed")
+            ? "Confirme primeiro o e-mail que lhe enviámos."
+            : "E-mail ou senha incorretos.",
         );
         setSenha("");
         return;
       }
-      // O guarda de rota lê o cookie no servidor, por isso é preciso invalidar
-      // o que o router já tem em cache antes de navegar.
       await router.invalidate();
       await navegar({ to: "/dashboard" });
     } catch (falha) {
@@ -103,36 +138,66 @@ function AuthPage() {
               <ShieldCheck className="size-6 text-primary" aria-hidden="true" />
               <span className="font-semibold">IGESDF - Licenciamento</span>
             </div>
-            <CardTitle>Senha de acesso</CardTitle>
+            <CardTitle>
+              {modo === "criar"
+                ? "Criar conta"
+                : modo === "recuperar"
+                  ? "Recuperar senha"
+                  : "Entrar"}
+            </CardTitle>
             <CardDescription>
-              Há duas senhas: uma de <strong>edição</strong> (cria, altera e exclui) e outra de{" "}
-              <strong>consulta</strong> (apenas ver e imprimir relatórios). Não há cadastro nem
-              contas individuais — o acesso fica guardado neste navegador por 30 dias.
+              {modo === "criar"
+                ? "Cadastre o seu e-mail e escolha uma senha. Receberá um e-mail de confirmação; depois o utilizador master autoriza o seu perfil (consulta, edição ou master)."
+                : modo === "recuperar"
+                  ? "Indique o e-mail da sua conta para receber o link de nova senha."
+                  : "Entre com o e-mail e a senha da sua conta."}
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {config && !config.configurado ? (
-              <div className="flex items-start gap-2 rounded-md border border-warning/50 bg-warning/10 p-3 text-sm">
-                <TriangleAlert className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
-                <div>
-                  <p className="font-medium">Senha de acesso não configurada</p>
-                  <p className="mt-1 text-xs">
-                    Defina a variável de ambiente <code className="font-mono">ACESSO_SENHA</code>{" "}
-                    nas configurações do projeto e recarregue esta página.
-                  </p>
+            <form onSubmit={submeter} className="space-y-4">
+              {aviso && (
+                <div className="flex items-start gap-2 rounded-md border border-primary/40 bg-primary/5 p-3 text-sm">
+                  <MailCheck className="mt-0.5 size-4 shrink-0" aria-hidden="true" />
+                  <p>{aviso}</p>
                 </div>
+              )}
+
+              {modo === "criar" && (
+                <div className="space-y-1.5">
+                  <Label htmlFor="nome">Nome</Label>
+                  <Input
+                    id="nome"
+                    autoComplete="name"
+                    required
+                    value={nome}
+                    onChange={(e) => setNome(e.target.value)}
+                  />
+                </div>
+              )}
+
+              <div className="space-y-1.5">
+                <Label htmlFor="email">E-mail</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  autoComplete="email"
+                  autoFocus
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                />
               </div>
-            ) : (
-              <form onSubmit={submeter} className="space-y-4">
+
+              {modo !== "recuperar" && (
                 <div className="space-y-1.5">
                   <Label htmlFor="senha">Senha</Label>
                   <div className="relative">
                     <Input
                       id="senha"
                       type={verSenha ? "text" : "password"}
-                      autoComplete="current-password"
-                      autoFocus
+                      autoComplete={modo === "criar" ? "new-password" : "current-password"}
                       required
+                      minLength={modo === "criar" ? 8 : undefined}
                       className="pr-10"
                       value={senha}
                       onChange={(e) => setSenha(e.target.value)}
@@ -154,17 +219,63 @@ function AuthPage() {
                       )}
                     </Button>
                   </div>
-                  {erro && (
-                    <p id="senha-erro" role="alert" className="text-xs text-destructive">
-                      {erro}
-                    </p>
-                  )}
                 </div>
-                <Button type="submit" className="w-full" disabled={ocupado || senha.length === 0}>
-                  {ocupado ? "Entrando…" : "Entrar"}
-                </Button>
-              </form>
-            )}
+              )}
+
+              {erro && (
+                <p id="senha-erro" role="alert" className="text-xs text-destructive">
+                  {erro}
+                </p>
+              )}
+
+              <Button type="submit" className="w-full" disabled={ocupado}>
+                {ocupado
+                  ? "A processar…"
+                  : modo === "criar"
+                    ? "Criar conta"
+                    : modo === "recuperar"
+                      ? "Enviar link"
+                      : "Entrar"}
+              </Button>
+
+              <div className="flex flex-wrap justify-between gap-2 text-xs">
+                {modo === "entrar" ? (
+                  <>
+                    <button
+                      type="button"
+                      className="text-primary underline-offset-2 hover:underline"
+                      onClick={() => {
+                        setModo("criar");
+                        setErro(null);
+                      }}
+                    >
+                      Criar conta
+                    </button>
+                    <button
+                      type="button"
+                      className="text-muted-foreground underline-offset-2 hover:underline"
+                      onClick={() => {
+                        setModo("recuperar");
+                        setErro(null);
+                      }}
+                    >
+                      Esqueci a senha
+                    </button>
+                  </>
+                ) : (
+                  <button
+                    type="button"
+                    className="text-primary underline-offset-2 hover:underline"
+                    onClick={() => {
+                      setModo("entrar");
+                      setErro(null);
+                    }}
+                  >
+                    Já tenho conta — entrar
+                  </button>
+                )}
+              </div>
+            </form>
           </CardContent>
         </Card>
       </div>
