@@ -15,15 +15,19 @@ type Detalhes = {
 type Resposta = { data: Detalhes | null; error: { message: string } | null };
 
 // O namespace supabase.auth.oauth ainda é beta e pode não estar tipado.
-const oauth = (
-  supabase.auth as unknown as {
-    oauth: {
-      getAuthorizationDetails: (id: string) => Promise<Resposta>;
-      approveAuthorization: (id: string) => Promise<Resposta>;
-      denyAuthorization: (id: string) => Promise<Resposta>;
-    };
-  }
-).oauth;
+// Tem de ser lido dentro das funções: o code-splitting das rotas remove as
+// constantes de módulo do pedaço que contém o componente.
+function oauthApi() {
+  return (
+    supabase.auth as unknown as {
+      oauth: {
+        getAuthorizationDetails: (id: string) => Promise<Resposta>;
+        approveAuthorization: (id: string) => Promise<Resposta>;
+        denyAuthorization: (id: string) => Promise<Resposta>;
+      };
+    }
+  ).oauth;
+}
 
 export const Route = createFileRoute("/.lovable/oauth/consent")({
   ssr: false,
