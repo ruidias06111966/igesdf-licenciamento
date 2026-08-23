@@ -39,7 +39,7 @@ export const Route = createFileRoute("/.lovable/oauth/consent")({
     if (!id) throw new Error("Pedido de autorização inválido (falta authorization_id).");
     const { data: sessao } = await supabase.auth.getSession();
     if (!sessao.session) return { autenticado: false as const, detalhes: null };
-    const { data, error } = await oauth.getAuthorizationDetails(id);
+    const { data, error } = await oauthApi().getAuthorizationDetails(id);
     if (error) throw new Error(error.message);
     const imediato = data?.redirect_url ?? data?.redirect_to;
     if (imediato && !data?.client) throw redirect({ href: imediato });
@@ -78,8 +78,8 @@ function Consentimento() {
     setOcupado(true);
     setErro(null);
     const { data, error } = aprovar
-      ? await oauth.approveAuthorization(authorization_id)
-      : await oauth.denyAuthorization(authorization_id);
+      ? await oauthApi().approveAuthorization(authorization_id)
+      : await oauthApi().denyAuthorization(authorization_id);
     if (error) {
       setOcupado(false);
       setErro(error.message);
