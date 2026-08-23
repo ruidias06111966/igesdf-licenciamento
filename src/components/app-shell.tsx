@@ -1,9 +1,6 @@
 import { Link, Outlet } from "@tanstack/react-router";
 import {
   BookText,
-  Clock,
-  History,
-  Upload,
   Building2,
   FileBarChart2,
   FileCheck2,
@@ -13,7 +10,7 @@ import {
   LayoutDashboard,
   LogOut,
   Menu,
-  Palette,
+  Settings,
   ShieldCheck,
   Sparkles,
 } from "lucide-react";

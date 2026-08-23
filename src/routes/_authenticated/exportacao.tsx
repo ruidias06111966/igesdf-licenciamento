@@ -3,6 +3,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { Palette, RotateCcw, Save } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/page-header";
+import { SubNav } from "@/components/sub-nav";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -132,6 +133,8 @@ function Pagina() {
           </>
         }
       />
+
+      <SubNav grupo="configuracoes" />
 
       <Card>
         <CardHeader>
