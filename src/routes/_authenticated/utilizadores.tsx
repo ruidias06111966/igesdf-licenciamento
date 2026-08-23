@@ -106,7 +106,9 @@ function Pagina() {
               ))}
             </SelectContent>
           </Select>
-          {u.suspenso ? (
+          {euMesmo ? (
+            <span className="text-xs text-muted-foreground">A sua conta (master)</span>
+          ) : u.suspenso ? (
             <Button
               variant="outline"
               size="sm"
