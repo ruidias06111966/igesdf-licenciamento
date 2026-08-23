@@ -36,8 +36,9 @@ const ATALHOS: {
 }[] = [
   {
     to: "/utilizadores",
-    titulo: "Utilizadores",
-    descricao: "Autorize quem entra no sistema e defina o perfil: consulta, edição ou master.",
+    titulo: "Acesso",
+    descricao:
+      "Autorize quem se cadastra no sistema e defina o perfil: consulta, edição ou master. Só o master vê este painel.",
     icon: Users,
     master: true,
   },
