@@ -93,6 +93,39 @@ export async function sessaoAtual(): Promise<Sessao | null> {
   const ehResponsavel = eu.email === emailMaster();
 
   if (!data) {
+    // A conta pode ter sido recriada (mesmo e-mail, novo id). Nesse caso há um
+    // registo antigo pelo e-mail — herda-se esse registo, com a autorização já
+    // dada pelo master, em vez de tentar inserir e violar o índice único.
+    const { data: porEmail } = await supabaseAdmin
+      .from("perfis_acesso")
+      .select("user_id, email, nome, perfil, suspenso")
+      .ilike("email", eu.email)
+      .maybeSingle();
+
+    if (porEmail) {
+      const perfil: Perfil | null = ehResponsavel
+        ? "master"
+        : ((porEmail.perfil as Perfil | null) ?? null);
+      const suspenso = ehResponsavel ? false : porEmail.suspenso;
+      await supabaseAdmin
+        .from("perfis_acesso")
+        .update({
+          user_id: eu.userId,
+          nome: porEmail.nome ?? eu.nome,
+          perfil,
+          suspenso,
+          ultimo_acesso: new Date().toISOString(),
+        })
+        .eq("user_id", porEmail.user_id);
+      return {
+        userId: eu.userId,
+        email: eu.email,
+        nome: porEmail.nome ?? eu.nome,
+        perfil: suspenso ? null : perfil,
+        suspenso,
+      };
+    }
+
     const perfilInicial: Perfil | null = ehResponsavel ? "master" : null;
     await supabaseAdmin.from("perfis_acesso").insert({
       user_id: eu.userId,
@@ -110,6 +143,7 @@ export async function sessaoAtual(): Promise<Sessao | null> {
       suspenso: false,
     };
   }
+
 
   // A conta do responsável nunca pode ficar sem acesso ao próprio sistema.
   if (ehResponsavel && (data.perfil !== "master" || data.suspenso)) {
