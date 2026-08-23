@@ -52,8 +52,8 @@ export const Route = createFileRoute("/api/ia")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const { ehMaster, perfilAtual } = await import("@/lib/acesso.server");
-        if (!ehMaster()) {
+        const { ehMaster, autorAtual } = await import("@/lib/acesso.server");
+        if (!(await ehMaster())) {
           return new Response("Acesso restrito ao utilizador master.", { status: 403 });
         }
 
@@ -205,7 +205,7 @@ export const Route = createFileRoute("/api/ia")({
 
         // Converte o SSE da Anthropic em texto simples, que o navegador lê
         // diretamente do corpo da resposta, e regista o consumo no fim.
-        const perfil = perfilAtual() ?? "master";
+        const perfil = (await autorAtual()) ?? "master";
         const decoder = new TextDecoder();
         const encoder = new TextEncoder();
         let resto = "";

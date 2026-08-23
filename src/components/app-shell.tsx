@@ -87,7 +87,7 @@ function Rodape({ onLogout }: { onLogout: () => void }) {
       {!podeEditar && (
         <p className="mb-2 rounded-md bg-sidebar-accent/60 px-3 py-2 text-xs">
           Acesso de <span className="font-medium">consulta e impressão</span>. Alterações e
-          exclusões exigem a senha de edição.
+          exclusões exigem o perfil de edição, atribuído pelo master.
         </p>
       )}
       <Button

@@ -679,6 +679,45 @@ export type Database = {
         }
         Relationships: []
       }
+      perfis_acesso: {
+        Row: {
+          autorizado_em: string | null
+          autorizado_por: string | null
+          created_at: string
+          email: string
+          nome: string | null
+          perfil: string | null
+          suspenso: boolean
+          ultimo_acesso: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          autorizado_em?: string | null
+          autorizado_por?: string | null
+          created_at?: string
+          email: string
+          nome?: string | null
+          perfil?: string | null
+          suspenso?: boolean
+          ultimo_acesso?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          autorizado_em?: string | null
+          autorizado_por?: string | null
+          created_at?: string
+          email?: string
+          nome?: string | null
+          perfil?: string | null
+          suspenso?: boolean
+          ultimo_acesso?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       processo_checklist_templates: {
         Row: {
           created_at: string

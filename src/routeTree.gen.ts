@@ -10,11 +10,13 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SitemapDotxmlRouteImport } from './routes/sitemap[.]xml'
+import { Route as PendenteRouteImport } from './routes/pendente'
 import { Route as McpRouteImport } from './routes/mcp'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiIaRouteImport } from './routes/api/ia'
+import { Route as AuthenticatedUtilizadoresRouteImport } from './routes/_authenticated/utilizadores'
 import { Route as AuthenticatedRotinaRouteImport } from './routes/_authenticated/rotina'
 import { Route as AuthenticatedRelatoriosRouteImport } from './routes/_authenticated/relatorios'
 import { Route as AuthenticatedRelatorioMensalRouteImport } from './routes/_authenticated/relatorio-mensal'
@@ -41,12 +43,19 @@ import { Route as AuthenticatedProcessosIdRouteImport } from './routes/_authenti
 import { Route as Char91DotmcpChar93InvokeToolToolRouteImport } from './routes/[.mcp]/invoke-tool/$tool'
 import { Route as DotlovableOauthConsentRouteImport } from './routes/[.]lovable.oauth.consent'
 import { Route as LovableEmailTransactionalPreviewRouteImport } from './routes/lovable/email/transactional/preview'
+import { Route as LovableEmailAuthWebhookRouteImport } from './routes/lovable/email/auth/webhook'
+import { Route as LovableEmailAuthPreviewRouteImport } from './routes/lovable/email/auth/preview'
 import { Route as ApiPublicHooksEnviarAlertasRouteImport } from './routes/api/public/hooks/enviar-alertas'
 import { Route as AuthenticatedUnidadesIdDossieRouteImport } from './routes/_authenticated/unidades.$id_.dossie'
 
 const SitemapDotxmlRoute = SitemapDotxmlRouteImport.update({
   id: '/sitemap.xml',
   path: '/sitemap.xml',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PendenteRoute = PendenteRouteImport.update({
+  id: '/pendente',
+  path: '/pendente',
   getParentRoute: () => rootRouteImport,
 } as any)
 const McpRoute = McpRouteImport.update({
@@ -73,6 +82,12 @@ const ApiIaRoute = ApiIaRouteImport.update({
   path: '/api/ia',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedUtilizadoresRoute =
+  AuthenticatedUtilizadoresRouteImport.update({
+    id: '/utilizadores',
+    path: '/utilizadores',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedRotinaRoute = AuthenticatedRotinaRouteImport.update({
   id: '/rotina',
   path: '/rotina',
@@ -213,6 +228,16 @@ const LovableEmailTransactionalPreviewRoute =
     path: '/lovable/email/transactional/preview',
     getParentRoute: () => rootRouteImport,
   } as any)
+const LovableEmailAuthWebhookRoute = LovableEmailAuthWebhookRouteImport.update({
+  id: '/lovable/email/auth/webhook',
+  path: '/lovable/email/auth/webhook',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LovableEmailAuthPreviewRoute = LovableEmailAuthPreviewRouteImport.update({
+  id: '/lovable/email/auth/preview',
+  path: '/lovable/email/auth/preview',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicHooksEnviarAlertasRoute =
   ApiPublicHooksEnviarAlertasRouteImport.update({
     id: '/api/public/hooks/enviar-alertas',
@@ -230,6 +255,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/mcp': typeof McpRoute
+  '/pendente': typeof PendenteRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
@@ -250,6 +276,7 @@ export interface FileRoutesByFullPath {
   '/relatorio-mensal': typeof AuthenticatedRelatorioMensalRoute
   '/relatorios': typeof AuthenticatedRelatoriosRoute
   '/rotina': typeof AuthenticatedRotinaRoute
+  '/utilizadores': typeof AuthenticatedUtilizadoresRoute
   '/api/ia': typeof ApiIaRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -259,12 +286,15 @@ export interface FileRoutesByFullPath {
   '/unidades/': typeof AuthenticatedUnidadesIndexRoute
   '/unidades/$id/dossie': typeof AuthenticatedUnidadesIdDossieRoute
   '/api/public/hooks/enviar-alertas': typeof ApiPublicHooksEnviarAlertasRoute
+  '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
+  '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
   '/mcp': typeof McpRoute
+  '/pendente': typeof PendenteRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
@@ -285,6 +315,7 @@ export interface FileRoutesByTo {
   '/relatorio-mensal': typeof AuthenticatedRelatorioMensalRoute
   '/relatorios': typeof AuthenticatedRelatoriosRoute
   '/rotina': typeof AuthenticatedRotinaRoute
+  '/utilizadores': typeof AuthenticatedUtilizadoresRoute
   '/api/ia': typeof ApiIaRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -294,6 +325,8 @@ export interface FileRoutesByTo {
   '/unidades': typeof AuthenticatedUnidadesIndexRoute
   '/unidades/$id/dossie': typeof AuthenticatedUnidadesIdDossieRoute
   '/api/public/hooks/enviar-alertas': typeof ApiPublicHooksEnviarAlertasRoute
+  '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
+  '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
 }
 export interface FileRoutesById {
@@ -302,6 +335,7 @@ export interface FileRoutesById {
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRoute
   '/mcp': typeof McpRoute
+  '/pendente': typeof PendenteRoute
   '/sitemap.xml': typeof SitemapDotxmlRoute
   '/.mcp/list-tools': typeof Char91DotmcpChar93ListToolsRoute
   '/.well-known/oauth-protected-resource': typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
@@ -322,6 +356,7 @@ export interface FileRoutesById {
   '/_authenticated/relatorio-mensal': typeof AuthenticatedRelatorioMensalRoute
   '/_authenticated/relatorios': typeof AuthenticatedRelatoriosRoute
   '/_authenticated/rotina': typeof AuthenticatedRotinaRoute
+  '/_authenticated/utilizadores': typeof AuthenticatedUtilizadoresRoute
   '/api/ia': typeof ApiIaRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -331,6 +366,8 @@ export interface FileRoutesById {
   '/_authenticated/unidades/': typeof AuthenticatedUnidadesIndexRoute
   '/_authenticated/unidades/$id_/dossie': typeof AuthenticatedUnidadesIdDossieRoute
   '/api/public/hooks/enviar-alertas': typeof ApiPublicHooksEnviarAlertasRoute
+  '/lovable/email/auth/preview': typeof LovableEmailAuthPreviewRoute
+  '/lovable/email/auth/webhook': typeof LovableEmailAuthWebhookRoute
   '/lovable/email/transactional/preview': typeof LovableEmailTransactionalPreviewRoute
 }
 export interface FileRouteTypes {
@@ -339,6 +376,7 @@ export interface FileRouteTypes {
     | '/'
     | '/auth'
     | '/mcp'
+    | '/pendente'
     | '/sitemap.xml'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
@@ -359,6 +397,7 @@ export interface FileRouteTypes {
     | '/relatorio-mensal'
     | '/relatorios'
     | '/rotina'
+    | '/utilizadores'
     | '/api/ia'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
@@ -368,12 +407,15 @@ export interface FileRouteTypes {
     | '/unidades/'
     | '/unidades/$id/dossie'
     | '/api/public/hooks/enviar-alertas'
+    | '/lovable/email/auth/preview'
+    | '/lovable/email/auth/webhook'
     | '/lovable/email/transactional/preview'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/auth'
     | '/mcp'
+    | '/pendente'
     | '/sitemap.xml'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
@@ -394,6 +436,7 @@ export interface FileRouteTypes {
     | '/relatorio-mensal'
     | '/relatorios'
     | '/rotina'
+    | '/utilizadores'
     | '/api/ia'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
@@ -403,6 +446,8 @@ export interface FileRouteTypes {
     | '/unidades'
     | '/unidades/$id/dossie'
     | '/api/public/hooks/enviar-alertas'
+    | '/lovable/email/auth/preview'
+    | '/lovable/email/auth/webhook'
     | '/lovable/email/transactional/preview'
   id:
     | '__root__'
@@ -410,6 +455,7 @@ export interface FileRouteTypes {
     | '/_authenticated'
     | '/auth'
     | '/mcp'
+    | '/pendente'
     | '/sitemap.xml'
     | '/.mcp/list-tools'
     | '/.well-known/oauth-protected-resource'
@@ -430,6 +476,7 @@ export interface FileRouteTypes {
     | '/_authenticated/relatorio-mensal'
     | '/_authenticated/relatorios'
     | '/_authenticated/rotina'
+    | '/_authenticated/utilizadores'
     | '/api/ia'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
@@ -439,6 +486,8 @@ export interface FileRouteTypes {
     | '/_authenticated/unidades/'
     | '/_authenticated/unidades/$id_/dossie'
     | '/api/public/hooks/enviar-alertas'
+    | '/lovable/email/auth/preview'
+    | '/lovable/email/auth/webhook'
     | '/lovable/email/transactional/preview'
   fileRoutesById: FileRoutesById
 }
@@ -447,6 +496,7 @@ export interface RootRouteChildren {
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRoute: typeof AuthRoute
   McpRoute: typeof McpRoute
+  PendenteRoute: typeof PendenteRoute
   SitemapDotxmlRoute: typeof SitemapDotxmlRoute
   Char91DotmcpChar93ListToolsRoute: typeof Char91DotmcpChar93ListToolsRoute
   Char91DotwellKnownChar93OauthProtectedResourceRoute: typeof Char91DotwellKnownChar93OauthProtectedResourceRoute
@@ -454,6 +504,8 @@ export interface RootRouteChildren {
   DotlovableOauthConsentRoute: typeof DotlovableOauthConsentRoute
   Char91DotmcpChar93InvokeToolToolRoute: typeof Char91DotmcpChar93InvokeToolToolRoute
   ApiPublicHooksEnviarAlertasRoute: typeof ApiPublicHooksEnviarAlertasRoute
+  LovableEmailAuthPreviewRoute: typeof LovableEmailAuthPreviewRoute
+  LovableEmailAuthWebhookRoute: typeof LovableEmailAuthWebhookRoute
   LovableEmailTransactionalPreviewRoute: typeof LovableEmailTransactionalPreviewRoute
 }
 
@@ -464,6 +516,13 @@ declare module '@tanstack/react-router' {
       path: '/sitemap.xml'
       fullPath: '/sitemap.xml'
       preLoaderRoute: typeof SitemapDotxmlRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pendente': {
+      id: '/pendente'
+      path: '/pendente'
+      fullPath: '/pendente'
+      preLoaderRoute: typeof PendenteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/mcp': {
@@ -500,6 +559,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/ia'
       preLoaderRoute: typeof ApiIaRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/utilizadores': {
+      id: '/_authenticated/utilizadores'
+      path: '/utilizadores'
+      fullPath: '/utilizadores'
+      preLoaderRoute: typeof AuthenticatedUtilizadoresRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/rotina': {
       id: '/_authenticated/rotina'
@@ -683,6 +749,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LovableEmailTransactionalPreviewRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/lovable/email/auth/webhook': {
+      id: '/lovable/email/auth/webhook'
+      path: '/lovable/email/auth/webhook'
+      fullPath: '/lovable/email/auth/webhook'
+      preLoaderRoute: typeof LovableEmailAuthWebhookRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/lovable/email/auth/preview': {
+      id: '/lovable/email/auth/preview'
+      path: '/lovable/email/auth/preview'
+      fullPath: '/lovable/email/auth/preview'
+      preLoaderRoute: typeof LovableEmailAuthPreviewRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/enviar-alertas': {
       id: '/api/public/hooks/enviar-alertas'
       path: '/api/public/hooks/enviar-alertas'
@@ -718,6 +798,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedRelatorioMensalRoute: typeof AuthenticatedRelatorioMensalRoute
   AuthenticatedRelatoriosRoute: typeof AuthenticatedRelatoriosRoute
   AuthenticatedRotinaRoute: typeof AuthenticatedRotinaRoute
+  AuthenticatedUtilizadoresRoute: typeof AuthenticatedUtilizadoresRoute
   AuthenticatedProcessosIdRoute: typeof AuthenticatedProcessosIdRoute
   AuthenticatedUnidadesIdRoute: typeof AuthenticatedUnidadesIdRoute
   AuthenticatedProcessosIndexRoute: typeof AuthenticatedProcessosIndexRoute
@@ -743,6 +824,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedRelatorioMensalRoute: AuthenticatedRelatorioMensalRoute,
   AuthenticatedRelatoriosRoute: AuthenticatedRelatoriosRoute,
   AuthenticatedRotinaRoute: AuthenticatedRotinaRoute,
+  AuthenticatedUtilizadoresRoute: AuthenticatedUtilizadoresRoute,
   AuthenticatedProcessosIdRoute: AuthenticatedProcessosIdRoute,
   AuthenticatedUnidadesIdRoute: AuthenticatedUnidadesIdRoute,
   AuthenticatedProcessosIndexRoute: AuthenticatedProcessosIndexRoute,
@@ -758,6 +840,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRoute: AuthRoute,
   McpRoute: McpRoute,
+  PendenteRoute: PendenteRoute,
   SitemapDotxmlRoute: SitemapDotxmlRoute,
   Char91DotmcpChar93ListToolsRoute: Char91DotmcpChar93ListToolsRoute,
   Char91DotwellKnownChar93OauthProtectedResourceRoute:
@@ -766,6 +849,8 @@ const rootRouteChildren: RootRouteChildren = {
   DotlovableOauthConsentRoute: DotlovableOauthConsentRoute,
   Char91DotmcpChar93InvokeToolToolRoute: Char91DotmcpChar93InvokeToolToolRoute,
   ApiPublicHooksEnviarAlertasRoute: ApiPublicHooksEnviarAlertasRoute,
+  LovableEmailAuthPreviewRoute: LovableEmailAuthPreviewRoute,
+  LovableEmailAuthWebhookRoute: LovableEmailAuthWebhookRoute,
   LovableEmailTransactionalPreviewRoute: LovableEmailTransactionalPreviewRoute,
 }
 export const routeTree = rootRouteImport
