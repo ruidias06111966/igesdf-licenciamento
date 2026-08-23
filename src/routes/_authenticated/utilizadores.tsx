@@ -70,6 +70,9 @@ function Pagina() {
   const suspensos = (utilizadores ?? []).filter((u) => u.suspenso);
 
   function Linha({ u }: { u: NonNullable<typeof utilizadores>[number] }) {
+    // A própria conta master não se pode rebaixar nem suspender — ficaria o
+    // sistema sem quem autorize os restantes.
+    const euMesmo = !!perfil?.email && perfil.email === u.email;
     return (
       <div className="flex flex-wrap items-center justify-between gap-3 rounded-md border p-3">
         <div className="min-w-0">
