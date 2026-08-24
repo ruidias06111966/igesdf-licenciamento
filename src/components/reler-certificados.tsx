@@ -25,6 +25,8 @@ export function RelerCertificados() {
   const [analise, setAnalise] = useState<AnaliseCertificado | null>(null);
   const [aLer, setALer] = useState<string | null>(null);
 
+  const qc = useQueryClient();
+
   const { data, isLoading, error } = useQuery({
     queryKey: ["certificados-arquivados"],
     queryFn: () => listarCertificados(),
