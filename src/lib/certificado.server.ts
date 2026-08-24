@@ -130,6 +130,10 @@ type Bruto = { texto: string; tokens: { entrada: number; saida: number } };
 
 const PEDIDO = "Extraia os dados deste certificado em JSON.";
 
+/** Motivo mais frequente da falha: nenhum dos serviços de IA tem créditos. */
+const SEM_CREDITOS =
+  "A leitura automática está sem créditos de IA disponíveis. Recarregue os créditos da plataforma (ou da conta Anthropic) e tente novamente — o certificado continua arquivado.";
+
 /** Leitura pelo serviço de IA da plataforma (não depende de créditos próprios). */
 async function lerPelaPlataforma(arquivo: Uint8Array, mime: string): Promise<Bruto> {
   const chave = process.env["LOVABLE_API_KEY"];
@@ -156,6 +160,8 @@ async function lerPelaPlataforma(arquivo: Uint8Array, mime: string): Promise<Bru
   if (!resposta.ok) {
     const detalhe = await resposta.text().catch(() => "");
     console.error(`[certificado] plataforma respondeu ${resposta.status}:`, detalhe.slice(0, 500));
+    if (resposta.status === 402 || /credit/i.test(detalhe)) throw new Error(SEM_CREDITOS);
+    if (resposta.status === 429) throw new Error("limite-plataforma");
     throw new Error(`plataforma-${resposta.status}`);
   }
   const json = (await resposta.json()) as {
@@ -201,6 +207,7 @@ async function lerPelaAnthropic(arquivo: Uint8Array, mime: string): Promise<Brut
   if (!resposta.ok) {
     const detalhe = await resposta.text().catch(() => "");
     console.error(`[certificado] Anthropic respondeu ${resposta.status}:`, detalhe.slice(0, 500));
+    if (/credit balance|insufficient_quota|billing/i.test(detalhe)) throw new Error(SEM_CREDITOS);
     throw new Error(`anthropic-${resposta.status}`);
   }
   const json = (await resposta.json()) as {
@@ -236,8 +243,10 @@ export async function extrairCertificado(
       bruto = await lerPelaAnthropic(arquivo, mime);
     } catch (erro2) {
       console.error("[certificado] leitura pela Anthropic falhou:", erro2);
+      const motivos = [erro, erro2].map((e) => (e instanceof Error ? e.message : String(e)));
+      if (motivos.includes(SEM_CREDITOS)) throw new Error(SEM_CREDITOS);
       throw new Error(
-        "Não foi possível ler o documento agora. Verifique se é um PDF ou imagem legível e tente novamente.",
+        `Não foi possível ler o documento agora (${motivos.join("; ")}). Verifique se é um PDF ou imagem legível e tente novamente.`,
       );
     }
   }

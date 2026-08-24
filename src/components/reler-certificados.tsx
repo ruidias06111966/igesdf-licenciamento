@@ -1,10 +1,12 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { FileSearch, Loader2, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CertificadoAnalise } from "@/components/certificado-analise";
+import { ConfirmDelete } from "@/components/confirm-delete";
+import { deleteDocumento } from "@/lib/licencas.functions";
 import { analisarCertificado, listarCertificados } from "@/lib/certificado.functions";
 import type { AnaliseCertificado } from "@/lib/certificado";
 import { formatDate } from "@/lib/domain";
@@ -22,6 +24,8 @@ export function RelerCertificados() {
   const podeEditar = usePodeEditar();
   const [analise, setAnalise] = useState<AnaliseCertificado | null>(null);
   const [aLer, setALer] = useState<string | null>(null);
+
+  const qc = useQueryClient();
 
   const { data, isLoading, error } = useQuery({
     queryKey: ["certificados-arquivados"],
@@ -104,6 +108,15 @@ export function RelerCertificados() {
                     )}
                     Reler
                   </Button>
+                  <ConfirmDelete
+                    titulo="Excluir certificado arquivado"
+                    descricao={`O ficheiro "${d.nome}" (${d.unidade_nome}) será removido definitivamente do arquivo. As licenças já registradas não são alteradas.`}
+                    mensagemSucesso="Certificado excluído"
+                    onConfirm={() =>
+                      deleteDocumento({ data: { id: d.id, storage_path: d.storage_path } })
+                    }
+                    onDone={() => qc.invalidateQueries({ queryKey: ["certificados-arquivados"] })}
+                  />
                 </li>
               ))}
             </ul>
