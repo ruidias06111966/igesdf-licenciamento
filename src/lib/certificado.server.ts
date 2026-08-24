@@ -130,6 +130,10 @@ type Bruto = { texto: string; tokens: { entrada: number; saida: number } };
 
 const PEDIDO = "Extraia os dados deste certificado em JSON.";
 
+/** Motivo mais frequente da falha: nenhum dos serviços de IA tem créditos. */
+const SEM_CREDITOS =
+  "A leitura automática está sem créditos de IA disponíveis. Recarregue os créditos da plataforma (ou da conta Anthropic) e tente novamente — o certificado continua arquivado.";
+
 /** Leitura pelo serviço de IA da plataforma (não depende de créditos próprios). */
 async function lerPelaPlataforma(arquivo: Uint8Array, mime: string): Promise<Bruto> {
   const chave = process.env["LOVABLE_API_KEY"];
