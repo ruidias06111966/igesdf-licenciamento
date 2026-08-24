@@ -7,7 +7,7 @@
  * depois, e apenas nas linhas que o utilizador aceitou. Um campo que o
  * certificado não traz preenchido é ignorado — não apaga o que já existe.
  *
- * Servidor-only: a chave da Anthropic é lida apenas dentro destas funções.
+ * Servidor-only: a chave do serviço de IA é lida apenas dentro destas funções.
  */
 import { z } from "zod";
 import { parseCnae, ORGAOS, type Orgao, type StatusLicenca } from "@/lib/domain";

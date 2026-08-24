@@ -3,7 +3,7 @@
  * contexto e controlo de utilização.
  *
  * Tudo aqui é servidor-only (`*.server.ts` nunca entra no pacote do navegador).
- * A chave da Anthropic nunca passa por este ficheiro nem pelo cliente: é lida
+ * A chave do serviço de IA nunca passa por este ficheiro nem pelo cliente: é lida
  * apenas dentro do handler de `src/routes/api/ia.ts`.
  */
 
@@ -45,7 +45,7 @@ Quando listar licenças ou prazos, cite sempre a unidade, o órgão e a data, pa
 Se uma lista vier truncada (indicado no campo "nota" do contexto), avise que há mais registos e sugira consultar a unidade específica.`;
 
 /**
- * Campos que identificam pessoas físicas e nunca são enviados à Anthropic.
+ * Campos que identificam pessoas físicas e nunca são enviados ao serviço de IA.
  * A filtragem é feita aqui, no servidor: o que o navegador manda não é de
  * confiança, e um contexto montado a partir de tabelas como
  * `responsaveis_tecnicos` traz CPF, e-mail e telefone sem se dar por isso.
