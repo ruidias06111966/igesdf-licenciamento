@@ -156,6 +156,8 @@ async function lerPelaPlataforma(arquivo: Uint8Array, mime: string): Promise<Bru
   if (!resposta.ok) {
     const detalhe = await resposta.text().catch(() => "");
     console.error(`[certificado] plataforma respondeu ${resposta.status}:`, detalhe.slice(0, 500));
+    if (resposta.status === 402 || /credit/i.test(detalhe)) throw new Error(SEM_CREDITOS);
+    if (resposta.status === 429) throw new Error("limite-plataforma");
     throw new Error(`plataforma-${resposta.status}`);
   }
   const json = (await resposta.json()) as {
