@@ -243,8 +243,10 @@ export async function extrairCertificado(
       bruto = await lerPelaAnthropic(arquivo, mime);
     } catch (erro2) {
       console.error("[certificado] leitura pela Anthropic falhou:", erro2);
+      const motivos = [erro, erro2].map((e) => (e instanceof Error ? e.message : String(e)));
+      if (motivos.includes(SEM_CREDITOS)) throw new Error(SEM_CREDITOS);
       throw new Error(
-        "Não foi possível ler o documento agora. Verifique se é um PDF ou imagem legível e tente novamente.",
+        `Não foi possível ler o documento agora (${motivos.join("; ")}). Verifique se é um PDF ou imagem legível e tente novamente.`,
       );
     }
   }
