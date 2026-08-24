@@ -1,10 +1,12 @@
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { FileSearch, Loader2, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { CertificadoAnalise } from "@/components/certificado-analise";
+import { ConfirmDelete } from "@/components/confirm-delete";
+import { deleteDocumento } from "@/lib/licencas.functions";
 import { analisarCertificado, listarCertificados } from "@/lib/certificado.functions";
 import type { AnaliseCertificado } from "@/lib/certificado";
 import { formatDate } from "@/lib/domain";
