@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
-import { Eye, EyeOff, MailCheck, ShieldCheck } from "lucide-react";
+import { BookOpen, Eye, EyeOff, MailCheck, ShieldCheck } from "lucide-react";
+import manualAsset from "@/assets/manual-igesdf.pdf.asset.json";
 import { supabase } from "@/integrations/supabase/client";
 import { mensagemErro } from "@/lib/errors";
 import { Button } from "@/components/ui/button";
