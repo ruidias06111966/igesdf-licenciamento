@@ -211,8 +211,7 @@ export const Route = createFileRoute("/api/ia")({
           });
         }
 
-
-        // Converte o SSE da Anthropic em texto simples, que o navegador lê
+        // Converte o SSE do serviço de IA em texto simples, que o navegador lê
         // diretamente do corpo da resposta, e regista o consumo no fim.
         const perfil = (await autorAtual()) ?? "master";
         const decoder = new TextDecoder();
@@ -231,23 +230,18 @@ export const Route = createFileRoute("/api/ia")({
               if (!dados || dados === "[DONE]") continue;
               try {
                 const json = JSON.parse(dados) as {
-                  type?: string;
-                  delta?: { type?: string; text?: string };
-                  message?: { usage?: { input_tokens?: number; output_tokens?: number } };
-                  usage?: { input_tokens?: number; output_tokens?: number };
+                  choices?: Array<{ delta?: { content?: string } }>;
+                  usage?: { prompt_tokens?: number; completion_tokens?: number };
                 };
-                if (json.type === "message_start") {
-                  entrada = json.message?.usage?.input_tokens ?? 0;
-                }
-                if (json.usage?.output_tokens) saida = json.usage.output_tokens;
-                if (json.type === "content_block_delta" && json.delta?.type === "text_delta") {
-                  const texto = json.delta.text;
-                  if (texto) controller.enqueue(encoder.encode(texto));
-                }
+                if (json.usage?.prompt_tokens) entrada = json.usage.prompt_tokens;
+                if (json.usage?.completion_tokens) saida = json.usage.completion_tokens;
+                const texto = json.choices?.[0]?.delta?.content;
+                if (texto) controller.enqueue(encoder.encode(texto));
               } catch {
                 /* fragmento incompleto: ignorado */
               }
             }
+
           },
           flush() {
             void registarUso({ perfil, acao, tokensEntrada: entrada, tokensSaida: saida });
