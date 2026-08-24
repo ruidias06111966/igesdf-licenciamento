@@ -137,44 +137,45 @@ export const Route = createFileRoute("/api/ia")({
             ? mensagens
             : [{ role: "user", content: body.pergunta ?? "Analisa os dados do contexto." }];
 
-        const payload = historico.map((m) => {
+        const payload: Array<Record<string, unknown>> = [{ role: "system", content: sistema }];
+        for (const m of historico) {
           if (m.role === "user" && m.anexos && m.anexos.length > 0) {
-            return {
+            payload.push({
               role: "user",
               content: [
                 { type: "text", text: m.content || "Analisa os documentos em anexo." },
                 ...m.anexos.map(parteAnexo),
               ],
-            };
+            });
+          } else {
+            payload.push({ role: m.role, content: m.content });
           }
-          return { role: m.role, content: m.content };
-        });
+        }
 
         // Timeout: um pedido pendurado bloquearia o utilizador sem resposta.
         const controlo = new AbortController();
-        const relogio = setTimeout(() => controlo.abort(), 60_000);
+        const relogio = setTimeout(() => controlo.abort(), 120_000);
 
         let resposta: Response;
         try {
-          resposta = await fetch("https://api.anthropic.com/v1/messages", {
+          resposta = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
             method: "POST",
             signal: controlo.signal,
             headers: {
               "Content-Type": "application/json",
-              "x-api-key": chave,
-              "anthropic-version": "2023-06-01",
+              Authorization: `Bearer ${chave}`,
             },
             body: JSON.stringify({
               model: modelo,
               stream: true,
+              stream_options: { include_usage: true },
               max_tokens: body.acao ? 2000 : 8000,
-              system: sistema,
               messages: payload,
             }),
           });
         } catch (erro) {
           clearTimeout(relogio);
-          console.error("[ia] falha na chamada à Anthropic:", erro);
+          console.error("[ia] falha na chamada ao serviço de IA:", erro);
           return new Response("Serviço de IA temporariamente indisponível. Tente novamente.", {
             status: 503,
           });
@@ -185,25 +186,31 @@ export const Route = createFileRoute("/api/ia")({
           // O corpo do erro do provedor fica só no registo do servidor: pode
           // conter detalhes da conta e nunca deve chegar ao navegador.
           const detalhe = await resposta.text().catch(() => "");
-          console.error(`[ia] Anthropic respondeu ${resposta.status}:`, detalhe);
-          if (resposta.status === 401 || resposta.status === 403) {
+          console.error(`[ia] serviço de IA respondeu ${resposta.status}:`, detalhe);
+          if (resposta.status === 402) {
+            return new Response(
+              "Créditos de IA esgotados. Recarregue os créditos da plataforma para voltar a usar o assistente.",
+              { status: 402 },
+            );
+          }
+          if (resposta.status === 403) {
+            return new Response("Serviço de IA bloqueado nas definições da plataforma.", {
+              status: 403,
+            });
+          }
+          if (resposta.status === 401) {
             return new Response("Assistente indisponível no momento.", { status: 500 });
           }
-          if (resposta.status === 429 || resposta.status === 529 || resposta.status >= 500) {
+          if (resposta.status === 429 || resposta.status >= 500) {
             return new Response("Serviço de IA temporariamente indisponível. Tente novamente.", {
               status: 503,
             });
-          }
-          if (resposta.status === 400 && detalhe.includes("credit")) {
-            return new Response(
-              "Saldo esgotado na conta Anthropic. Adicione créditos em console.anthropic.com → Billing.",
-              { status: 402 },
-            );
           }
           return new Response("Não foi possível processar o pedido do assistente.", {
             status: 400,
           });
         }
+
 
         // Converte o SSE da Anthropic em texto simples, que o navegador lê
         // diretamente do corpo da resposta, e regista o consumo no fim.
