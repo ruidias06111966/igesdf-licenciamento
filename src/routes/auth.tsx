@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
-import { Eye, EyeOff, MailCheck, ShieldCheck } from "lucide-react";
+import { BookOpen, Eye, EyeOff, MailCheck, ShieldCheck } from "lucide-react";
+import manualAsset from "@/assets/manual-igesdf.pdf.asset.json";
 import { supabase } from "@/integrations/supabase/client";
 import { mensagemErro } from "@/lib/errors";
 import { Button } from "@/components/ui/button";
@@ -154,6 +155,22 @@ function AuthPage() {
             </CardDescription>
           </CardHeader>
           <CardContent>
+            <a
+              href={manualAsset.url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="mb-4 flex items-start gap-3 rounded-md border border-primary/40 bg-primary/5 p-3 text-sm transition-colors hover:bg-primary/10"
+            >
+              <BookOpen className="mt-0.5 size-5 shrink-0 text-primary" aria-hidden="true" />
+              <span>
+                <span className="block font-medium text-foreground">
+                  Manual de utilização (PDF)
+                </span>
+                <span className="block text-xs text-muted-foreground">
+                  Leia antes de entrar — abre numa nova janela.
+                </span>
+              </span>
+            </a>
             <form onSubmit={submeter} className="space-y-4">
               {aviso && (
                 <div className="flex items-start gap-2 rounded-md border border-primary/40 bg-primary/5 p-3 text-sm">
