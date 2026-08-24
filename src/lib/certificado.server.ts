@@ -179,58 +179,10 @@ async function lerPelaPlataforma(arquivo: Uint8Array, mime: string): Promise<Bru
     },
   };
 }
-
-/** Leitura pela conta Anthropic do utilizador (usada como alternativa). */
-async function lerPelaAnthropic(arquivo: Uint8Array, mime: string): Promise<Bruto> {
-  const chave = process.env["ANTHROPIC_API_KEY"];
-  if (!chave) throw new Error("sem-chave-anthropic");
-  const bloco =
-    mime === "application/pdf"
-      ? {
-          type: "document",
-          source: { type: "base64", media_type: "application/pdf", data: base64(arquivo) },
-        }
-      : { type: "image", source: { type: "base64", media_type: mime, data: base64(arquivo) } };
-
-  const resposta = await fetch("https://api.anthropic.com/v1/messages", {
-    method: "POST",
-    signal: AbortSignal.timeout(120_000),
-    headers: {
-      "Content-Type": "application/json",
-      "x-api-key": chave,
-      "anthropic-version": "2023-06-01",
-    },
-    body: JSON.stringify({
-      model: "claude-sonnet-5",
-      max_tokens: 8000,
-      system: INSTRUCOES,
-      messages: [{ role: "user", content: [bloco, { type: "text", text: PEDIDO }] }],
-    }),
-  });
-  if (!resposta.ok) {
-    const detalhe = await resposta.text().catch(() => "");
-    console.error(`[certificado] Anthropic respondeu ${resposta.status}:`, detalhe.slice(0, 500));
-    if (/credit balance|insufficient_quota|billing/i.test(detalhe)) throw new Error(SEM_CREDITOS);
-    throw new Error(`anthropic-${resposta.status}`);
-  }
-  const json = (await resposta.json()) as {
-    content?: Array<{ type: string; text?: string }>;
-    usage?: { input_tokens?: number; output_tokens?: number };
-  };
-  return {
-    texto: (json.content ?? [])
-      .filter((c) => c.type === "text")
-      .map((c) => c.text ?? "")
-      .join(""),
-    tokens: { entrada: json.usage?.input_tokens ?? 0, saida: json.usage?.output_tokens ?? 0 },
-  };
-}
-
 /**
  * Lê o certificado e devolve os dados estruturados.
  *
- * A leitura é feita exclusivamente pela conta Claude (Anthropic) do IGESDF.
- * O serviço da plataforma só é usado se a conta Claude não estiver configurada.
+ * A leitura é feita exclusivamente pelo serviço de IA da plataforma.
  */
 export async function extrairCertificado(
   arquivo: Uint8Array,
@@ -238,19 +190,16 @@ export async function extrairCertificado(
 ): Promise<{ dados: Extracao; tokens: { entrada: number; saida: number } }> {
   let bruto: Bruto;
   try {
-    bruto = await lerPelaAnthropic(arquivo, mime);
+    bruto = await lerPelaPlataforma(arquivo, mime);
   } catch (erro) {
-    console.error("[certificado] leitura pela Claude falhou:", erro);
+    console.error("[certificado] leitura pelo serviço de IA falhou:", erro);
     const motivo = erro instanceof Error ? erro.message : String(erro);
     if (motivo === SEM_CREDITOS) throw new Error(SEM_CREDITOS);
-    if (motivo !== "sem-chave-anthropic") {
-      throw new Error(
-        `Não foi possível ler o documento agora (${motivo}). Verifique se é um PDF ou imagem legível e tente novamente.`,
-      );
-    }
-    // Sem chave Claude configurada: recorre ao serviço de IA da plataforma.
-    bruto = await lerPelaPlataforma(arquivo, mime);
+    throw new Error(
+      `Não foi possível ler o documento agora (${motivo}). Verifique se é um PDF ou imagem legível e tente novamente.`,
+    );
   }
+
 
 
   const texto = bruto.texto;
