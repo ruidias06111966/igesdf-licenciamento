@@ -203,6 +203,7 @@ async function lerPelaAnthropic(arquivo: Uint8Array, mime: string): Promise<Brut
   if (!resposta.ok) {
     const detalhe = await resposta.text().catch(() => "");
     console.error(`[certificado] Anthropic respondeu ${resposta.status}:`, detalhe.slice(0, 500));
+    if (/credit balance|insufficient_quota|billing/i.test(detalhe)) throw new Error(SEM_CREDITOS);
     throw new Error(`anthropic-${resposta.status}`);
   }
   const json = (await resposta.json()) as {
