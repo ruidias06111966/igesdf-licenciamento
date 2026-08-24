@@ -8,9 +8,9 @@ import { createFileRoute } from "@tanstack/react-router";
  * menu na interface não impediria uma chamada direta ao endpoint (e cada
  * chamada consome créditos).
  *
- * A chave `ANTHROPIC_API_KEY` é lida apenas dentro deste handler, que corre
- * exclusivamente no servidor. Nunca é enviada ao navegador nem devolvida em
- * mensagens de erro.
+ * A chave `LOVABLE_API_KEY` (serviço de IA da plataforma) é lida apenas dentro
+ * deste handler, que corre exclusivamente no servidor. Nunca é enviada ao
+ * navegador nem devolvida em mensagens de erro.
  */
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -24,19 +24,18 @@ function base64(dados: string): string {
   return i >= 0 ? dados.slice(i + 7) : dados;
 }
 
-/** Converte um anexo no bloco de conteúdo correspondente da API da Anthropic. */
+/** Garante um data URL completo para enviar ao serviço de IA. */
+function dataUrl(a: Anexo): string {
+  return a.dados.startsWith("data:") ? a.dados : `data:${a.tipo};base64,${base64(a.dados)}`;
+}
+
+/** Converte um anexo no bloco de conteúdo do serviço de IA da plataforma. */
 function parteAnexo(a: Anexo) {
   if (a.tipo.startsWith("image/")) {
-    return {
-      type: "image",
-      source: { type: "base64", media_type: a.tipo, data: base64(a.dados) },
-    };
+    return { type: "image_url", image_url: { url: dataUrl(a) } };
   }
   if (a.tipo === "application/pdf") {
-    return {
-      type: "document",
-      source: { type: "base64", media_type: "application/pdf", data: base64(a.dados) },
-    };
+    return { type: "file", file: { filename: a.nome || "documento.pdf", file_data: dataUrl(a) } };
   }
   // Texto simples (txt, md, csv): enviado como texto para o modelo.
   let conteudo = "";
@@ -47,6 +46,7 @@ function parteAnexo(a: Anexo) {
   }
   return { type: "text", text: `Ficheiro anexado "${a.nome}":\n\n${conteudo.slice(0, 200_000)}` };
 }
+
 
 export const Route = createFileRoute("/api/ia")({
   server: {
