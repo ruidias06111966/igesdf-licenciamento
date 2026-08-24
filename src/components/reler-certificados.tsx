@@ -108,6 +108,15 @@ export function RelerCertificados() {
                     )}
                     Reler
                   </Button>
+                  <ConfirmDelete
+                    titulo="Excluir certificado arquivado"
+                    descricao={`O ficheiro "${d.nome}" (${d.unidade_nome}) será removido definitivamente do arquivo. As licenças já registradas não são alteradas.`}
+                    mensagemSucesso="Certificado excluído"
+                    onConfirm={() =>
+                      deleteDocumento({ data: { id: d.id, storage_path: d.storage_path } })
+                    }
+                    onDone={() => qc.invalidateQueries({ queryKey: ["certificados-arquivados"] })}
+                  />
                 </li>
               ))}
             </ul>
