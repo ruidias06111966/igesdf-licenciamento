@@ -8,9 +8,9 @@ import { createFileRoute } from "@tanstack/react-router";
  * menu na interface não impediria uma chamada direta ao endpoint (e cada
  * chamada consome créditos).
  *
- * A chave `ANTHROPIC_API_KEY` é lida apenas dentro deste handler, que corre
- * exclusivamente no servidor. Nunca é enviada ao navegador nem devolvida em
- * mensagens de erro.
+ * A chave `LOVABLE_API_KEY` (serviço de IA da plataforma) é lida apenas dentro
+ * deste handler, que corre exclusivamente no servidor. Nunca é enviada ao
+ * navegador nem devolvida em mensagens de erro.
  */
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -24,19 +24,18 @@ function base64(dados: string): string {
   return i >= 0 ? dados.slice(i + 7) : dados;
 }
 
-/** Converte um anexo no bloco de conteúdo correspondente da API da Anthropic. */
+/** Garante um data URL completo para enviar ao serviço de IA. */
+function dataUrl(a: Anexo): string {
+  return a.dados.startsWith("data:") ? a.dados : `data:${a.tipo};base64,${base64(a.dados)}`;
+}
+
+/** Converte um anexo no bloco de conteúdo do serviço de IA da plataforma. */
 function parteAnexo(a: Anexo) {
   if (a.tipo.startsWith("image/")) {
-    return {
-      type: "image",
-      source: { type: "base64", media_type: a.tipo, data: base64(a.dados) },
-    };
+    return { type: "image_url", image_url: { url: dataUrl(a) } };
   }
   if (a.tipo === "application/pdf") {
-    return {
-      type: "document",
-      source: { type: "base64", media_type: "application/pdf", data: base64(a.dados) },
-    };
+    return { type: "file", file: { filename: a.nome || "documento.pdf", file_data: dataUrl(a) } };
   }
   // Texto simples (txt, md, csv): enviado como texto para o modelo.
   let conteudo = "";
@@ -47,6 +46,7 @@ function parteAnexo(a: Anexo) {
   }
   return { type: "text", text: `Ficheiro anexado "${a.nome}":\n\n${conteudo.slice(0, 200_000)}` };
 }
+
 
 export const Route = createFileRoute("/api/ia")({
   server: {
@@ -106,13 +106,15 @@ export const Route = createFileRoute("/api/ia")({
           );
         }
 
-        const chave = process.env["ANTHROPIC_API_KEY"];
+        const chave = process.env["LOVABLE_API_KEY"];
         if (!chave) {
-          console.error("[ia] ANTHROPIC_API_KEY não configurada no ambiente do servidor.");
+          console.error("[ia] LOVABLE_API_KEY não configurada no ambiente do servidor.");
           return new Response("Assistente indisponível no momento.", { status: 500 });
         }
 
-        const modelo = body.modelo === "aprofundado" ? "claude-opus-5" : "claude-sonnet-5";
+        const modelo =
+          body.modelo === "aprofundado" ? "google/gemini-3-pro-preview" : "google/gemini-3.5-flash";
+
 
         // O contexto é montado no servidor a partir da base de dados — o
         // navegador só indica a ação e, quando aplicável, a unidade. Depois é
@@ -135,44 +137,45 @@ export const Route = createFileRoute("/api/ia")({
             ? mensagens
             : [{ role: "user", content: body.pergunta ?? "Analisa os dados do contexto." }];
 
-        const payload = historico.map((m) => {
+        const payload: Array<Record<string, unknown>> = [{ role: "system", content: sistema }];
+        for (const m of historico) {
           if (m.role === "user" && m.anexos && m.anexos.length > 0) {
-            return {
+            payload.push({
               role: "user",
               content: [
                 { type: "text", text: m.content || "Analisa os documentos em anexo." },
                 ...m.anexos.map(parteAnexo),
               ],
-            };
+            });
+          } else {
+            payload.push({ role: m.role, content: m.content });
           }
-          return { role: m.role, content: m.content };
-        });
+        }
 
         // Timeout: um pedido pendurado bloquearia o utilizador sem resposta.
         const controlo = new AbortController();
-        const relogio = setTimeout(() => controlo.abort(), 60_000);
+        const relogio = setTimeout(() => controlo.abort(), 120_000);
 
         let resposta: Response;
         try {
-          resposta = await fetch("https://api.anthropic.com/v1/messages", {
+          resposta = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
             method: "POST",
             signal: controlo.signal,
             headers: {
               "Content-Type": "application/json",
-              "x-api-key": chave,
-              "anthropic-version": "2023-06-01",
+              Authorization: `Bearer ${chave}`,
             },
             body: JSON.stringify({
               model: modelo,
               stream: true,
+              stream_options: { include_usage: true },
               max_tokens: body.acao ? 2000 : 8000,
-              system: sistema,
               messages: payload,
             }),
           });
         } catch (erro) {
           clearTimeout(relogio);
-          console.error("[ia] falha na chamada à Anthropic:", erro);
+          console.error("[ia] falha na chamada ao serviço de IA:", erro);
           return new Response("Serviço de IA temporariamente indisponível. Tente novamente.", {
             status: 503,
           });
@@ -183,27 +186,32 @@ export const Route = createFileRoute("/api/ia")({
           // O corpo do erro do provedor fica só no registo do servidor: pode
           // conter detalhes da conta e nunca deve chegar ao navegador.
           const detalhe = await resposta.text().catch(() => "");
-          console.error(`[ia] Anthropic respondeu ${resposta.status}:`, detalhe);
-          if (resposta.status === 401 || resposta.status === 403) {
+          console.error(`[ia] serviço de IA respondeu ${resposta.status}:`, detalhe);
+          if (resposta.status === 402) {
+            return new Response(
+              "Créditos de IA esgotados. Recarregue os créditos da plataforma para voltar a usar o assistente.",
+              { status: 402 },
+            );
+          }
+          if (resposta.status === 403) {
+            return new Response("Serviço de IA bloqueado nas definições da plataforma.", {
+              status: 403,
+            });
+          }
+          if (resposta.status === 401) {
             return new Response("Assistente indisponível no momento.", { status: 500 });
           }
-          if (resposta.status === 429 || resposta.status === 529 || resposta.status >= 500) {
+          if (resposta.status === 429 || resposta.status >= 500) {
             return new Response("Serviço de IA temporariamente indisponível. Tente novamente.", {
               status: 503,
             });
-          }
-          if (resposta.status === 400 && detalhe.includes("credit")) {
-            return new Response(
-              "Saldo esgotado na conta Anthropic. Adicione créditos em console.anthropic.com → Billing.",
-              { status: 402 },
-            );
           }
           return new Response("Não foi possível processar o pedido do assistente.", {
             status: 400,
           });
         }
 
-        // Converte o SSE da Anthropic em texto simples, que o navegador lê
+        // Converte o SSE do serviço de IA em texto simples, que o navegador lê
         // diretamente do corpo da resposta, e regista o consumo no fim.
         const perfil = (await autorAtual()) ?? "master";
         const decoder = new TextDecoder();
@@ -222,23 +230,18 @@ export const Route = createFileRoute("/api/ia")({
               if (!dados || dados === "[DONE]") continue;
               try {
                 const json = JSON.parse(dados) as {
-                  type?: string;
-                  delta?: { type?: string; text?: string };
-                  message?: { usage?: { input_tokens?: number; output_tokens?: number } };
-                  usage?: { input_tokens?: number; output_tokens?: number };
+                  choices?: Array<{ delta?: { content?: string } }>;
+                  usage?: { prompt_tokens?: number; completion_tokens?: number };
                 };
-                if (json.type === "message_start") {
-                  entrada = json.message?.usage?.input_tokens ?? 0;
-                }
-                if (json.usage?.output_tokens) saida = json.usage.output_tokens;
-                if (json.type === "content_block_delta" && json.delta?.type === "text_delta") {
-                  const texto = json.delta.text;
-                  if (texto) controller.enqueue(encoder.encode(texto));
-                }
+                if (json.usage?.prompt_tokens) entrada = json.usage.prompt_tokens;
+                if (json.usage?.completion_tokens) saida = json.usage.completion_tokens;
+                const texto = json.choices?.[0]?.delta?.content;
+                if (texto) controller.enqueue(encoder.encode(texto));
               } catch {
                 /* fragmento incompleto: ignorado */
               }
             }
+
           },
           flush() {
             void registarUso({ perfil, acao, tokensEntrada: entrada, tokensSaida: saida });
