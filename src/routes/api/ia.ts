@@ -106,13 +106,15 @@ export const Route = createFileRoute("/api/ia")({
           );
         }
 
-        const chave = process.env["ANTHROPIC_API_KEY"];
+        const chave = process.env["LOVABLE_API_KEY"];
         if (!chave) {
-          console.error("[ia] ANTHROPIC_API_KEY não configurada no ambiente do servidor.");
+          console.error("[ia] LOVABLE_API_KEY não configurada no ambiente do servidor.");
           return new Response("Assistente indisponível no momento.", { status: 500 });
         }
 
-        const modelo = body.modelo === "aprofundado" ? "claude-opus-5" : "claude-sonnet-5";
+        const modelo =
+          body.modelo === "aprofundado" ? "google/gemini-3-pro-preview" : "google/gemini-3.5-flash";
+
 
         // O contexto é montado no servidor a partir da base de dados — o
         // navegador só indica a ação e, quando aplicável, a unidade. Depois é
