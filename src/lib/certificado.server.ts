@@ -130,9 +130,10 @@ type Bruto = { texto: string; tokens: { entrada: number; saida: number } };
 
 const PEDIDO = "Extraia os dados deste certificado em JSON.";
 
-/** Motivo mais frequente da falha: nenhum dos serviços de IA tem créditos. */
+/** Motivo mais frequente da falha: a conta Claude está sem créditos. */
 const SEM_CREDITOS =
-  "A leitura automática está sem créditos de IA disponíveis. Recarregue os créditos da plataforma (ou da conta Anthropic) e tente novamente — o certificado continua arquivado.";
+  "A leitura automática está sem créditos na conta Claude. Adicione créditos em console.anthropic.com → Plans & Billing e tente novamente — o certificado continua arquivado.";
+
 
 /** Leitura pelo serviço de IA da plataforma (não depende de créditos próprios). */
 async function lerPelaPlataforma(arquivo: Uint8Array, mime: string): Promise<Bruto> {
@@ -226,9 +227,8 @@ async function lerPelaAnthropic(arquivo: Uint8Array, mime: string): Promise<Brut
 /**
  * Lê o certificado e devolve os dados estruturados.
  *
- * A leitura corre primeiro pelo serviço de IA da plataforma; a conta Anthropic
- * própria só é usada como alternativa. Assim, ficar sem créditos numa delas
- * deixa de bloquear a leitura de PDFs.
+ * A leitura é feita exclusivamente pela conta Claude (Anthropic) do IGESDF.
+ * O serviço da plataforma só é usado se a conta Claude não estiver configurada.
  */
 export async function extrairCertificado(
   arquivo: Uint8Array,
@@ -236,20 +236,20 @@ export async function extrairCertificado(
 ): Promise<{ dados: Extracao; tokens: { entrada: number; saida: number } }> {
   let bruto: Bruto;
   try {
-    bruto = await lerPelaPlataforma(arquivo, mime);
+    bruto = await lerPelaAnthropic(arquivo, mime);
   } catch (erro) {
-    console.error("[certificado] leitura pela plataforma falhou:", erro);
-    try {
-      bruto = await lerPelaAnthropic(arquivo, mime);
-    } catch (erro2) {
-      console.error("[certificado] leitura pela Anthropic falhou:", erro2);
-      const motivos = [erro, erro2].map((e) => (e instanceof Error ? e.message : String(e)));
-      if (motivos.includes(SEM_CREDITOS)) throw new Error(SEM_CREDITOS);
+    console.error("[certificado] leitura pela Claude falhou:", erro);
+    const motivo = erro instanceof Error ? erro.message : String(erro);
+    if (motivo === SEM_CREDITOS) throw new Error(SEM_CREDITOS);
+    if (motivo !== "sem-chave-anthropic") {
       throw new Error(
-        `Não foi possível ler o documento agora (${motivos.join("; ")}). Verifique se é um PDF ou imagem legível e tente novamente.`,
+        `Não foi possível ler o documento agora (${motivo}). Verifique se é um PDF ou imagem legível e tente novamente.`,
       );
     }
+    // Sem chave Claude configurada: recorre ao serviço de IA da plataforma.
+    bruto = await lerPelaPlataforma(arquivo, mime);
   }
+
 
   const texto = bruto.texto;
   const inicio = texto.indexOf("{");
