@@ -130,9 +130,11 @@ type Bruto = { texto: string; tokens: { entrada: number; saida: number } };
 
 const PEDIDO = "Extraia os dados deste certificado em JSON.";
 
-/** Motivo mais frequente da falha: a conta Claude está sem créditos. */
+/** Motivo mais frequente da falha: o serviço de IA da plataforma sem créditos. */
 const SEM_CREDITOS =
-  "A leitura automática está sem créditos na conta Claude. Adicione créditos em console.anthropic.com → Plans & Billing e tente novamente — o certificado continua arquivado.";
+  "A leitura automática está sem créditos de IA. Recarregue os créditos da plataforma e tente novamente — o certificado continua arquivado.";
+
+
 
 
 /** Leitura pelo serviço de IA da plataforma (não depende de créditos próprios). */
