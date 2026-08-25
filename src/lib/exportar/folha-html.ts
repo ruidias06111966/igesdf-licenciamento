@@ -5,6 +5,16 @@
  */
 import { corSituacao, MARCA, SITUACOES_LEGENDA, corPadrao } from "@/lib/exportar/paleta";
 import { linhasMetadados, type MetaExport } from "@/lib/exportar/metadados";
+import logoIgesdf from "@/assets/igesdf-logo.jpg.asset.json";
+
+/**
+ * O documento é aberto noutra janela/iframe, por isso o endereço do logótipo
+ * tem de ser absoluto — um caminho relativo não resolveria lá.
+ */
+function urlLogo() {
+  if (typeof window === "undefined") return logoIgesdf.url;
+  return new URL(logoIgesdf.url, window.location.origin).href;
+}
 
 export type Orientacao = "portrait" | "landscape";
 
@@ -43,7 +53,7 @@ function legendaHtml() {
 function capaHtml(doc: DocumentoTabela) {
   const linhas = linhasMetadados(doc.meta);
   return `<section class="folha capa">
-  <div class="marca"><div class="marca-nome">IGESDF</div><div class="marca-sub">Núcleo de Licenciamento · NUCON</div></div>
+  <div class="marca"><img class="marca-logo" src="${urlLogo()}" alt="IGESDF"><div><div class="marca-nome">IGESDF</div><div class="marca-sub">Núcleo de Licenciamento · NUCON</div></div></div>
   <h1>${esc(doc.titulo)}</h1>
   ${doc.subtitulo ? `<p class="sub">${esc(doc.subtitulo)}</p>` : ""}
   <table class="meta"><tbody>
@@ -73,7 +83,7 @@ function tabelaHtml(doc: DocumentoTabela) {
     )
     .join("");
   return `<section class="folha dados">
-  <div class="cabecalho-dados"><span>${esc(doc.titulo)}</span><span>${esc(doc.subtitulo ?? "")}</span></div>
+  <div class="cabecalho-dados"><span class="cabecalho-marca"><img src="${urlLogo()}" alt="IGESDF">${esc(doc.titulo)}</span><span>${esc(doc.subtitulo ?? "")}</span></div>
   <table class="grade"><thead><tr>${cabecalho}</tr></thead><tbody>${corpo}</tbody></table>
 </section>`;
 }
@@ -88,7 +98,10 @@ export function construirHtmlRelatorio(doc: DocumentoTabela) {
   body { margin: 0; background: #eef0f4; font-family: Arial, Helvetica, sans-serif; color: #1F2937; }
   .folha { width: ${largura}; min-height: ${orientacao === "landscape" ? "210mm" : "297mm"}; margin: 0 auto 8mm; padding: 14mm 12mm; background: #fff; }
   .folha + .folha { break-before: page; }
-  .marca { border-bottom: 3px solid #${MARCA.fundo}; padding-bottom: 8px; }
+  .marca { display: flex; align-items: center; gap: 10px; border-bottom: 3px solid #${MARCA.fundo}; padding-bottom: 8px; }
+  .marca-logo { height: 16mm; width: auto; }
+  .cabecalho-marca { display: inline-flex; align-items: center; gap: 6px; }
+  .cabecalho-marca img { height: 7mm; width: auto; }
   .marca-nome { font-size: 22pt; font-weight: 800; letter-spacing: .04em; color: #${MARCA.fundo}; }
   .marca-sub { font-size: 9pt; letter-spacing: .18em; text-transform: uppercase; color: #${MARCA.cinza}; }
   h1 { font-size: 20pt; margin: 22mm 0 4px; color: #${MARCA.fundo}; }
