@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
-import { BookOpen, Eye, EyeOff, MailCheck, ShieldCheck } from "lucide-react";
+import { BookOpen, Eye, EyeOff, MailCheck } from "lucide-react";
+import logoIgesdf from "@/assets/igesdf-logo.jpg.asset.json";
 import manualAsset from "@/assets/manual-igesdf.pdf.asset.json";
 import { supabase } from "@/integrations/supabase/client";
 import { mensagemErro } from "@/lib/errors";
@@ -111,7 +112,13 @@ function AuthPage() {
     <main className="grid min-h-screen lg:grid-cols-2">
       <div className="hidden flex-col justify-between bg-sidebar p-12 text-sidebar-foreground lg:flex">
         <div className="flex items-center gap-3">
-          <ShieldCheck className="size-8 text-sidebar-primary" aria-hidden="true" />
+          <span className="flex items-center justify-center rounded-lg bg-white p-2">
+            <img
+              src={logoIgesdf.url}
+              alt="IGESDF — Instituto de Gestão Estratégica de Saúde do Distrito Federal"
+              className="h-10 w-auto"
+            />
+          </span>
           <div>
             <div className="text-xl font-semibold">IGESDF - Licenciamento</div>
             <div className="text-sm opacity-70">Gestão integrada de licenciamentos</div>
