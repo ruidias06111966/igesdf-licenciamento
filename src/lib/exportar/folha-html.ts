@@ -5,6 +5,16 @@
  */
 import { corSituacao, MARCA, SITUACOES_LEGENDA, corPadrao } from "@/lib/exportar/paleta";
 import { linhasMetadados, type MetaExport } from "@/lib/exportar/metadados";
+import logoIgesdf from "@/assets/igesdf-logo.jpg.asset.json";
+
+/**
+ * O documento é aberto noutra janela/iframe, por isso o endereço do logótipo
+ * tem de ser absoluto — um caminho relativo não resolveria lá.
+ */
+function urlLogo() {
+  if (typeof window === "undefined") return logoIgesdf.url;
+  return new URL(logoIgesdf.url, window.location.origin).href;
+}
 
 export type Orientacao = "portrait" | "landscape";
 
@@ -43,7 +53,7 @@ function legendaHtml() {
 function capaHtml(doc: DocumentoTabela) {
   const linhas = linhasMetadados(doc.meta);
   return `<section class="folha capa">
-  <div class="marca"><div class="marca-nome">IGESDF</div><div class="marca-sub">Núcleo de Licenciamento · NUCON</div></div>
+  <div class="marca"><img class="marca-logo" src="${urlLogo()}" alt="IGESDF"><div><div class="marca-nome">IGESDF</div><div class="marca-sub">Núcleo de Licenciamento · NUCON</div></div></div>
   <h1>${esc(doc.titulo)}</h1>
   ${doc.subtitulo ? `<p class="sub">${esc(doc.subtitulo)}</p>` : ""}
   <table class="meta"><tbody>
