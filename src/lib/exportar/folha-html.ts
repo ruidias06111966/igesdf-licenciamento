@@ -83,7 +83,7 @@ function tabelaHtml(doc: DocumentoTabela) {
     )
     .join("");
   return `<section class="folha dados">
-  <div class="cabecalho-dados"><span>${esc(doc.titulo)}</span><span>${esc(doc.subtitulo ?? "")}</span></div>
+  <div class="cabecalho-dados"><span class="cabecalho-marca"><img src="${urlLogo()}" alt="IGESDF">${esc(doc.titulo)}</span><span>${esc(doc.subtitulo ?? "")}</span></div>
   <table class="grade"><thead><tr>${cabecalho}</tr></thead><tbody>${corpo}</tbody></table>
 </section>`;
 }
@@ -98,7 +98,10 @@ export function construirHtmlRelatorio(doc: DocumentoTabela) {
   body { margin: 0; background: #eef0f4; font-family: Arial, Helvetica, sans-serif; color: #1F2937; }
   .folha { width: ${largura}; min-height: ${orientacao === "landscape" ? "210mm" : "297mm"}; margin: 0 auto 8mm; padding: 14mm 12mm; background: #fff; }
   .folha + .folha { break-before: page; }
-  .marca { border-bottom: 3px solid #${MARCA.fundo}; padding-bottom: 8px; }
+  .marca { display: flex; align-items: center; gap: 10px; border-bottom: 3px solid #${MARCA.fundo}; padding-bottom: 8px; }
+  .marca-logo { height: 16mm; width: auto; }
+  .cabecalho-marca { display: inline-flex; align-items: center; gap: 6px; }
+  .cabecalho-marca img { height: 7mm; width: auto; }
   .marca-nome { font-size: 22pt; font-weight: 800; letter-spacing: .04em; color: #${MARCA.fundo}; }
   .marca-sub { font-size: 9pt; letter-spacing: .18em; text-transform: uppercase; color: #${MARCA.cinza}; }
   h1 { font-size: 20pt; margin: 22mm 0 4px; color: #${MARCA.fundo}; }
