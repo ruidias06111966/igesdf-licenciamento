@@ -43,7 +43,11 @@ function tokenDoPedido(): string | null {
 }
 
 /** Valida o token da sessão e devolve a identidade, ou `null`. */
-async function identidade(): Promise<{ userId: string; email: string; nome: string | null } | null> {
+async function identidade(): Promise<{
+  userId: string;
+  email: string;
+  nome: string | null;
+} | null> {
   const token = tokenDoPedido();
   if (!token) return null;
 
@@ -143,7 +147,6 @@ export async function sessaoAtual(): Promise<Sessao | null> {
       suspenso: false,
     };
   }
-
 
   // A conta do responsável nunca pode ficar sem acesso ao próprio sistema.
   if (ehResponsavel && (data.perfil !== "master" || data.suspenso)) {

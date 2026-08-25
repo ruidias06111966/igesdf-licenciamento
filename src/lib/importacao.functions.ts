@@ -54,9 +54,10 @@ export const importarLicencas = createServerFn({ method: "POST" })
 
     for (const [i, l] of data.linhas.entries()) {
       const numeroLinha = i + 2; // cabeçalho é a linha 1 na planilha
-      const chave = /^\d+$/.test(l.unidade.replace(/\D/g, "")) && l.unidade.replace(/\D/g, "")
-        ? (indice.get(l.unidade.replace(/\D/g, "")) ?? indice.get(normalizar(l.unidade)))
-        : indice.get(normalizar(l.unidade));
+      const chave =
+        /^\d+$/.test(l.unidade.replace(/\D/g, "")) && l.unidade.replace(/\D/g, "")
+          ? (indice.get(l.unidade.replace(/\D/g, "")) ?? indice.get(normalizar(l.unidade)))
+          : indice.get(normalizar(l.unidade));
 
       if (!chave) {
         resultados.push({

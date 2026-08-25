@@ -10,7 +10,13 @@ export const verificarAcesso = createServerFn({ method: "GET" }).handler(async (
   const { sessaoAtual } = await import("@/lib/acesso.server");
   const sessao = await sessaoAtual();
   if (!sessao) {
-    return { sessao: false as const, autorizado: false, perfil: null, email: null, suspenso: false };
+    return {
+      sessao: false as const,
+      autorizado: false,
+      perfil: null,
+      email: null,
+      suspenso: false,
+    };
   }
   return {
     sessao: true as const,

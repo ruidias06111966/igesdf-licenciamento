@@ -453,7 +453,6 @@ export const deleteLicenca = createServerFn({ method: "POST" })
     return { ok: true };
   });
 
-
 const rtSchema = z.object({
   id: z.string().uuid().optional(),
   unidade_id: z.string().uuid(),

@@ -78,7 +78,6 @@ export function AcoesCopiar({
   );
 }
 
-
 export function markdownDe(blocos: Bloco[]) {
   return blocosParaMarkdown(blocos);
 }
@@ -97,7 +96,11 @@ export function FolhaDespacho({ blocos }: { blocos: Bloco[] }) {
             );
           case "p":
             return (
-              <p key={i} className="text-justify" dangerouslySetInnerHTML={{ __html: negrito(b.texto) }} />
+              <p
+                key={i}
+                className="text-justify"
+                dangerouslySetInnerHTML={{ __html: negrito(b.texto) }}
+              />
             );
           case "lista":
             return (

@@ -133,7 +133,9 @@ export function montarDespachoUnidade(entrada: {
       t: "p",
       texto: `**Atenção:** ${expiradas.length} licença(s) com validade expirada — ${expiradas
         .map((i) => `${sigla(i.orgao)} / ${i.cnae || "s/ CNAE"} (venceu em ${dataBr(i.validade)})`)
-        .join("; ")}. A renovação sanitária deve ser protocolada com, no mínimo, 60 dias de antecedência.`,
+        .join(
+          "; ",
+        )}. A renovação sanitária deve ser protocolada com, no mínimo, 60 dias de antecedência.`,
     });
   }
   if (indeferidas.length) {

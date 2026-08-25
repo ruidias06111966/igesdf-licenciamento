@@ -131,11 +131,7 @@ export function BotaoExportar<T>({
     await exportarDocumento("docx", titulo, construirMarkdownRelatorio(doc));
   }
 
-  const campo = (
-    id: keyof MetaExport,
-    rotuloCampo: string,
-    placeholder: string,
-  ) => (
+  const campo = (id: keyof MetaExport, rotuloCampo: string, placeholder: string) => (
     <div className="space-y-1.5">
       <Label htmlFor={`meta-${id}`} className="text-xs text-muted-foreground">
         {rotuloCampo}

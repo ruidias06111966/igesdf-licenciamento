@@ -177,17 +177,13 @@ function Pagina() {
                   id={`${s.chave}-fundo`}
                   rotulo="Fundo"
                   valor={cor.fundo}
-                  onChange={(v) =>
-                    setCores((c) => ({ ...c, [s.chave]: { ...cor, fundo: v } }))
-                  }
+                  onChange={(v) => setCores((c) => ({ ...c, [s.chave]: { ...cor, fundo: v } }))}
                 />
                 <SeletorCor
                   id={`${s.chave}-texto`}
                   rotulo="Texto"
                   valor={cor.texto}
-                  onChange={(v) =>
-                    setCores((c) => ({ ...c, [s.chave]: { ...cor, texto: v } }))
-                  }
+                  onChange={(v) => setCores((c) => ({ ...c, [s.chave]: { ...cor, texto: v } }))}
                 />
               </div>
             );

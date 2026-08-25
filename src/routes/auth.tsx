@@ -140,20 +140,16 @@ function AuthPage() {
           </div>
 
           <ul className="flex flex-wrap gap-2" aria-label="Órgãos abrangidos">
-            {[
-              "Vigilância Sanitária",
-              "CBMDF",
-              "IBRAM",
-              "CNES",
-              "Administração Regional",
-            ].map((orgao) => (
-              <li
-                key={orgao}
-                className="rounded-md border border-sidebar-border bg-sidebar-accent/40 px-3 py-1.5 text-xs font-medium"
-              >
-                {orgao}
-              </li>
-            ))}
+            {["Vigilância Sanitária", "CBMDF", "IBRAM", "CNES", "Administração Regional"].map(
+              (orgao) => (
+                <li
+                  key={orgao}
+                  className="rounded-md border border-sidebar-border bg-sidebar-accent/40 px-3 py-1.5 text-xs font-medium"
+                >
+                  {orgao}
+                </li>
+              ),
+            )}
           </ul>
         </div>
         <div className="text-xs opacity-60">

@@ -38,7 +38,10 @@ export function ListaHistorico({ registos }: { registos: RegistoAuditoria[] }) {
       {registos.map((r) => (
         <li key={r.id} className="rounded-lg border p-3">
           <div className="flex flex-wrap items-center gap-2">
-            <Badge variant={r.acao === "excluir" ? "destructive" : "secondary"} className="text-[10px]">
+            <Badge
+              variant={r.acao === "excluir" ? "destructive" : "secondary"}
+              className="text-[10px]"
+            >
               {ACAO_LABEL[r.acao] ?? r.acao}
             </Badge>
             <span className="text-xs text-muted-foreground">{dataHora(r.created_at)}</span>
@@ -51,7 +54,10 @@ export function ListaHistorico({ registos }: { registos: RegistoAuditoria[] }) {
           {r.alteracoes.length > 0 && (
             <ul className="mt-2 space-y-1 text-xs">
               {r.alteracoes.map((a, i) => (
-                <li key={`${a.campo}-${i}`} className="grid gap-1 sm:grid-cols-[160px_minmax(0,1fr)]">
+                <li
+                  key={`${a.campo}-${i}`}
+                  className="grid gap-1 sm:grid-cols-[160px_minmax(0,1fr)]"
+                >
                   <span className="font-medium">{campoLegivel(a.campo)}</span>
                   <span className="text-muted-foreground">
                     <span className="line-through">{valorLegivel(a.campo, a.antes)}</span>

@@ -228,7 +228,6 @@ function Editor({ unidadeId }: { unidadeId: string }) {
     onError: (e) => toast.error(mensagemErro(e)),
   });
 
-
   if (isLoading) return <p className="text-sm text-muted-foreground">A carregar dados…</p>;
   if (error) return <ErrorState error={error} />;
   if (!data) return null;
@@ -243,7 +242,11 @@ function Editor({ unidadeId }: { unidadeId: string }) {
     <div className="space-y-5">
       <Card className="no-print">
         <CardContent className="grid gap-4 p-4 md:grid-cols-2">
-          <Campo label="Número do despacho" valor={campos.numero} ao={(v) => definir("numero", v)} />
+          <Campo
+            label="Número do despacho"
+            valor={campos.numero}
+            ao={(v) => definir("numero", v)}
+          />
           <Campo
             label="Processo SEI"
             valor={campos.processo_sei}
@@ -335,9 +338,7 @@ function Editor({ unidadeId }: { unidadeId: string }) {
                         aria-label="Classificação"
                         className="w-full rounded border bg-background px-1 py-0.5"
                         value={i.classe}
-                        onChange={(e) =>
-                          atualizarItem(idx, { classe: e.target.value as Classe })
-                        }
+                        onChange={(e) => atualizarItem(idx, { classe: e.target.value as Classe })}
                       >
                         {(Object.keys(CLASSE_LABEL) as Classe[]).map((c) => (
                           <option key={c} value={c}>

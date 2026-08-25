@@ -52,7 +52,9 @@ export const dadosConsolidado = createServerFn({ method: "POST" })
 
     const unidades = await supabase
       .from("unidades")
-      .select("id, nome, nome_fantasia, tipo, cnpj, regiao_administrativa, ativa, situacao_edificacao")
+      .select(
+        "id, nome, nome_fantasia, tipo, cnpj, regiao_administrativa, ativa, situacao_edificacao",
+      )
       .eq("ativa", true)
       .order("nome");
     if (unidades.error) throw unidades.error;
@@ -103,7 +105,6 @@ export const registarDespachoGerado = createServerFn({ method: "POST" })
       numero?: string | null;
       processo_sei?: string | null;
     }) => entrada,
-
   )
   .handler(async ({ data, context }) => {
     const { registarAuditoria } = await import("@/lib/auditoria.server");
@@ -119,7 +120,6 @@ export const registarDespachoGerado = createServerFn({ method: "POST" })
         numero: data.numero ?? null,
         processo_sei: data.processo_sei ?? null,
       },
-
     });
     return { ok: true };
   });
