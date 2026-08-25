@@ -1,4 +1,34 @@
 import { createMiddleware } from "@tanstack/react-start";
+import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+
+type ClaimsAcesso = {
+  email?: unknown;
+  user_metadata?: unknown;
+};
+
+function identidadeDasClaims(userId: string, claims: ClaimsAcesso) {
+  const email = typeof claims.email === "string" ? claims.email.trim().toLowerCase() : "";
+  if (!email) {
+    throw new Error("Unauthorized: a sessão não contém um e-mail válido.");
+  }
+
+  const metadata =
+    claims.user_metadata && typeof claims.user_metadata === "object"
+      ? (claims.user_metadata as Record<string, unknown>)
+      : {};
+  const nomeBruto = metadata.nome ?? metadata.full_name;
+
+  return {
+    userId,
+    email,
+    nome: typeof nomeBruto === "string" && nomeBruto.trim() ? nomeBruto.trim() : null,
+  };
+}
+
+async function sessaoValidada(userId: string, claims: ClaimsAcesso) {
+  const { sessaoDaIdentidade } = await import("@/lib/acesso.server");
+  return sessaoDaIdentidade(identidadeDasClaims(userId, claims));
+}
 
 /**
  * Exige uma conta autorizada e entrega o cliente Supabase com service role.
@@ -8,12 +38,10 @@ import { createMiddleware } from "@tanstack/react-start";
  * ignora RLS — é intencional: as políticas continuam fechadas ao navegador, e
  * todo o acesso a dados passa por estas funções, onde o perfil é conferido.
  */
-export const requireAcesso = createMiddleware({ type: "function" }).server(async ({ next }) => {
-  const { sessaoAtual } = await import("@/lib/acesso.server");
-  const sessao = await sessaoAtual();
-  if (!sessao) {
-    throw new Error("Unauthorized: sessão não iniciada ou e-mail por confirmar.");
-  }
+export const requireAcesso = createMiddleware({ type: "function" })
+  .middleware([requireSupabaseAuth])
+  .server(async ({ next, context }) => {
+  const sessao = await sessaoValidada(context.userId, context.claims);
   if (!sessao.perfil) {
     throw new Error(
       "A sua conta ainda não foi autorizada pelo utilizador master. Aguarde a liberação.",
@@ -28,12 +56,10 @@ export const requireAcesso = createMiddleware({ type: "function" }).server(async
  * modo apenas-leitura: esconder os botões não chega, porque as funções de
  * servidor são chamáveis diretamente — a barreira tem de estar aqui.
  */
-export const requireEdicao = createMiddleware({ type: "function" }).server(async ({ next }) => {
-  const { sessaoAtual } = await import("@/lib/acesso.server");
-  const sessao = await sessaoAtual();
-  if (!sessao) {
-    throw new Error("Unauthorized: sessão não iniciada ou e-mail por confirmar.");
-  }
+export const requireEdicao = createMiddleware({ type: "function" })
+  .middleware([requireSupabaseAuth])
+  .server(async ({ next, context }) => {
+  const sessao = await sessaoValidada(context.userId, context.claims);
   if (!sessao.perfil) {
     throw new Error(
       "A sua conta ainda não foi autorizada pelo utilizador master. Aguarde a liberação.",
@@ -53,10 +79,11 @@ export const requireEdicao = createMiddleware({ type: "function" }).server(async
  * (assistente de IA, despachos e consolidado da rede) e pela gestão de
  * utilizadores — esconder o menu não bastaria, porque as funções são chamáveis.
  */
-export const requireMaster = createMiddleware({ type: "function" }).server(async ({ next }) => {
-  const { sessaoAtual } = await import("@/lib/acesso.server");
-  const sessao = await sessaoAtual();
-  if (sessao?.perfil !== "master") {
+export const requireMaster = createMiddleware({ type: "function" })
+  .middleware([requireSupabaseAuth])
+  .server(async ({ next, context }) => {
+  const sessao = await sessaoValidada(context.userId, context.claims);
+  if (sessao.perfil !== "master") {
     throw new Error("Este módulo é reservado ao acesso master.");
   }
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
