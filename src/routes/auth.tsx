@@ -143,7 +143,7 @@ function AuthPage() {
         <Card className="w-full max-w-md">
           <CardHeader>
             <div className="mb-2 flex items-center gap-2 lg:hidden">
-              <ShieldCheck className="size-6 text-primary" aria-hidden="true" />
+              <img src={logoIgesdf.url} alt="Logótipo IGESDF" className="h-6 w-auto" />
               <span className="font-semibold">IGESDF - Licenciamento</span>
             </div>
             <CardTitle>
