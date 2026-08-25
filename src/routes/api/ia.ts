@@ -47,7 +47,6 @@ function parteAnexo(a: Anexo) {
   return { type: "text", text: `Ficheiro anexado "${a.nome}":\n\n${conteudo.slice(0, 200_000)}` };
 }
 
-
 export const Route = createFileRoute("/api/ia")({
   server: {
     handlers: {
@@ -114,7 +113,6 @@ export const Route = createFileRoute("/api/ia")({
 
         const modelo =
           body.modelo === "aprofundado" ? "google/gemini-3-pro-preview" : "google/gemini-3.5-flash";
-
 
         // O contexto é montado no servidor a partir da base de dados — o
         // navegador só indica a ação e, quando aplicável, a unidade. Depois é
@@ -241,7 +239,6 @@ export const Route = createFileRoute("/api/ia")({
                 /* fragmento incompleto: ignorado */
               }
             }
-
           },
           flush() {
             void registarUso({ perfil, acao, tokensEntrada: entrada, tokensSaida: saida });

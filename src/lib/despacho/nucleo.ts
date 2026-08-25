@@ -190,17 +190,12 @@ export function blocosParaMarkdown(blocos: Bloco[]): string {
 
 /** Texto simples, para quem cola num campo sem formatação. */
 export function blocosParaTexto(blocos: Bloco[]): string {
-  return blocosParaMarkdown(blocos)
-    .replace(/\*\*/g, "")
-    .replace(/^## /gm, "")
-    .trim();
+  return blocosParaMarkdown(blocos).replace(/\*\*/g, "").replace(/^## /gm, "").trim();
 }
 
 export function csvDeQuadro(cab: string[], linhas: string[][]): string {
   const esc = (c: string) => `"${String(c ?? "").replace(/"/g, '""')}"`;
-  return (
-    "\uFEFF" + [cab, ...linhas].map((l) => l.map(esc).join(";")).join("\r\n")
-  );
+  return "\uFEFF" + [cab, ...linhas].map((l) => l.map(esc).join(";")).join("\r\n");
 }
 
 export function competenciaLabel(iso: string): string {

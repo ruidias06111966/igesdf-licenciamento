@@ -57,8 +57,10 @@ export async function registarAuditoria(
       entidade_id: registo.entidade_id ?? null,
       acao: registo.acao,
       perfil: await autorAtual(),
-      alteracoes: (registo.alteracoes ?? []) as unknown as Database["public"]["Tables"]["atividade_log"]["Insert"]["alteracoes"],
-      detalhes: (registo.detalhes ?? null) as unknown as Database["public"]["Tables"]["atividade_log"]["Insert"]["detalhes"],
+      alteracoes: (registo.alteracoes ??
+        []) as unknown as Database["public"]["Tables"]["atividade_log"]["Insert"]["alteracoes"],
+      detalhes: (registo.detalhes ??
+        null) as unknown as Database["public"]["Tables"]["atividade_log"]["Insert"]["detalhes"],
     });
   } catch {
     // Auditoria é acessória: nunca derruba a gravação principal.

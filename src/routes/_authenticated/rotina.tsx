@@ -19,11 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  executarSincronizacao,
-  getConfigRotina,
-  salvarConfigRotina,
-} from "@/lib/rotina.functions";
+import { executarSincronizacao, getConfigRotina, salvarConfigRotina } from "@/lib/rotina.functions";
 import { listAuditoria } from "@/lib/auditoria.functions";
 import { dataHora } from "@/lib/auditoria-labels";
 import { invalidarDados } from "@/lib/queries";

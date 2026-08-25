@@ -21,7 +21,6 @@ export type OpcoesPlanilha = {
   meta?: MetaExport;
 };
 
-
 const BORDA = { style: "thin", color: { rgb: "D0D5DD" } } as const;
 const BORDAS = { top: BORDA, bottom: BORDA, left: BORDA, right: BORDA };
 
@@ -202,7 +201,6 @@ export async function baixarPlanilha<T>(
     Company: "IGESDF",
     Keywords: meta.map((m) => `${m.rotulo}: ${m.valor}`).join("; "),
   };
-
 
   XLSX.writeFile(livro, nomeArquivo.endsWith(".xlsx") ? nomeArquivo : `${nomeArquivo}.xlsx`, {
     bookType: "xlsx",

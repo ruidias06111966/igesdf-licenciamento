@@ -58,8 +58,11 @@ function Pagina() {
   });
 
   const guardar = useMutation({
-    mutationFn: (v: { userId: string; perfil: "master" | "edicao" | "leitura" | null; suspenso?: boolean }) =>
-      definirPerfilUtilizador({ data: v }),
+    mutationFn: (v: {
+      userId: string;
+      perfil: "master" | "edicao" | "leitura" | null;
+      suspenso?: boolean;
+    }) => definirPerfilUtilizador({ data: v }),
     onSuccess: () => {
       toast.success("Acesso atualizado.");
       queryClient.invalidateQueries({ queryKey: ["utilizadores"] });
@@ -113,7 +116,9 @@ function Pagina() {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => guardar.mutate({ userId: u.user_id, perfil: u.perfil as never, suspenso: false })}
+              onClick={() =>
+                guardar.mutate({ userId: u.user_id, perfil: u.perfil as never, suspenso: false })
+              }
             >
               <UserCheck className="mr-2 size-4" aria-hidden="true" /> Reativar
             </Button>

@@ -293,8 +293,8 @@ function VersoesModelo({ id, versao }: { id: string; versao: number }) {
         <DialogHeader>
           <DialogTitle>Versões do modelo</DialogTitle>
           <DialogDescription className="text-xs">
-            Gravar por cima arquiva a versão anterior. Pode repor qualquer uma — a atual fica
-            também guardada.
+            Gravar por cima arquiva a versão anterior. Pode repor qualquer uma — a atual fica também
+            guardada.
           </DialogDescription>
         </DialogHeader>
         {isLoading && <p className="text-sm text-muted-foreground">A carregar…</p>}
@@ -425,9 +425,7 @@ export function BibliotecaModelos({ onUsar }: { onUsar: (conteudo: string) => vo
       if (orgao !== TODOS && m.orgao !== orgao) return false;
       if (tipoUnidade !== TODOS && m.tipo_unidade !== tipoUnidade) return false;
       if (!termo) return true;
-      return `${m.titulo} ${(m.tags ?? []).join(" ")} ${m.conteudo}`
-        .toLowerCase()
-        .includes(termo);
+      return `${m.titulo} ${(m.tags ?? []).join(" ")} ${m.conteudo}`.toLowerCase().includes(termo);
     });
   }, [modelos, busca, tipo, orgao, tipoUnidade]);
 

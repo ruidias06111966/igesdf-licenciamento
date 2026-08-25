@@ -134,9 +134,6 @@ const PEDIDO = "Extraia os dados deste certificado em JSON.";
 const SEM_CREDITOS =
   "A leitura automática está sem créditos de IA. Recarregue os créditos da plataforma e tente novamente — o certificado continua arquivado.";
 
-
-
-
 /** Leitura pelo serviço de IA da plataforma (não depende de créditos próprios). */
 async function lerPelaPlataforma(arquivo: Uint8Array, mime: string): Promise<Bruto> {
   const chave = process.env["LOVABLE_API_KEY"];
@@ -199,8 +196,6 @@ export async function extrairCertificado(
       `Não foi possível ler o documento agora (${motivo}). Verifique se é um PDF ou imagem legível e tente novamente.`,
     );
   }
-
-
 
   const texto = bruto.texto;
   const inicio = texto.indexOf("{");
@@ -349,7 +344,8 @@ export function compararComBase(
     if (obsCert) {
       const obsBase = limpar(existente.observacoes ?? null);
       if (!obsBase) comparar("observacoes", null, obsCert);
-      else if (!obsBase.includes(obsCert)) comparar("observacoes", obsBase, `${obsBase}\n${obsCert}`);
+      else if (!obsBase.includes(obsCert))
+        comparar("observacoes", obsBase, `${obsBase}\n${obsCert}`);
     }
 
     linhas.push(

@@ -54,9 +54,8 @@ export const salvarConfigRotina = createServerFn({ method: "POST" })
     if (error) throw error;
 
     // Reagenda o cron com o novo horário convertido para UTC.
-    const { data: expressao, error: erroCron } = await context.supabase.rpc(
-      "agendar_sincronizacao",
-    );
+    const { data: expressao, error: erroCron } =
+      await context.supabase.rpc("agendar_sincronizacao");
     if (erroCron) throw erroCron;
 
     const { registarAuditoria } = await import("@/lib/auditoria.server");

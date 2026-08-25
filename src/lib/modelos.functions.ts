@@ -14,7 +14,6 @@ import { modeloSchema } from "@/lib/modelos-schema";
  * cima arquiva a versão anterior em vez de a perder.
  */
 
-
 export const listModelos = createServerFn({ method: "GET" })
   .middleware([requireEdicao])
   .handler(async ({ context }) => {
@@ -48,11 +47,7 @@ export const restaurarVersaoModelo = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const [{ data: modelo }, { data: versao }] = await Promise.all([
       context.supabase.from("ia_modelos").select("*").eq("id", data.modelo_id).maybeSingle(),
-      context.supabase
-        .from("ia_modelo_versoes")
-        .select("*")
-        .eq("id", data.versao_id)
-        .maybeSingle(),
+      context.supabase.from("ia_modelo_versoes").select("*").eq("id", data.versao_id).maybeSingle(),
     ]);
     if (!modelo) throw new Error("Modelo não encontrado.");
     if (!versao || versao.modelo_id !== data.modelo_id) throw new Error("Versão não encontrada.");
@@ -88,7 +83,6 @@ async function arquivarVersao(
     perfil: await autorAtual(),
   });
 }
-
 
 export const upsertModelo = createServerFn({ method: "POST" })
   .middleware([requireEdicao])
@@ -143,7 +137,6 @@ export const deleteModelo = createServerFn({ method: "POST" })
     if (error) throw error;
     return { ok: true };
   });
-
 
 /** Nome de ficheiro seguro a partir do título do modelo. */
 function slug(titulo: string) {

@@ -146,7 +146,16 @@ function ConsolidadoPage() {
 
   const exportarCsv = () => {
     const csv = csvDeQuadro(
-      ["Unidade", "Tipo", "Total", "Licenciadas", "Dispensadas", "Pendentes", "Vencidas", "Última atualização"],
+      [
+        "Unidade",
+        "Tipo",
+        "Total",
+        "Licenciadas",
+        "Dispensadas",
+        "Pendentes",
+        "Vencidas",
+        "Última atualização",
+      ],
       resumos.map((r) => [
         r.unidade.nome_fantasia?.trim() || r.unidade.nome,
         tipoUnidadeLabel(r.unidade.tipo),

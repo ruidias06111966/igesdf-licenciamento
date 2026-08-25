@@ -45,13 +45,15 @@ const ATALHOS: {
   {
     to: "/rotina",
     titulo: "Correção automática",
-    descricao: "Horário e fuso da rotina diária que marca as licenças vencidas, e execução em lote.",
+    descricao:
+      "Horário e fuso da rotina diária que marca as licenças vencidas, e execução em lote.",
     icon: Clock,
   },
   {
     to: "/importar",
     titulo: "Importar CSV",
-    descricao: "Atualize várias licenças de uma vez a partir de uma planilha, com conferência prévia.",
+    descricao:
+      "Atualize várias licenças de uma vez a partir de uma planilha, com conferência prévia.",
     icon: Upload,
   },
   {
@@ -80,18 +82,20 @@ function Pagina() {
       <SubNav grupo="configuracoes" />
 
       <div className="grid gap-4 sm:grid-cols-2">
-        {ATALHOS.filter((a) => !a.master || ehMaster).map(({ to, titulo, descricao, icon: Icone }) => (
-          <Link key={to} to={to} className="block">
-            <Card className="h-full transition-colors hover:border-primary/40 hover:bg-muted/40">
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <Icone className="size-4" aria-hidden="true" /> {titulo}
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="text-sm text-muted-foreground">{descricao}</CardContent>
-            </Card>
-          </Link>
-        ))}
+        {ATALHOS.filter((a) => !a.master || ehMaster).map(
+          ({ to, titulo, descricao, icon: Icone }) => (
+            <Link key={to} to={to} className="block">
+              <Card className="h-full transition-colors hover:border-primary/40 hover:bg-muted/40">
+                <CardHeader className="pb-2">
+                  <CardTitle className="flex items-center gap-2 text-base">
+                    <Icone className="size-4" aria-hidden="true" /> {titulo}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="text-sm text-muted-foreground">{descricao}</CardContent>
+              </Card>
+            </Link>
+          ),
+        )}
       </div>
     </div>
   );
