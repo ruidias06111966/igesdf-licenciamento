@@ -11,10 +11,10 @@ import {
   LogOut,
   Menu,
   Settings,
-  ShieldCheck,
   Sparkles,
 } from "lucide-react";
 import { useState, type ComponentType } from "react";
+import logoIgesdf from "@/assets/igesdf-logo.jpg.asset.json";
 import { Button } from "@/components/ui/button";
 import { AlertasVencimento } from "@/components/alertas-vencimento";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
@@ -47,7 +47,13 @@ const NAV_MASTER: ItemNav[] = [
 function Marca({ compacta }: { compacta?: boolean }) {
   return (
     <div className="flex items-center gap-2.5">
-      <ShieldCheck className="size-6 shrink-0 text-sidebar-primary" aria-hidden="true" />
+      <span className="flex shrink-0 items-center justify-center rounded-md bg-white p-1.5">
+        <img
+          src={logoIgesdf.url}
+          alt="IGESDF — Instituto de Gestão Estratégica de Saúde do Distrito Federal"
+          className="h-6 w-auto"
+        />
+      </span>
       <div className="min-w-0 leading-tight">
         <div className="text-sm font-semibold">IGESDF</div>
         {!compacta && <div className="text-xs opacity-70">Licenciamento</div>}
