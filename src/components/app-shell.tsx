@@ -11,10 +11,10 @@ import {
   LogOut,
   Menu,
   Settings,
-  ShieldCheck,
   Sparkles,
 } from "lucide-react";
 import { useState, type ComponentType } from "react";
+import logoIgesdf from "@/assets/igesdf-logo.jpg.asset.json";
 import { Button } from "@/components/ui/button";
 import { AlertasVencimento } from "@/components/alertas-vencimento";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
