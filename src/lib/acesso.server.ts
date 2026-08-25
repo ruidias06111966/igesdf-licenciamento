@@ -76,6 +76,12 @@ async function identidade(): Promise<{
   };
 }
 
+export type IdentidadeConfirmada = {
+  userId: string;
+  email: string;
+  nome: string | null;
+};
+
 /**
  * Sessão atual: identidade validada + perfil atribuído.
  *
@@ -83,10 +89,7 @@ async function identidade(): Promise<{
  * `perfis_acesso` (pendente), para o master a poder autorizar. A conta do
  * responsável é promovida a master automaticamente.
  */
-export async function sessaoAtual(): Promise<Sessao | null> {
-  const eu = await identidade();
-  if (!eu) return null;
-
+export async function sessaoDaIdentidade(eu: IdentidadeConfirmada): Promise<Sessao> {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data } = await supabaseAdmin
     .from("perfis_acesso")
@@ -170,6 +173,12 @@ export async function sessaoAtual(): Promise<Sessao | null> {
     perfil: data.suspenso ? null : ((data.perfil as Perfil | null) ?? null),
     suspenso: data.suspenso,
   };
+}
+
+export async function sessaoAtual(): Promise<Sessao | null> {
+  const eu = await identidade();
+  if (!eu) return null;
+  return sessaoDaIdentidade(eu);
 }
 
 /** Perfil da sessão, ou `null` quando não há sessão autorizada. */
