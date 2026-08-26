@@ -302,25 +302,20 @@ const ORGAOS_HERO = [
 ];
 
 function PainelResumo() {
-  const { data } = useSuspenseQuery(resumoQuery);
-  const totalFaixas =
-    data.faixas.vencido + data.faixas.critico + data.faixas.atencao + data.faixas.emdia || 1;
-  const pct = (n: number) => `${((n / totalFaixas) * 100).toFixed(2)}%`;
-
   return (
     <div className="hidden flex-col justify-between bg-sidebar p-10 text-sidebar-foreground lg:flex lg:overflow-y-auto">
       <div className="mx-auto flex w-full max-w-xl flex-col">
-        <header className="mb-10 flex items-center gap-5">
-          <span className="flex size-20 shrink-0 items-center justify-center rounded-2xl bg-white p-2.5 shadow-sm">
+        <header className="mb-12 flex items-center gap-5">
+          <span className="flex size-24 shrink-0 items-center justify-center rounded-2xl bg-white p-3 shadow-sm">
             <img
               src={logoIgesdf.url}
               alt="IGESDF — Instituto de Gestão Estratégica de Saúde do Distrito Federal"
-              className="h-14 w-auto"
+              className="h-16 w-auto"
             />
           </span>
           <div>
-            <h1 className="text-[22px] font-semibold leading-tight">IGESDF — Licenciamento</h1>
-            <p className="text-sm opacity-70">Gestão integrada de licenciamentos</p>
+            <h1 className="text-[26px] font-semibold leading-tight">IGESDF — Licenciamento</h1>
+            <p className="text-[15px] opacity-70">Gestão integrada de licenciamentos</p>
           </div>
         </header>
 
