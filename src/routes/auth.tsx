@@ -1,17 +1,26 @@
 import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
+import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
 import { useState } from "react";
 import { BookOpen, Eye, EyeOff, MailCheck } from "lucide-react";
 import logoIgesdf from "@/assets/igesdf-logo.jpg.asset.json";
 import manualAsset from "@/assets/manual-igesdf.pdf.asset.json";
 import { supabase } from "@/integrations/supabase/client";
 import { mensagemErro } from "@/lib/errors";
+import { getResumoPublico } from "@/lib/publico.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
+const resumoQuery = queryOptions({
+  queryKey: ["resumo-publico"],
+  queryFn: () => getResumoPublico(),
+  staleTime: 5 * 60 * 1000,
+});
+
 export const Route = createFileRoute("/auth")({
   component: AuthPage,
+  loader: ({ context }) => context.queryClient.ensureQueryData(resumoQuery),
   head: () => ({
     meta: [
       { title: "Entrar — IGESDF - Licenciamento" },
@@ -31,6 +40,7 @@ export const Route = createFileRoute("/auth")({
     links: [{ rel: "canonical", href: "https://igesdf-licenciamento.qidominios.tech/auth" }],
   }),
 });
+
 
 type Modo = "entrar" | "criar" | "recuperar";
 
