@@ -289,3 +289,185 @@ function AuthPage() {
     </main>
   );
 }
+
+const ORGAOS_HERO = [
+  "DF LEGAL",
+  "VISADF",
+  "CBMDF",
+  "IBRAM",
+  "SUSDEC",
+  "PCDF",
+  "SEAGRI",
+  "SEEDF",
+];
+
+function PainelResumo() {
+  const { data } = useSuspenseQuery(resumoQuery);
+  const totalFaixas =
+    data.faixas.vencido + data.faixas.critico + data.faixas.atencao + data.faixas.emdia || 1;
+  const pct = (n: number) => `${((n / totalFaixas) * 100).toFixed(2)}%`;
+
+  return (
+    <div className="hidden flex-col justify-between bg-sidebar p-10 text-sidebar-foreground lg:flex lg:overflow-y-auto">
+      <div className="mx-auto flex w-full max-w-xl flex-col">
+        <header className="mb-10 flex items-center gap-5">
+          <span className="flex size-20 shrink-0 items-center justify-center rounded-2xl bg-white p-2.5 shadow-sm">
+            <img
+              src={logoIgesdf.url}
+              alt="IGESDF — Instituto de Gestão Estratégica de Saúde do Distrito Federal"
+              className="h-14 w-auto"
+            />
+          </span>
+          <div>
+            <h1 className="text-[22px] font-semibold leading-tight">IGESDF — Licenciamento</h1>
+            <p className="text-sm opacity-70">Gestão integrada de licenciamentos</p>
+          </div>
+        </header>
+
+        <section className="mb-10">
+          <span className="mb-5 inline-block rounded-full border border-sidebar-border bg-sidebar-accent/60 px-4 py-1.5 text-xs font-semibold uppercase tracking-widest">
+            Compliance regulatório
+          </span>
+
+          <h2 className="mb-5 text-balance text-[clamp(30px,3.8vw,48px)] font-semibold leading-[1.14] tracking-tight">
+            Cada CNAE tem sua data.
+            <br />
+            <span className="opacity-70">Cada órgão, seu prazo.</span>
+          </h2>
+
+          <p className="mb-6 max-w-[60ch] text-[17px] leading-relaxed opacity-80">
+            Controle de licenciamento das unidades do IGESDF por atividade económica — não por
+            órgão. Validades, indeferimentos e pendências de protocolo numa matriz única, com alerta
+            antes do vencimento.
+          </p>
+
+          <div className="mb-3 flex flex-wrap gap-2">
+            {ORGAOS_HERO.map((orgao) => (
+              <span
+                key={orgao}
+                className="rounded-lg border border-sidebar-border bg-sidebar-accent/40 px-3.5 py-2 text-sm font-medium"
+              >
+                {orgao}
+              </span>
+            ))}
+          </div>
+          <p className="text-xs opacity-60">Dados extraídos dos certificados detalhados da RedeSim.</p>
+        </section>
+
+        <section
+          className="mt-auto overflow-hidden rounded-2xl border border-sidebar-border bg-gradient-to-b from-sidebar-accent/50 to-sidebar-accent/20"
+          aria-label="Situação da rede"
+        >
+          <div
+            className="flex h-1.5 w-full"
+            role="img"
+            aria-label="Distribuição das atividades por faixa de prazo"
+          >
+            <span className="bg-destructive" style={{ width: pct(data.faixas.vencido) }} />
+            <span className="bg-warning" style={{ width: pct(data.faixas.critico) }} />
+            <span
+              className="bg-[hsl(var(--info))]"
+              style={{ width: pct(data.faixas.atencao) }}
+            />
+            <span className="bg-success" style={{ width: pct(data.faixas.emdia) }} />
+          </div>
+
+          <div className="grid grid-cols-2 divide-x divide-sidebar-border border-b border-sidebar-border">
+            <Indicador
+              faixa="neutro"
+              valor={data.unidades}
+              rotulo="Unidades acompanhadas"
+              apoio="Hospitais, UPAs e administrativas"
+            />
+            <Indicador
+              faixa="vencido"
+              valor={data.vencidas}
+              rotulo="Atividades com licença vencida"
+              apoio={`Em ${data.unidadesComVencida} unidades`}
+            />
+            <Indicador
+              faixa="critico"
+              valor={data.vencendo90}
+              rotulo="Vencendo em até 90 dias"
+              apoio="Renovação a protocolar"
+            />
+            <Indicador
+              faixa="atencao"
+              valor={data.aguardandoProtocolo}
+              rotulo="Aguardando protocolo do IGESDF"
+              apoio="Ação nossa, não do órgão"
+            />
+          </div>
+
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2 bg-black/15 px-6 py-3.5 text-xs opacity-70">
+            <span className="inline-flex items-center gap-2">
+              <span className="size-2 rounded-full bg-destructive" />
+              Vencida
+            </span>
+            <span className="inline-flex items-center gap-2">
+              <span className="size-2 rounded-full bg-warning" />
+              Até 60 dias
+            </span>
+            <span className="inline-flex items-center gap-2">
+              <span className="size-2 rounded-full bg-[hsl(var(--info))]" />
+              Até 90 dias
+            </span>
+            <span className="inline-flex items-center gap-2">
+              <span className="size-2 rounded-full bg-success" />
+              Dentro do prazo
+            </span>
+            <span className="ml-auto tabular-nums">
+              Última leitura de certificado: {data.ultimaLeitura}
+            </span>
+          </div>
+        </section>
+      </div>
+
+      <div className="mx-auto mt-6 w-full max-w-xl text-xs opacity-60">
+        Instituto de Gestão Estratégica de Saúde do Distrito Federal
+      </div>
+    </div>
+  );
+}
+
+function Indicador({
+  faixa,
+  valor,
+  rotulo,
+  apoio,
+}: {
+  faixa: "neutro" | "vencido" | "critico" | "atencao";
+  valor: number;
+  rotulo: string;
+  apoio: string;
+}) {
+  const corMarca =
+    faixa === "vencido"
+      ? "bg-destructive"
+      : faixa === "critico"
+        ? "bg-warning"
+        : faixa === "atencao"
+          ? "bg-[hsl(var(--info))]"
+          : "bg-sidebar-foreground/40";
+
+  const corValor =
+    faixa === "vencido"
+      ? "text-destructive"
+      : faixa === "critico"
+        ? "text-warning"
+        : faixa === "atencao"
+          ? "text-[hsl(var(--info))]"
+          : "text-sidebar-foreground";
+
+  return (
+    <div className="px-6 py-6">
+      <span className={`mb-4 block h-0.5 w-5 rounded-full ${corMarca}`} />
+      <span className={`block text-[38px] font-semibold leading-none tracking-tight ${corValor}`}>
+        {valor}
+      </span>
+      <p className="mt-2 text-[13.5px] font-medium">{rotulo}</p>
+      <p className="mt-1 text-xs opacity-70">{apoio}</p>
+    </div>
+  );
+}
+
