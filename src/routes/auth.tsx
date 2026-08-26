@@ -120,52 +120,7 @@ function AuthPage() {
 
   return (
     <main className="grid min-h-screen lg:grid-cols-2">
-      <div className="hidden flex-col justify-between bg-sidebar p-12 text-sidebar-foreground lg:flex">
-        <div className="flex items-center gap-4">
-          <span className="flex items-center justify-center rounded-xl bg-white p-3 shadow-sm">
-            <img
-              src={logoIgesdf.url}
-              alt="IGESDF — Instituto de Gestão Estratégica de Saúde do Distrito Federal"
-              className="h-16 w-auto"
-            />
-          </span>
-          <div>
-            <div className="text-xl font-semibold">IGESDF - Licenciamento</div>
-            <div className="text-sm opacity-70">Gestão integrada de licenciamentos</div>
-          </div>
-        </div>
-
-        <div className="max-w-lg space-y-8">
-          <div className="space-y-4">
-            <span className="inline-block rounded-full bg-sidebar-accent/60 px-3 py-1 text-xs font-medium tracking-widest uppercase">
-              Compliance regulatório
-            </span>
-            <h1 className="text-4xl leading-[1.15] font-semibold text-balance">
-              Do CNPJ ao alvará, tudo controlado em um só lugar.
-            </h1>
-            <p className="max-w-md text-base leading-relaxed opacity-80">
-              Hospitais, UPAs e unidades administrativas. Datas, documentos e responsáveis técnicos
-              reunidos numa única matriz de compliance.
-            </p>
-          </div>
-
-          <ul className="flex flex-wrap gap-2" aria-label="Órgãos abrangidos">
-            {["Vigilância Sanitária", "CBMDF", "IBRAM", "CNES", "Administração Regional"].map(
-              (orgao) => (
-                <li
-                  key={orgao}
-                  className="rounded-md border border-sidebar-border bg-sidebar-accent/40 px-3 py-1.5 text-xs font-medium"
-                >
-                  {orgao}
-                </li>
-              ),
-            )}
-          </ul>
-        </div>
-        <div className="text-xs opacity-60">
-          Instituto de Gestão Estratégica de Saúde do Distrito Federal
-        </div>
-      </div>
+      <PainelResumo />
 
       <div className="flex items-center justify-center p-6">
         <Card className="w-full max-w-md">
