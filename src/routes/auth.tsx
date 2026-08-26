@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
-import { queryOptions, useSuspenseQuery } from "@tanstack/react-query";
+import { queryOptions } from "@tanstack/react-query";
 import { useState } from "react";
 import { BookOpen, Eye, EyeOff, MailCheck } from "lucide-react";
 import logoIgesdf from "@/assets/igesdf-logo.jpg.asset.json";
