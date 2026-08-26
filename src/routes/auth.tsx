@@ -356,44 +356,4 @@ function PainelResumo() {
   );
 }
 
-function Indicador({
-  faixa,
-  valor,
-  rotulo,
-  apoio,
-}: {
-  faixa: "neutro" | "vencido" | "critico" | "atencao";
-  valor: number;
-  rotulo: string;
-  apoio: string;
-}) {
-  const corMarca =
-    faixa === "vencido"
-      ? "bg-destructive"
-      : faixa === "critico"
-        ? "bg-warning"
-        : faixa === "atencao"
-          ? "bg-[hsl(var(--info))]"
-          : "bg-sidebar-foreground/40";
-
-  const corValor =
-    faixa === "vencido"
-      ? "text-destructive"
-      : faixa === "critico"
-        ? "text-warning"
-        : faixa === "atencao"
-          ? "text-[hsl(var(--info))]"
-          : "text-sidebar-foreground";
-
-  return (
-    <div className="px-6 py-6">
-      <span className={`mb-4 block h-0.5 w-5 rounded-full ${corMarca}`} />
-      <span className={`block text-[38px] font-semibold leading-none tracking-tight ${corValor}`}>
-        {valor}
-      </span>
-      <p className="mt-2 text-[13.5px] font-medium">{rotulo}</p>
-      <p className="mt-1 text-xs opacity-70">{apoio}</p>
-    </div>
-  );
-}
 
