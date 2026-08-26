@@ -119,11 +119,11 @@ function AuthPage() {
   }
 
   return (
-    <main className="grid min-h-screen lg:grid-cols-2">
+    <main className="grid min-h-screen lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
       <PainelResumo />
 
-      <div className="flex items-center justify-center p-6">
-        <Card className="w-full max-w-md">
+      <div className="flex items-center justify-center px-4 py-8 sm:px-8 sm:py-12">
+        <Card className="w-full max-w-[26rem]">
           <CardHeader>
             <div className="mb-2 flex items-center gap-2 lg:hidden">
               <img src={logoIgesdf.url} alt="Logótipo IGESDF" className="h-6 w-auto" />
