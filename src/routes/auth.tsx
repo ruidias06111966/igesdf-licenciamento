@@ -119,11 +119,11 @@ function AuthPage() {
   }
 
   return (
-    <main className="grid min-h-screen lg:grid-cols-2">
+    <main className="grid min-h-screen lg:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)]">
       <PainelResumo />
 
-      <div className="flex items-center justify-center p-6">
-        <Card className="w-full max-w-md">
+      <div className="flex items-center justify-center px-4 py-8 sm:px-8 sm:py-12">
+        <Card className="w-full max-w-[26rem]">
           <CardHeader>
             <div className="mb-2 flex items-center gap-2 lg:hidden">
               <img src={logoIgesdf.url} alt="Logótipo IGESDF" className="h-6 w-auto" />
@@ -303,44 +303,48 @@ const ORGAOS_HERO = [
 
 function PainelResumo() {
   return (
-    <div className="hidden flex-col justify-between bg-sidebar p-10 text-sidebar-foreground lg:flex lg:overflow-y-auto">
-      <div className="mx-auto flex w-full max-w-xl flex-col">
-        <header className="mb-12 flex items-center gap-5">
-          <span className="flex size-24 shrink-0 items-center justify-center rounded-2xl bg-white p-3 shadow-sm">
+    <div className="hidden flex-col justify-between gap-10 bg-sidebar px-8 py-10 text-sidebar-foreground lg:flex lg:overflow-y-auto xl:px-14 xl:py-14">
+      <div className="mx-auto flex w-full max-w-2xl flex-col">
+        <header className="mb-10 flex items-center gap-4 xl:mb-12 xl:gap-5">
+          <span className="flex size-20 shrink-0 items-center justify-center rounded-2xl bg-white p-3 shadow-sm xl:size-24">
             <img
               src={logoIgesdf.url}
               alt="IGESDF — Instituto de Gestão Estratégica de Saúde do Distrito Federal"
-              className="h-16 w-auto"
+              className="h-full w-auto object-contain"
             />
           </span>
-          <div>
-            <h1 className="text-[26px] font-semibold leading-tight">IGESDF — Licenciamento</h1>
-            <p className="text-[15px] opacity-70">Gestão integrada de licenciamentos</p>
+          <div className="min-w-0">
+            <h1 className="truncate text-xl font-semibold leading-tight xl:text-2xl">
+              IGESDF — Licenciamento
+            </h1>
+            <p className="text-sm opacity-70 xl:text-[15px]">
+              Gestão integrada de licenciamentos
+            </p>
           </div>
         </header>
 
-        <section className="mb-10">
-          <span className="mb-6 inline-block rounded-full border border-sidebar-border bg-sidebar-accent/60 px-4 py-1.5 text-sm font-semibold uppercase tracking-widest">
+        <section>
+          <span className="mb-5 inline-block rounded-full border border-sidebar-border bg-sidebar-accent/60 px-3.5 py-1.5 text-[11px] font-semibold uppercase tracking-[0.18em] xl:text-xs">
             Compliance regulatório
           </span>
 
-          <h2 className="mb-6 text-balance text-[clamp(34px,4.2vw,56px)] font-semibold leading-[1.12] tracking-tight">
+          <h2 className="mb-5 text-balance text-[clamp(28px,3.2vw,46px)] font-semibold leading-[1.15] tracking-tight">
             Cada CNAE tem sua data.
             <br />
             <span className="opacity-70">Cada órgão, seu prazo.</span>
           </h2>
 
-          <p className="mb-8 max-w-[62ch] text-[18px] leading-relaxed opacity-80">
+          <p className="mb-8 max-w-[58ch] text-[clamp(15px,1.15vw,17px)] leading-relaxed opacity-80">
             Controle de licenciamento das unidades do IGESDF por atividade económica — não por
             órgão. Validades, indeferimentos e pendências de protocolo numa matriz única, com alerta
             antes do vencimento.
           </p>
 
-          <div className="flex flex-wrap gap-2.5">
+          <div className="flex flex-wrap gap-2">
             {ORGAOS_HERO.map((orgao) => (
               <span
                 key={orgao}
-                className="rounded-lg border border-sidebar-border bg-sidebar-accent/40 px-4 py-2.5 text-sm font-medium"
+                className="rounded-lg border border-sidebar-border bg-sidebar-accent/40 px-3 py-2 text-[13px] font-medium xl:px-3.5 xl:text-sm"
               >
                 {orgao}
               </span>
@@ -349,9 +353,10 @@ function PainelResumo() {
         </section>
       </div>
 
-      <div className="mx-auto mt-auto w-full max-w-xl text-xs opacity-60">
+      <div className="mx-auto w-full max-w-2xl text-xs leading-relaxed opacity-60">
         Instituto de Gestão Estratégica de Saúde do Distrito Federal
       </div>
+
     </div>
   );
 }
