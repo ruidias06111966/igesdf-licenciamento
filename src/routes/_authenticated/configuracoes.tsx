@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Clock, History, Palette, Upload, Users } from "lucide-react";
+import { Clock, History, Palette, ShieldCheck, Upload, Users } from "lucide-react";
 import type { ComponentType } from "react";
 import { PageHeader } from "@/components/page-header";
 import { SubNav } from "@/components/sub-nav";
