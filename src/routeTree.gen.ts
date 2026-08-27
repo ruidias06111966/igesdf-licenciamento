@@ -16,6 +16,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ApiIaRouteImport } from './routes/api/ia'
+import { Route as AuthenticatedValidacaoRouteImport } from './routes/_authenticated/validacao'
 import { Route as AuthenticatedUtilizadoresRouteImport } from './routes/_authenticated/utilizadores'
 import { Route as AuthenticatedRotinaRouteImport } from './routes/_authenticated/rotina'
 import { Route as AuthenticatedRelatoriosRouteImport } from './routes/_authenticated/relatorios'
@@ -81,6 +82,11 @@ const ApiIaRoute = ApiIaRouteImport.update({
   id: '/api/ia',
   path: '/api/ia',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AuthenticatedValidacaoRoute = AuthenticatedValidacaoRouteImport.update({
+  id: '/validacao',
+  path: '/validacao',
+  getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedUtilizadoresRoute =
   AuthenticatedUtilizadoresRouteImport.update({
@@ -277,6 +283,7 @@ export interface FileRoutesByFullPath {
   '/relatorios': typeof AuthenticatedRelatoriosRoute
   '/rotina': typeof AuthenticatedRotinaRoute
   '/utilizadores': typeof AuthenticatedUtilizadoresRoute
+  '/validacao': typeof AuthenticatedValidacaoRoute
   '/api/ia': typeof ApiIaRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -316,6 +323,7 @@ export interface FileRoutesByTo {
   '/relatorios': typeof AuthenticatedRelatoriosRoute
   '/rotina': typeof AuthenticatedRotinaRoute
   '/utilizadores': typeof AuthenticatedUtilizadoresRoute
+  '/validacao': typeof AuthenticatedValidacaoRoute
   '/api/ia': typeof ApiIaRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -357,6 +365,7 @@ export interface FileRoutesById {
   '/_authenticated/relatorios': typeof AuthenticatedRelatoriosRoute
   '/_authenticated/rotina': typeof AuthenticatedRotinaRoute
   '/_authenticated/utilizadores': typeof AuthenticatedUtilizadoresRoute
+  '/_authenticated/validacao': typeof AuthenticatedValidacaoRoute
   '/api/ia': typeof ApiIaRoute
   '/.lovable/oauth/consent': typeof DotlovableOauthConsentRoute
   '/.mcp/invoke-tool/$tool': typeof Char91DotmcpChar93InvokeToolToolRoute
@@ -398,6 +407,7 @@ export interface FileRouteTypes {
     | '/relatorios'
     | '/rotina'
     | '/utilizadores'
+    | '/validacao'
     | '/api/ia'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
@@ -437,6 +447,7 @@ export interface FileRouteTypes {
     | '/relatorios'
     | '/rotina'
     | '/utilizadores'
+    | '/validacao'
     | '/api/ia'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
@@ -477,6 +488,7 @@ export interface FileRouteTypes {
     | '/_authenticated/relatorios'
     | '/_authenticated/rotina'
     | '/_authenticated/utilizadores'
+    | '/_authenticated/validacao'
     | '/api/ia'
     | '/.lovable/oauth/consent'
     | '/.mcp/invoke-tool/$tool'
@@ -559,6 +571,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/api/ia'
       preLoaderRoute: typeof ApiIaRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/validacao': {
+      id: '/_authenticated/validacao'
+      path: '/validacao'
+      fullPath: '/validacao'
+      preLoaderRoute: typeof AuthenticatedValidacaoRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/utilizadores': {
       id: '/_authenticated/utilizadores'
@@ -799,6 +818,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedRelatoriosRoute: typeof AuthenticatedRelatoriosRoute
   AuthenticatedRotinaRoute: typeof AuthenticatedRotinaRoute
   AuthenticatedUtilizadoresRoute: typeof AuthenticatedUtilizadoresRoute
+  AuthenticatedValidacaoRoute: typeof AuthenticatedValidacaoRoute
   AuthenticatedProcessosIdRoute: typeof AuthenticatedProcessosIdRoute
   AuthenticatedUnidadesIdRoute: typeof AuthenticatedUnidadesIdRoute
   AuthenticatedProcessosIndexRoute: typeof AuthenticatedProcessosIndexRoute
@@ -825,6 +845,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedRelatoriosRoute: AuthenticatedRelatoriosRoute,
   AuthenticatedRotinaRoute: AuthenticatedRotinaRoute,
   AuthenticatedUtilizadoresRoute: AuthenticatedUtilizadoresRoute,
+  AuthenticatedValidacaoRoute: AuthenticatedValidacaoRoute,
   AuthenticatedProcessosIdRoute: AuthenticatedProcessosIdRoute,
   AuthenticatedUnidadesIdRoute: AuthenticatedUnidadesIdRoute,
   AuthenticatedProcessosIndexRoute: AuthenticatedProcessosIndexRoute,
