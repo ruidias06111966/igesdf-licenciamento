@@ -1078,6 +1078,36 @@ export type Database = {
         }
         Relationships: []
       }
+      validacao_execucoes: {
+        Row: {
+          created_at: string
+          executado_em: string
+          executado_por: string | null
+          id: string
+          resumo: Json
+          total_itens: number
+          total_problemas: number
+        }
+        Insert: {
+          created_at?: string
+          executado_em?: string
+          executado_por?: string | null
+          id?: string
+          resumo?: Json
+          total_itens?: number
+          total_problemas?: number
+        }
+        Update: {
+          created_at?: string
+          executado_em?: string
+          executado_por?: string | null
+          id?: string
+          resumo?: Json
+          total_itens?: number
+          total_problemas?: number
+        }
+        Relationships: []
+      }
     }
     Views: {
       v_licencas_dashboard: {

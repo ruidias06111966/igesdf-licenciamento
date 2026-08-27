@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Clock, History, Palette, Upload, Users } from "lucide-react";
+import { Clock, History, Palette, ShieldCheck, Upload, Users } from "lucide-react";
 import type { ComponentType } from "react";
 import { PageHeader } from "@/components/page-header";
 import { SubNav } from "@/components/sub-nav";
@@ -41,6 +41,13 @@ const ATALHOS: {
       "Autorize quem se cadastra no sistema e defina o perfil: consulta, edição ou master. Só o master vê este painel.",
     icon: Users,
     master: true,
+  },
+  {
+    to: "/validacao",
+    titulo: "Validação do sistema",
+    descricao:
+      "Conferência dos dados com as pendências encontradas, correção direta, histórico das execuções e relatório em PDF ou CSV.",
+    icon: ShieldCheck,
   },
   {
     to: "/rotina",
