@@ -20,7 +20,9 @@ export async function coletarProblemas(supabase: Cliente): Promise<ResultadoVali
   const [licencas, unidades, cnaes, documentos] = await Promise.all([
     supabase
       .from("licencas")
-      .select("id, orgao, descricao, status, data_vencimento, unidade_id, unidades!inner(nome, ativa)")
+      .select(
+        "id, orgao, descricao, status, data_vencimento, unidade_id, unidades!inner(nome, ativa)",
+      )
       .eq("unidades.ativa", true),
     supabase.from("unidades").select("id, nome, tipo, cnpj").eq("ativa", true),
     supabase.from("cnaes_unidade").select("unidade_id"),
@@ -117,9 +119,7 @@ export async function coletarProblemas(supabase: Cliente): Promise<ResultadoVali
     }),
   });
 
-  const semPrazoNemSituacao = lics.filter(
-    (l) => l.status === "a_vencer" && !l.data_vencimento,
-  );
+  const semPrazoNemSituacao = lics.filter((l) => l.status === "a_vencer" && !l.data_vencimento);
   grupos.push({
     chave: "a_vencer_sem_prazo",
     titulo: "Licenças “a vencer” sem data",

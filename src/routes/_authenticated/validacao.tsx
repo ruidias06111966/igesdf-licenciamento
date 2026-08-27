@@ -183,7 +183,9 @@ function ValidacaoPage() {
       {resultado.isLoading && (
         <p className="text-sm text-muted-foreground">A conferir os dados do sistema…</p>
       )}
-      {resultado.error && <ErrorState error={resultado.error} onRetry={() => resultado.refetch()} />}
+      {resultado.error && (
+        <ErrorState error={resultado.error} onRetry={() => resultado.refetch()} />
+      )}
 
       {resultado.data && (
         <>
@@ -271,7 +273,9 @@ function GrupoCard({
   onAnalise: (a: AnaliseCertificado) => void;
 }) {
   const Icone = ICONE[grupo.severidade];
-  const [marcados, setMarcados] = useState<Set<string>>(() => new Set(grupo.itens.map((i) => i.id)));
+  const [marcados, setMarcados] = useState<Set<string>>(
+    () => new Set(grupo.itens.map((i) => i.id)),
+  );
   const [status, setStatus] = useState<"dispensada" | "nao_iniciado" | "em_estudo">("dispensada");
   const selecionavel = grupo.acao === "marcar_dispensada";
 
