@@ -43,6 +43,13 @@ const ATALHOS: {
     master: true,
   },
   {
+    to: "/validacao",
+    titulo: "Validação do sistema",
+    descricao:
+      "Conferência dos dados com as pendências encontradas, correção direta, histórico das execuções e relatório em PDF ou CSV.",
+    icon: ShieldCheck,
+  },
+  {
     to: "/rotina",
     titulo: "Correção automática",
     descricao:
