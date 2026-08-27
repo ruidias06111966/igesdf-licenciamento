@@ -41,15 +41,15 @@ async function sessaoValidada(userId: string, claims: ClaimsAcesso) {
 export const requireAcesso = createMiddleware({ type: "function" })
   .middleware([requireSupabaseAuth])
   .server(async ({ next, context }) => {
-  const sessao = await sessaoValidada(context.userId, context.claims);
-  if (!sessao.perfil) {
-    throw new Error(
-      "A sua conta ainda não foi autorizada pelo utilizador master. Aguarde a liberação.",
-    );
-  }
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  return next({ context: { supabase: supabaseAdmin, sessao } });
-});
+    const sessao = await sessaoValidada(context.userId, context.claims);
+    if (!sessao.perfil) {
+      throw new Error(
+        "A sua conta ainda não foi autorizada pelo utilizador master. Aguarde a liberação.",
+      );
+    }
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    return next({ context: { supabase: supabaseAdmin, sessao } });
+  });
 
 /**
  * Exige o perfil de edição (ou master). O perfil de consulta abre o sistema em
@@ -59,20 +59,20 @@ export const requireAcesso = createMiddleware({ type: "function" })
 export const requireEdicao = createMiddleware({ type: "function" })
   .middleware([requireSupabaseAuth])
   .server(async ({ next, context }) => {
-  const sessao = await sessaoValidada(context.userId, context.claims);
-  if (!sessao.perfil) {
-    throw new Error(
-      "A sua conta ainda não foi autorizada pelo utilizador master. Aguarde a liberação.",
-    );
-  }
-  if (sessao.perfil !== "edicao" && sessao.perfil !== "master") {
-    throw new Error(
-      "Este acesso é apenas para consulta e impressão. Para alterar dados, peça ao master o perfil de edição.",
-    );
-  }
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  return next({ context: { supabase: supabaseAdmin, sessao } });
-});
+    const sessao = await sessaoValidada(context.userId, context.claims);
+    if (!sessao.perfil) {
+      throw new Error(
+        "A sua conta ainda não foi autorizada pelo utilizador master. Aguarde a liberação.",
+      );
+    }
+    if (sessao.perfil !== "edicao" && sessao.perfil !== "master") {
+      throw new Error(
+        "Este acesso é apenas para consulta e impressão. Para alterar dados, peça ao master o perfil de edição.",
+      );
+    }
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    return next({ context: { supabase: supabaseAdmin, sessao } });
+  });
 
 /**
  * Exige o perfil master. Usado pelos módulos que produzem documentos oficiais
@@ -82,10 +82,10 @@ export const requireEdicao = createMiddleware({ type: "function" })
 export const requireMaster = createMiddleware({ type: "function" })
   .middleware([requireSupabaseAuth])
   .server(async ({ next, context }) => {
-  const sessao = await sessaoValidada(context.userId, context.claims);
-  if (sessao.perfil !== "master") {
-    throw new Error("Este módulo é reservado ao acesso master.");
-  }
-  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-  return next({ context: { supabase: supabaseAdmin, sessao } });
-});
+    const sessao = await sessaoValidada(context.userId, context.claims);
+    if (sessao.perfil !== "master") {
+      throw new Error("Este módulo é reservado ao acesso master.");
+    }
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    return next({ context: { supabase: supabaseAdmin, sessao } });
+  });
