@@ -41,7 +41,6 @@ export const Route = createFileRoute("/auth")({
   }),
 });
 
-
 type Modo = "entrar" | "criar" | "recuperar";
 
 function AuthPage() {
@@ -290,16 +289,7 @@ function AuthPage() {
   );
 }
 
-const ORGAOS_HERO = [
-  "DF LEGAL",
-  "VISADF",
-  "CBMDF",
-  "IBRAM",
-  "SUSDEC",
-  "PCDF",
-  "SEAGRI",
-  "SEEDF",
-];
+const ORGAOS_HERO = ["DF LEGAL", "VISADF", "CBMDF", "IBRAM", "SUSDEC", "PCDF", "SEAGRI", "SEEDF"];
 
 function PainelResumo() {
   return (
@@ -317,9 +307,7 @@ function PainelResumo() {
             <h1 className="truncate text-xl font-semibold leading-tight xl:text-2xl">
               IGESDF — Licenciamento
             </h1>
-            <p className="text-sm opacity-70 xl:text-[15px]">
-              Gestão integrada de licenciamentos
-            </p>
+            <p className="text-sm opacity-70 xl:text-[15px]">Gestão integrada de licenciamentos</p>
           </div>
         </header>
 
@@ -356,9 +344,6 @@ function PainelResumo() {
       <div className="mx-auto w-full max-w-2xl text-xs leading-relaxed opacity-60">
         Instituto de Gestão Estratégica de Saúde do Distrito Federal
       </div>
-
     </div>
   );
 }
-
-
