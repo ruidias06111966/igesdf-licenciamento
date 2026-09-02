@@ -39,8 +39,42 @@ export const listarUtilizadores = createServerFn({ method: "GET" })
       .select("user_id, email, nome, perfil, suspenso, autorizado_em, ultimo_acesso, created_at")
       .order("created_at", { ascending: false });
     if (error) throw new Error(error.message);
-    return data ?? [];
+    const perfis = data ?? [];
+
+    // Contas que confirmaram o e-mail mas ainda não abriram o sistema não têm
+    // registo em `perfis_acesso` — ficariam invisíveis para o master, que nunca
+    // as poderia autorizar. Junta-se aqui a lista real de contas.
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: contas } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 200 });
+    const conhecidos = new Set(perfis.map((p) => p.user_id));
+    const emailsConhecidos = new Set(perfis.map((p) => (p.email ?? "").toLowerCase()));
+
+    const emFalta = (contas?.users ?? [])
+      .filter(
+        (u) =>
+          !!u.email &&
+          !conhecidos.has(u.id) &&
+          !emailsConhecidos.has(u.email.toLowerCase()),
+      )
+      .map((u) => ({
+        user_id: u.id,
+        email: u.email!,
+        nome:
+          (u.user_metadata as { nome?: string; full_name?: string } | null)?.nome ??
+          (u.user_metadata as { full_name?: string } | null)?.full_name ??
+          null,
+        perfil: null as string | null,
+        suspenso: false,
+        autorizado_em: null as string | null,
+        ultimo_acesso: u.last_sign_in_at ?? null,
+        created_at: u.created_at,
+      }));
+
+    return [...perfis, ...emFalta].sort((a, b) =>
+      (b.created_at ?? "").localeCompare(a.created_at ?? ""),
+    );
   });
+
 
 const definirSchema = z.object({
   userId: z.string().uuid(),
