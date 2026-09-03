@@ -76,6 +76,12 @@ function AuthPage() {
           },
         });
         if (error) throw error;
+        // Fica logo visível ao master, mesmo antes de confirmar o e-mail.
+        try {
+          await registarCadastro({ data: { email: email.trim() } });
+        } catch {
+          /* o master vê na mesma a conta na lista de pendentes */
+        }
         setAviso(
           "Conta criada. Enviámos um e-mail de confirmação para " +
             email.trim() +
