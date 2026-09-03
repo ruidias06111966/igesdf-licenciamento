@@ -6,6 +6,7 @@ import logoIgesdf from "@/assets/igesdf-logo.jpg.asset.json";
 import manualAsset from "@/assets/manual-igesdf.pdf.asset.json";
 import { supabase } from "@/integrations/supabase/client";
 import { mensagemErro } from "@/lib/errors";
+import { registarCadastro } from "@/lib/acesso.functions";
 import { getResumoPublico } from "@/lib/publico.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
