@@ -6,6 +6,7 @@ import logoIgesdf from "@/assets/igesdf-logo.jpg.asset.json";
 import manualAsset from "@/assets/manual-igesdf.pdf.asset.json";
 import { supabase } from "@/integrations/supabase/client";
 import { mensagemErro } from "@/lib/errors";
+import { registarCadastro } from "@/lib/acesso.functions";
 import { getResumoPublico } from "@/lib/publico.functions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -75,6 +76,12 @@ function AuthPage() {
           },
         });
         if (error) throw error;
+        // Fica logo visível ao master, mesmo antes de confirmar o e-mail.
+        try {
+          await registarCadastro({ data: { email: email.trim() } });
+        } catch {
+          /* o master vê na mesma a conta na lista de pendentes */
+        }
         setAviso(
           "Conta criada. Enviámos um e-mail de confirmação para " +
             email.trim() +
