@@ -27,9 +27,46 @@ export const verificarAcesso = createServerFn({ method: "GET" }).handler(async (
   };
 });
 
+/**
+ * Regista a conta acabada de criar como pendente, para o master a ver em
+ * Configurações → Acesso mesmo antes de a pessoa confirmar o e-mail e entrar.
+ * Só grava se existir mesmo uma conta com esse e-mail (evita registos falsos).
+ */
+export const registarCadastro = createServerFn({ method: "POST" })
+  .inputValidator((input: unknown) => z.object({ email: z.string().email() }).parse(input))
+  .handler(async ({ data }) => {
+    const email = data.email.toLowerCase().trim();
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    const { data: contas } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 200 });
+    const conta = (contas?.users ?? []).find((u) => (u.email ?? "").toLowerCase() === email);
+    if (!conta) return { ok: false as const };
+
+    const { data: existente } = await supabaseAdmin
+      .from("perfis_acesso")
+      .select("user_id")
+      .or(`user_id.eq.${conta.id},email.eq.${email}`)
+      .maybeSingle();
+    if (existente) return { ok: true as const };
+
+    await supabaseAdmin.from("perfis_acesso").upsert(
+      {
+        user_id: conta.id,
+        email,
+        nome:
+          (conta.user_metadata as { nome?: string; full_name?: string } | null)?.nome ??
+          (conta.user_metadata as { full_name?: string } | null)?.full_name ??
+          null,
+        perfil: null,
+      },
+      { onConflict: "user_id" },
+    );
+    return { ok: true as const };
+  });
+
 /* ---------------------------------------------------------------------- */
 /* Gestão de utilizadores — reservada ao master                            */
 /* ---------------------------------------------------------------------- */
+
 
 export const listarUtilizadores = createServerFn({ method: "GET" })
   .middleware([requireMaster])
