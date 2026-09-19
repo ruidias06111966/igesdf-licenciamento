@@ -1,4 +1,5 @@
 import { createServerFn } from "@tanstack/react-start";
+import type { User } from "@supabase/supabase-js";
 import { z } from "zod";
 import { requireMaster } from "@/lib/acesso-middleware";
 
@@ -27,45 +28,69 @@ export const verificarAcesso = createServerFn({ method: "GET" }).handler(async (
   };
 });
 
-/**
- * Regista a conta acabada de criar como pendente, para o master a ver em
- * Configurações → Acesso mesmo antes de a pessoa confirmar o e-mail e entrar.
- * Só grava se existir mesmo uma conta com esse e-mail (evita registos falsos).
+/*
+ * Aqui existia o `registarCadastro`: uma função de servidor sem sessão, chamada
+ * pelo ecrã de cadastro, que criava já o registo pendente em `perfis_acesso`
+ * para o master ver a conta antes de a pessoa confirmar o e-mail.
+ *
+ * Foi removida por duas razões.
+ *
+ * A primeira é que não acrescentava nada: o `listarUtilizadores` aqui em baixo
+ * já junta à lista do master as contas que existem em `auth.users` sem registo
+ * em `perfis_acesso`, e o `definirPerfilUtilizador` já usa `upsert` justamente
+ * para poder autorizar uma conta que ainda não tem registo. A conta acabada de
+ * criar aparecia ao master de qualquer maneira.
+ *
+ * A segunda é que, sendo chamável sem sessão, respondia de forma diferente
+ * consoante o e-mail já tivesse conta (`{ok: true}`) ou não (`{ok: false}`).
+ * Bastava isso para qualquer pessoa, sem conta nenhuma, ir perguntando endereço
+ * a endereço e ficar a saber quem está registado no sistema. Não dava acesso a
+ * nada, mas dizia quem cá trabalha — e cada chamada varria ainda a lista de
+ * contas com a service role.
+ *
+ * Não se põe uma guarda de perfil no lugar: quem se está a cadastrar não tem
+ * sessão, por definição. A correção é o endpoint deixar de existir.
  */
-export const registarCadastro = createServerFn({ method: "POST" })
-  .inputValidator((input: unknown) => z.object({ email: z.string().email() }).parse(input))
-  .handler(async ({ data }) => {
-    const email = data.email.toLowerCase().trim();
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: contas } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 200 });
-    const conta = (contas?.users ?? []).find((u) => (u.email ?? "").toLowerCase() === email);
-    if (!conta) return { ok: false as const };
-
-    const { data: existente } = await supabaseAdmin
-      .from("perfis_acesso")
-      .select("user_id")
-      .or(`user_id.eq.${conta.id},email.eq.${email}`)
-      .maybeSingle();
-    if (existente) return { ok: true as const };
-
-    await supabaseAdmin.from("perfis_acesso").upsert(
-      {
-        user_id: conta.id,
-        email,
-        nome:
-          (conta.user_metadata as { nome?: string; full_name?: string } | null)?.nome ??
-          (conta.user_metadata as { full_name?: string } | null)?.full_name ??
-          null,
-        perfil: null,
-      },
-      { onConflict: "user_id" },
-    );
-    return { ok: true as const };
-  });
 
 /* ---------------------------------------------------------------------- */
 /* Gestão de utilizadores — reservada ao master                            */
 /* ---------------------------------------------------------------------- */
+
+/** Quantas contas se pedem de cada vez à API de administração. */
+const POR_PAGINA = 200;
+/**
+ * Travão de segurança: 50 páginas são 10 000 contas, muito acima do que esta
+ * rede alguma vez terá. Existe só para uma resposta inesperada da API não pôr
+ * o servidor a pedir páginas para sempre.
+ */
+const MAX_PAGINAS = 50;
+
+/**
+ * Todas as contas registadas, percorrendo as páginas até ao fim.
+ *
+ * Antes pedia-se uma única página de 200. Passando disso, as contas seguintes
+ * deixavam de aparecer ao master — e uma conta que ele não vê é uma conta que
+ * não pode autorizar, portanto alguém que ficava sem conseguir entrar sem que
+ * nada indicasse porquê.
+ */
+async function todasAsContas(): Promise<User[]> {
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const contas: User[] = [];
+
+  for (let pagina = 1; pagina <= MAX_PAGINAS; pagina += 1) {
+    const { data, error } = await supabaseAdmin.auth.admin.listUsers({
+      page: pagina,
+      perPage: POR_PAGINA,
+    });
+    if (error) throw new Error(error.message);
+    const lote = data?.users ?? [];
+    contas.push(...lote);
+    // Uma página incompleta é a última.
+    if (lote.length < POR_PAGINA) break;
+  }
+
+  return contas;
+}
 
 export const listarUtilizadores = createServerFn({ method: "GET" })
   .middleware([requireMaster])
@@ -77,15 +102,14 @@ export const listarUtilizadores = createServerFn({ method: "GET" })
     if (error) throw new Error(error.message);
     const perfis = data ?? [];
 
-    // Contas que confirmaram o e-mail mas ainda não abriram o sistema não têm
-    // registo em `perfis_acesso` — ficariam invisíveis para o master, que nunca
-    // as poderia autorizar. Junta-se aqui a lista real de contas.
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    const { data: contas } = await supabaseAdmin.auth.admin.listUsers({ page: 1, perPage: 200 });
+    // Contas que se cadastraram mas ainda não abriram o sistema não têm registo
+    // em `perfis_acesso` — ficariam invisíveis para o master, que nunca as
+    // poderia autorizar. Junta-se aqui a lista real de contas.
+    const contas = await todasAsContas();
     const conhecidos = new Set(perfis.map((p) => p.user_id));
     const emailsConhecidos = new Set(perfis.map((p) => (p.email ?? "").toLowerCase()));
 
-    const emFalta = (contas?.users ?? [])
+    const emFalta = contas
       .filter(
         (u) => !!u.email && !conhecidos.has(u.id) && !emailsConhecidos.has(u.email.toLowerCase()),
       )
