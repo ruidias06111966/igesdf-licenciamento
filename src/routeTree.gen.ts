@@ -28,6 +28,7 @@ import { Route as AuthenticatedLicencasRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedImportarRouteImport } from './routes/_authenticated/importar'
 import { Route as AuthenticatedIaRouteImport } from './routes/_authenticated/ia'
 import { Route as AuthenticatedExportacaoRouteImport } from './routes/_authenticated/exportacao'
+import { Route as AuthenticatedEmpresasRouteImport } from './routes/_authenticated/empresas'
 import { Route as AuthenticatedDespachosRouteImport } from './routes/_authenticated/despachos'
 import { Route as AuthenticatedDashboardRouteImport } from './routes/_authenticated/dashboard'
 import { Route as AuthenticatedConsolidadoRouteImport } from './routes/_authenticated/consolidado'
@@ -143,6 +144,11 @@ const AuthenticatedIaRoute = AuthenticatedIaRouteImport.update({
 const AuthenticatedExportacaoRoute = AuthenticatedExportacaoRouteImport.update({
   id: '/exportacao',
   path: '/exportacao',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedEmpresasRoute = AuthenticatedEmpresasRouteImport.update({
+  id: '/empresas',
+  path: '/empresas',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
 const AuthenticatedDespachosRoute = AuthenticatedDespachosRouteImport.update({
@@ -272,6 +278,7 @@ export interface FileRoutesByFullPath {
   '/consolidado': typeof AuthenticatedConsolidadoRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/despachos': typeof AuthenticatedDespachosRoute
+  '/empresas': typeof AuthenticatedEmpresasRoute
   '/exportacao': typeof AuthenticatedExportacaoRoute
   '/ia': typeof AuthenticatedIaRoute
   '/importar': typeof AuthenticatedImportarRoute
@@ -312,6 +319,7 @@ export interface FileRoutesByTo {
   '/consolidado': typeof AuthenticatedConsolidadoRoute
   '/dashboard': typeof AuthenticatedDashboardRoute
   '/despachos': typeof AuthenticatedDespachosRoute
+  '/empresas': typeof AuthenticatedEmpresasRoute
   '/exportacao': typeof AuthenticatedExportacaoRoute
   '/ia': typeof AuthenticatedIaRoute
   '/importar': typeof AuthenticatedImportarRoute
@@ -354,6 +362,7 @@ export interface FileRoutesById {
   '/_authenticated/consolidado': typeof AuthenticatedConsolidadoRoute
   '/_authenticated/dashboard': typeof AuthenticatedDashboardRoute
   '/_authenticated/despachos': typeof AuthenticatedDespachosRoute
+  '/_authenticated/empresas': typeof AuthenticatedEmpresasRoute
   '/_authenticated/exportacao': typeof AuthenticatedExportacaoRoute
   '/_authenticated/ia': typeof AuthenticatedIaRoute
   '/_authenticated/importar': typeof AuthenticatedImportarRoute
@@ -396,6 +405,7 @@ export interface FileRouteTypes {
     | '/consolidado'
     | '/dashboard'
     | '/despachos'
+    | '/empresas'
     | '/exportacao'
     | '/ia'
     | '/importar'
@@ -436,6 +446,7 @@ export interface FileRouteTypes {
     | '/consolidado'
     | '/dashboard'
     | '/despachos'
+    | '/empresas'
     | '/exportacao'
     | '/ia'
     | '/importar'
@@ -477,6 +488,7 @@ export interface FileRouteTypes {
     | '/_authenticated/consolidado'
     | '/_authenticated/dashboard'
     | '/_authenticated/despachos'
+    | '/_authenticated/empresas'
     | '/_authenticated/exportacao'
     | '/_authenticated/ia'
     | '/_authenticated/importar'
@@ -656,6 +668,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedExportacaoRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/empresas': {
+      id: '/_authenticated/empresas'
+      path: '/empresas'
+      fullPath: '/empresas'
+      preLoaderRoute: typeof AuthenticatedEmpresasRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
     '/_authenticated/despachos': {
       id: '/_authenticated/despachos'
       path: '/despachos'
@@ -807,6 +826,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedConsolidadoRoute: typeof AuthenticatedConsolidadoRoute
   AuthenticatedDashboardRoute: typeof AuthenticatedDashboardRoute
   AuthenticatedDespachosRoute: typeof AuthenticatedDespachosRoute
+  AuthenticatedEmpresasRoute: typeof AuthenticatedEmpresasRoute
   AuthenticatedExportacaoRoute: typeof AuthenticatedExportacaoRoute
   AuthenticatedIaRoute: typeof AuthenticatedIaRoute
   AuthenticatedImportarRoute: typeof AuthenticatedImportarRoute
@@ -834,6 +854,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedConsolidadoRoute: AuthenticatedConsolidadoRoute,
   AuthenticatedDashboardRoute: AuthenticatedDashboardRoute,
   AuthenticatedDespachosRoute: AuthenticatedDespachosRoute,
+  AuthenticatedEmpresasRoute: AuthenticatedEmpresasRoute,
   AuthenticatedExportacaoRoute: AuthenticatedExportacaoRoute,
   AuthenticatedIaRoute: AuthenticatedIaRoute,
   AuthenticatedImportarRoute: AuthenticatedImportarRoute,

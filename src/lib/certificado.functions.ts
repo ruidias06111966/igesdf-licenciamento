@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireEdicao } from "@/lib/acesso-middleware";
+import { dasUnidades, exigirUnidade, unidadesDoEscopo } from "@/lib/escopo.server";
 import { STATUS, linhaAplicar } from "@/lib/certificado-schemas";
 
 /**
@@ -21,6 +22,7 @@ export const analisarCertificado = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
+    await exigirUnidade(context.supabase, context.escopo, data.unidade_id);
     const { extrairCertificado, compararComBase, conferirCnpj } =
       await import("@/lib/certificado.server");
 
@@ -92,6 +94,7 @@ export const aplicarCertificado = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
+    await exigirUnidade(context.supabase, context.escopo, data.unidade_id);
     let cnaesCriados = 0;
     let licencasCriadas = 0;
     let licencasAtualizadas = 0;
@@ -152,6 +155,7 @@ export const aplicarCertificado = createServerFn({ method: "POST" })
     // Trilha de auditoria: fica registado o que o certificado alterou e qual
     // documento serviu de base.
     await context.supabase.from("atividade_log").insert({
+      empresa_id: context.escopo.global ? null : context.escopo.empresaId,
       entidade: "unidades",
       entidade_id: data.unidade_id,
       acao: "aplicar_certificado",
@@ -176,10 +180,14 @@ export const aplicarCertificado = createServerFn({ method: "POST" })
 export const listarCertificados = createServerFn({ method: "GET" })
   .middleware([requireEdicao])
   .handler(async ({ context }) => {
-    const { data, error } = await context.supabase
-      .from("documentos")
-      .select("id, nome, storage_path, mime_type, created_at, unidade_id, unidades(nome)")
-      .eq("categoria", "certificado")
+    const ids = await unidadesDoEscopo(context.supabase, context.escopo);
+    const { data, error } = await dasUnidades(
+      context.supabase
+        .from("documentos")
+        .select("id, nome, storage_path, mime_type, created_at, unidade_id, unidades(nome)")
+        .eq("categoria", "certificado"),
+      ids,
+    )
       .eq("ativo", true)
       .order("created_at", { ascending: false })
       .limit(500);

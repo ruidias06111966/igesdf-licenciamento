@@ -1,6 +1,6 @@
 import { defineTool } from "@lovable.dev/mcp-js";
 import { z } from "zod";
-import { exigirAutorizacao } from "../auth";
+import { escopoDoMcp } from "../auth";
 import { db, texto } from "../db";
 
 export default defineTool({
@@ -14,7 +14,8 @@ export default defineTool({
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ procura, orgao }, ctx) => {
-    exigirAutorizacao(ctx);
+    // As normativas são legislação do DF, iguais para todos os clientes.
+    await escopoDoMcp(ctx);
     const supabase = await db();
     let q = supabase
       .from("normativas")

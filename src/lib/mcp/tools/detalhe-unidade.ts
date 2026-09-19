@@ -1,6 +1,7 @@
 import { defineTool } from "@lovable.dev/mcp-js";
 import { z } from "zod";
-import { exigirAutorizacao } from "../auth";
+import { escopoDoMcp } from "../auth";
+import { daEmpresa, exigirUnidade } from "@/lib/escopo.server";
 import { db, texto } from "../db";
 
 export default defineTool({
@@ -14,7 +15,7 @@ export default defineTool({
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ unidade_id, nome }, ctx) => {
-    exigirAutorizacao(ctx);
+    const { escopo } = await escopoDoMcp(ctx);
     const supabase = await db();
     let id = unidade_id;
     if (!id) {
@@ -24,17 +25,23 @@ export default defineTool({
           isError: true,
         };
       }
-      const { data } = await supabase
-        .from("unidades")
-        .select("id")
-        .ilike("nome", `%${nome}%`)
-        .eq("ativa", true)
-        .limit(1);
+      const { data } = await daEmpresa(
+        supabase
+          .from("unidades")
+          .select("id")
+          .ilike("nome", `%${nome}%`)
+          .eq("ativa", true)
+          .limit(1),
+        escopo,
+      );
       id = data?.[0]?.id;
       if (!id) {
         return { content: [{ type: "text", text: "Unidade não encontrada." }], isError: true };
       }
     }
+    // Com `unidade_id` vindo do pedido, a procura por nome acima não protege:
+    // confere-se sempre antes de ler o detalhe.
+    await exigirUnidade(supabase, escopo, id);
     const [uni, cnaes, licencas, rts] = await Promise.all([
       supabase.from("unidades").select("*").eq("id", id).maybeSingle(),
       supabase.from("cnaes_unidade").select("*").eq("unidade_id", id).order("codigo"),

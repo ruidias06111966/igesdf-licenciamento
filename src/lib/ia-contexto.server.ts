@@ -12,6 +12,14 @@
  * e-mail, telefone e nomes de pessoas antes de a informação deixar o servidor.
  */
 
+import {
+  daEmpresa,
+  dasUnidades,
+  exigirUnidade,
+  unidadesDoEscopo,
+  type Escopo,
+} from "@/lib/escopo.server";
+
 /** Tectos por lista, para o contexto não crescer sem limite com a rede toda. */
 const MAX_LINHAS = 120;
 const MAX_UNIDADES = 40;
@@ -32,27 +40,37 @@ function contar(valores: Semaforo[]): Record<string, number> {
  * processos ainda abertos. Responde à maioria das perguntas de gestão sem
  * precisar de despejar a base inteira.
  */
-async function contextoRede() {
+async function contextoRede(escopo: Escopo) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const ids = await unidadesDoEscopo(supabaseAdmin, escopo);
 
   const [licencas, unidades, processos] = await Promise.all([
-    supabaseAdmin
-      .from("v_licencas_dashboard")
-      .select(
-        "unidade_nome, orgao, descricao, status, semaforo, data_vencimento, dias_restantes, numero, processo_sei",
-      )
-      .order("data_vencimento", { ascending: true, nullsFirst: false }),
-    supabaseAdmin
-      .from("unidades")
-      .select("nome, tipo, regiao_administrativa, situacao_edificacao, cnpj")
-      .eq("ativa", true)
-      .order("nome"),
-    supabaseAdmin
-      .from("processos_sei")
-      .select("numero, assunto, tipo, orgao, situacao, data_abertura, unidades(nome)")
-      .eq("ativo", true)
-      .neq("situacao", "concluido")
-      .order("data_abertura", { ascending: false }),
+    daEmpresa(
+      supabaseAdmin
+        .from("v_licencas_dashboard")
+        .select(
+          "unidade_nome, orgao, descricao, status, semaforo, data_vencimento, dias_restantes, numero, processo_sei",
+        )
+        .order("data_vencimento", { ascending: true, nullsFirst: false }),
+      escopo,
+    ),
+    daEmpresa(
+      supabaseAdmin
+        .from("unidades")
+        .select("nome, tipo, regiao_administrativa, situacao_edificacao, cnpj")
+        .eq("ativa", true)
+        .order("nome"),
+      escopo,
+    ),
+    dasUnidades(
+      supabaseAdmin
+        .from("processos_sei")
+        .select("numero, assunto, tipo, orgao, situacao, data_abertura, unidades(nome)")
+        .eq("ativo", true)
+        .neq("situacao", "concluido")
+        .order("data_abertura", { ascending: false }),
+      ids,
+    ),
   ]);
 
   const todas = licencas.data ?? [];
@@ -82,8 +100,11 @@ async function contextoRede() {
 }
 
 /** Retrato de uma unidade: licenças, CNAEs e processos. */
-async function contextoUnidade(unidadeId: string) {
+async function contextoUnidade(unidadeId: string, escopo: Escopo) {
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  // A unidade vem do navegador: sem esta conferência, mandar o id de uma
+  // unidade de outra empresa punha a IA a responder com os dados dela.
+  await exigirUnidade(supabaseAdmin, escopo, unidadeId);
 
   const { data: unidade } = await supabaseAdmin
     .from("unidades")
@@ -137,12 +158,13 @@ async function contextoUnidade(unidadeId: string) {
  */
 export async function montarContexto(
   acao: string,
+  escopo: Escopo,
   unidadeId?: string | null,
 ): Promise<unknown | null> {
   try {
     if (acao === "explicar_exigencia") return null;
-    if (unidadeId) return await contextoUnidade(unidadeId);
-    return await contextoRede();
+    if (unidadeId) return await contextoUnidade(unidadeId, escopo);
+    return await contextoRede(escopo);
   } catch (erro) {
     console.error("[ia] falha ao montar o contexto:", erro);
     // Sem contexto a IA responde que não tem os dados — melhor do que falhar

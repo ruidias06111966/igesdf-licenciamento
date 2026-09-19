@@ -2,6 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { orgaoLabel, statusLabel } from "@/lib/domain";
 import type { GrupoProblema, ResultadoValidacao } from "@/lib/validacao";
+import { daEmpresa, dasUnidades, unidadesDoEscopo, type Escopo } from "@/lib/escopo.server";
 
 type Cliente = SupabaseClient<Database>;
 
@@ -14,19 +15,31 @@ type Cliente = SupabaseClient<Database>;
  * consegue produzir a matriz. O resultado traz sempre os registos concretos,
  * para o painel poder corrigir sem obrigar a procurar à mão.
  */
-export async function coletarProblemas(supabase: Cliente): Promise<ResultadoValidacao> {
+export async function coletarProblemas(
+  supabase: Cliente,
+  escopo: Escopo,
+): Promise<ResultadoValidacao> {
   const hoje = new Date().toISOString().slice(0, 10);
 
+  // A validação varre a base inteira à procura de incoerências; sem filtro,
+  // listaria as pendências das unidades de todas as empresas.
+  const ids = await unidadesDoEscopo(supabase, escopo);
   const [licencas, unidades, cnaes, documentos] = await Promise.all([
-    supabase
-      .from("licencas")
-      .select(
-        "id, orgao, descricao, status, data_vencimento, unidade_id, unidades!inner(nome, ativa)",
-      )
-      .eq("unidades.ativa", true),
-    supabase.from("unidades").select("id, nome, tipo, cnpj").eq("ativa", true),
-    supabase.from("cnaes_unidade").select("unidade_id"),
-    supabase.from("documentos").select("id, nome, unidade_id, categoria").eq("ativo", true),
+    dasUnidades(
+      supabase
+        .from("licencas")
+        .select(
+          "id, orgao, descricao, status, data_vencimento, unidade_id, unidades!inner(nome, ativa)",
+        )
+        .eq("unidades.ativa", true),
+      ids,
+    ),
+    daEmpresa(supabase.from("unidades").select("id, nome, tipo, cnpj").eq("ativa", true), escopo),
+    dasUnidades(supabase.from("cnaes_unidade").select("unidade_id"), ids),
+    dasUnidades(
+      supabase.from("documentos").select("id, nome, unidade_id, categoria").eq("ativo", true),
+      ids,
+    ),
   ]);
   if (licencas.error) throw licencas.error;
   if (unidades.error) throw unidades.error;

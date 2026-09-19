@@ -2,6 +2,7 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireAcesso, requireEdicao } from "@/lib/acesso-middleware";
 import type { ExecucaoValidacao, ResultadoValidacao } from "@/lib/validacao";
+import { daEmpresa, dasUnidades, unidadesDoEscopo } from "@/lib/escopo.server";
 
 /**
  * Validação do sistema: conferências de coerência dos dados, com histórico das
@@ -12,9 +13,10 @@ export const executarValidacao = createServerFn({ method: "POST" })
   .middleware([requireAcesso])
   .handler(async ({ context }): Promise<ResultadoValidacao> => {
     const { coletarProblemas } = await import("@/lib/validacao.server");
-    const resultado = await coletarProblemas(context.supabase);
+    const resultado = await coletarProblemas(context.supabase, context.escopo);
 
     await context.supabase.from("validacao_execucoes").insert({
+      empresa_id: context.escopo.global ? null : context.escopo.empresaId,
       executado_por: context.sessao.email,
       total_problemas: resultado.total_problemas,
       total_itens: resultado.total_itens,
@@ -32,11 +34,14 @@ export const executarValidacao = createServerFn({ method: "POST" })
 export const listarExecucoesValidacao = createServerFn({ method: "GET" })
   .middleware([requireAcesso])
   .handler(async ({ context }): Promise<ExecucaoValidacao[]> => {
-    const { data, error } = await context.supabase
-      .from("validacao_execucoes")
-      .select("id, executado_em, executado_por, total_problemas, total_itens")
-      .order("executado_em", { ascending: false })
-      .limit(50);
+    const { data, error } = await daEmpresa(
+      context.supabase
+        .from("validacao_execucoes")
+        .select("id, executado_em, executado_por, total_problemas, total_itens")
+        .order("executado_em", { ascending: false })
+        .limit(50),
+      context.escopo,
+    );
     if (error) throw error;
     return data ?? [];
   });
@@ -59,16 +64,24 @@ export const corrigirSituacaoLicencas = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
-    const { data: antes, error: erroLeitura } = await context.supabase
-      .from("licencas")
-      .select("id, status, orgao, unidade_id")
-      .in("id", data.ids);
+    // A correção em lote recebe uma lista de ids vinda do navegador. Lê-se
+    // primeiro com o filtro da empresa e escreve-se só nos ids que sobraram:
+    // sem isso, bastava juntar à lista o id de uma licença de outra empresa
+    // para lhe mudar a situação.
+    const ids = await unidadesDoEscopo(context.supabase, context.escopo);
+    const { data: antes, error: erroLeitura } = await dasUnidades(
+      context.supabase.from("licencas").select("id, status, orgao, unidade_id").in("id", data.ids),
+      ids,
+    );
     if (erroLeitura) throw erroLeitura;
+
+    const permitidos = (antes ?? []).map((l) => l.id);
+    if (permitidos.length === 0) return { atualizadas: 0 };
 
     const { error } = await context.supabase
       .from("licencas")
       .update({ status: data.status, updated_at: new Date().toISOString() })
-      .in("id", data.ids);
+      .in("id", permitidos);
     if (error) throw error;
 
     const { registarAuditoria } = await import("@/lib/auditoria.server");

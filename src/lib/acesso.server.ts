@@ -23,7 +23,20 @@ export type Sessao = {
   /** `null` significa conta confirmada mas ainda sem autorização do master. */
   perfil: Perfil | null;
   suspenso: boolean;
+  /**
+   * Empresa a que a conta pertence.
+   *
+   * `null` com perfil master é o master global — o responsável pelo sistema,
+   * que vê todas as empresas e é o único que as gere. `null` sem perfil é uma
+   * conta ainda por autorizar.
+   */
+  empresaId: string | null;
 };
+
+/** Vê todas as empresas: só o master sem empresa atribuída. */
+export function ehMasterGlobal(s: Sessao): boolean {
+  return s.perfil === "master" && s.empresaId === null;
+}
 
 /** Conta que é sempre master — a do responsável pelo sistema. */
 function emailMaster(): string {
@@ -93,7 +106,7 @@ export async function sessaoDaIdentidade(eu: IdentidadeConfirmada): Promise<Sess
   const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
   const { data } = await supabaseAdmin
     .from("perfis_acesso")
-    .select("user_id, email, nome, perfil, suspenso")
+    .select("user_id, email, nome, perfil, suspenso, empresa_id")
     .eq("user_id", eu.userId)
     .maybeSingle();
 
@@ -105,7 +118,7 @@ export async function sessaoDaIdentidade(eu: IdentidadeConfirmada): Promise<Sess
     // dada pelo master, em vez de tentar inserir e violar o índice único.
     const { data: porEmail } = await supabaseAdmin
       .from("perfis_acesso")
-      .select("user_id, email, nome, perfil, suspenso")
+      .select("user_id, email, nome, perfil, suspenso, empresa_id")
       .ilike("email", eu.email)
       .maybeSingle();
 
@@ -130,6 +143,7 @@ export async function sessaoDaIdentidade(eu: IdentidadeConfirmada): Promise<Sess
         nome: porEmail.nome ?? eu.nome,
         perfil: suspenso ? null : perfil,
         suspenso,
+        empresaId: ehResponsavel ? null : (porEmail.empresa_id ?? null),
       };
     }
 
@@ -153,6 +167,7 @@ export async function sessaoDaIdentidade(eu: IdentidadeConfirmada): Promise<Sess
       nome: eu.nome,
       perfil: perfilInicial,
       suspenso: false,
+      empresaId: null,
     };
   }
 
@@ -177,6 +192,9 @@ export async function sessaoDaIdentidade(eu: IdentidadeConfirmada): Promise<Sess
     nome: data.nome ?? eu.nome,
     perfil: data.suspenso ? null : ((data.perfil as Perfil | null) ?? null),
     suspenso: data.suspenso,
+    // O responsável pelo sistema nunca fica preso a uma empresa: seria ele a
+    // perder a vista de todas, e ninguém ficava a poder geri-las.
+    empresaId: ehResponsavel ? null : (data.empresa_id ?? null),
   };
 }
 

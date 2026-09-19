@@ -51,10 +51,16 @@ export const Route = createFileRoute("/api/ia")({
   server: {
     handlers: {
       POST: async ({ request }) => {
-        const { ehMaster, autorAtual } = await import("@/lib/acesso.server");
-        if (!(await ehMaster())) {
+        const { sessaoAtual, autorAtual } = await import("@/lib/acesso.server");
+        const sessao = await sessaoAtual();
+        if (sessao?.perfil !== "master") {
           return new Response("Acesso restrito ao utilizador master.", { status: 403 });
         }
+        // O contexto que acompanha a pergunta sai da base de dados: tem de
+        // ficar preso à empresa de quem pergunta, ou um master de empresa
+        // recebia nas respostas os dados das outras.
+        const { escopoDaSessao } = await import("@/lib/escopo.server");
+        const escopo = escopoDaSessao(sessao);
 
         const {
           ACOES,
@@ -120,7 +126,7 @@ export const Route = createFileRoute("/api/ia")({
         const { montarContexto } = await import("@/lib/ia-contexto.server");
         const unidadeId =
           typeof body.unidadeId === "string" && UUID.test(body.unidadeId) ? body.unidadeId : null;
-        const contextoBruto = await montarContexto(acao, unidadeId);
+        const contextoBruto = await montarContexto(acao, escopo, unidadeId);
         const contextoLimpo = contextoBruto === null ? null : sanitizarContexto(contextoBruto);
 
         const sistema =

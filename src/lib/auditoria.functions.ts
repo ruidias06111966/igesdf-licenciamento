@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireAcesso } from "@/lib/acesso-middleware";
+import { daEmpresa } from "@/lib/escopo.server";
 
 const filtroSchema = z.object({
   entidade: z.string().trim().max(40).optional(),
@@ -28,11 +29,14 @@ export const listAuditoria = createServerFn({ method: "POST" })
   .middleware([requireAcesso])
   .inputValidator((input: unknown) => filtroSchema.parse(input ?? {}))
   .handler(async ({ data, context }) => {
-    let q = context.supabase
-      .from("atividade_log")
-      .select("id, created_at, entidade, entidade_id, acao, perfil, alteracoes, detalhes")
-      .order("created_at", { ascending: false })
-      .limit(data.limite);
+    let q = daEmpresa(
+      context.supabase
+        .from("atividade_log")
+        .select("id, created_at, entidade, entidade_id, acao, perfil, alteracoes, detalhes")
+        .order("created_at", { ascending: false })
+        .limit(data.limite),
+      context.escopo,
+    );
 
     if (data.entidade) q = q.eq("entidade", data.entidade);
     if (data.entidade_id) q = q.eq("entidade_id", data.entidade_id);

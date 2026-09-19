@@ -35,6 +35,7 @@ const GRUPOS: Record<string, Vista[]> = {
   ],
   configuracoes: [
     { to: "/configuracoes", label: "Geral" },
+    { to: "/empresas", label: "Empresas", master: true },
     { to: "/validacao", label: "Validação" },
     { to: "/rotina", label: "Correção automática" },
     { to: "/importar", label: "Importar CSV" },

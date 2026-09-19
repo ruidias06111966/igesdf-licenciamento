@@ -1,5 +1,16 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireAcesso, requireEdicao } from "@/lib/acesso-middleware";
+import {
+  daEmpresa,
+  dasUnidades,
+  exigirDocumento,
+  exigirLicenca,
+  exigirLinhaDaLicenca,
+  exigirLinhaDaUnidade,
+  exigirProcesso,
+  exigirUnidade,
+  unidadesDoEscopo,
+} from "@/lib/escopo.server";
 import { z } from "zod";
 import { vaziosParaNulo } from "@/lib/sanitize";
 import type { LicencaDashboard } from "@/lib/rows";
@@ -7,11 +18,14 @@ import type { LicencaDashboard } from "@/lib/rows";
 export const listUnidades = createServerFn({ method: "GET" })
   .middleware([requireAcesso])
   .handler(async ({ context }) => {
-    const { data, error } = await context.supabase
-      .from("unidades")
-      .select("*")
-      .eq("ativa", true)
-      .order("numero_iges", { ascending: true, nullsFirst: false });
+    const { data, error } = await daEmpresa(
+      context.supabase
+        .from("unidades")
+        .select("*")
+        .eq("ativa", true)
+        .order("numero_iges", { ascending: true, nullsFirst: false }),
+      context.escopo,
+    );
     if (error) throw error;
     return data ?? [];
   });
@@ -20,6 +34,10 @@ export const getUnidade = createServerFn({ method: "GET" })
   .middleware([requireAcesso])
   .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
+    // Confere-se a unidade antes de ler o resto: as consultas seguintes filtram
+    // por `unidade_id`, portanto basta a unidade estar ao alcance para tudo o
+    // que pende dela estar também.
+    await exigirUnidade(context.supabase, context.escopo, data.id);
     const [uni, lics, rts, docs, cnaes] = await Promise.all([
       context.supabase.from("unidades").select("*").eq("id", data.id).maybeSingle(),
       context.supabase.from("licencas").select("*").eq("unidade_id", data.id).order("orgao"),
@@ -50,6 +68,7 @@ export const deleteUnidade = createServerFn({ method: "POST" })
   .middleware([requireEdicao])
   .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
+    await exigirUnidade(context.supabase, context.escopo, data.id);
     const { error } = await context.supabase
       .from("unidades")
       .update({ ativa: false })
@@ -85,8 +104,13 @@ export const upsertCnae = createServerFn({ method: "POST" })
   .middleware([requireEdicao])
   .inputValidator((input: unknown) => cnaeSchema.parse(input))
   .handler(async ({ data, context }) => {
+    // A unidade de destino tem de estar ao alcance, e, ao editar, também a
+    // linha antiga: sem a segunda, mudava-se um CNAE de outra empresa
+    // apontando-o para uma unidade da nossa.
+    await exigirUnidade(context.supabase, context.escopo, data.unidade_id);
     const clean = vaziosParaNulo(data);
     if (data.id) {
+      await exigirLinhaDaUnidade(context.supabase, context.escopo, "cnaes_unidade", data.id);
       const { error } = await context.supabase
         .from("cnaes_unidade")
         .update(clean)
@@ -107,6 +131,7 @@ export const deleteCnae = createServerFn({ method: "POST" })
   .middleware([requireEdicao])
   .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
+    await exigirLinhaDaUnidade(context.supabase, context.escopo, "cnaes_unidade", data.id);
     const { error } = await context.supabase.from("cnaes_unidade").delete().eq("id", data.id);
     if (error) throw error;
     return { ok: true };
@@ -117,6 +142,7 @@ export const getChecklist = createServerFn({ method: "GET" })
   .middleware([requireAcesso])
   .inputValidator((input: unknown) => z.object({ licenca_id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
+    await exigirLicenca(context.supabase, context.escopo, data.licenca_id);
     // fetch licença → órgão
     const { data: lic, error: le } = await context.supabase
       .from("licencas")
@@ -180,6 +206,7 @@ export const updateChecklistItem = createServerFn({ method: "POST" })
   .middleware([requireEdicao])
   .inputValidator((input: unknown) => checklistItemSchema.parse(input))
   .handler(async ({ data, context }) => {
+    await exigirLinhaDaLicenca(context.supabase, context.escopo, "checklist_itens", data.id);
     const { id, ...campos } = data;
     const patch = vaziosParaNulo(campos) as Omit<typeof campos, never> & {
       concluido_por?: string;
@@ -208,6 +235,7 @@ export const registrarNovaVersao = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
+    await exigirDocumento(context.supabase, context.escopo, data.documento_pai_id);
     const { data: pai, error: pe } = await context.supabase
       .from("documentos")
       .select("*")
@@ -247,6 +275,7 @@ export const listVersoesDocumento = createServerFn({ method: "GET" })
   .middleware([requireAcesso])
   .inputValidator((input: unknown) => z.object({ documento_id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
+    await exigirDocumento(context.supabase, context.escopo, data.documento_id);
     const { data: base } = await context.supabase
       .from("documentos")
       .select("*")
@@ -274,12 +303,15 @@ export const listDashboard = createServerFn({ method: "GET" })
     const pagina = 1000;
     const todas: LicencaDashboard[] = [];
     for (let inicio = 0; ; inicio += pagina) {
-      const { data, error } = await context.supabase
-        .from("v_licencas_dashboard")
-        .select("*")
-        .order("data_vencimento", { ascending: true, nullsFirst: false })
-        .order("id", { ascending: true })
-        .range(inicio, inicio + pagina - 1);
+      const { data, error } = await daEmpresa(
+        context.supabase
+          .from("v_licencas_dashboard")
+          .select("*")
+          .order("data_vencimento", { ascending: true, nullsFirst: false })
+          .order("id", { ascending: true })
+          .range(inicio, inicio + pagina - 1),
+        context.escopo,
+      );
       if (error) throw error;
       const linhas = data ?? [];
       todas.push(...linhas);
@@ -287,6 +319,33 @@ export const listDashboard = createServerFn({ method: "GET" })
     }
     return todas;
   });
+
+/**
+ * Empresa em que nasce uma unidade nova.
+ *
+ * Quem tem empresa cria lá. O master global não tem, e só se adivinha quando há
+ * uma única empresa ativa — com duas ou mais, criar a unidade no cliente errado
+ * seria pior do que recusar.
+ */
+async function empresaParaNovaUnidade(context: {
+  supabase: Parameters<typeof exigirUnidade>[0];
+  escopo: Parameters<typeof exigirUnidade>[1];
+}): Promise<string> {
+  if (!context.escopo.global) return context.escopo.empresaId;
+  const { data, error } = await context.supabase
+    .from("empresas")
+    .select("id")
+    .eq("ativa", true)
+    .limit(2);
+  if (error) throw new Error(error.message);
+  const ativas = data ?? [];
+  if (ativas.length === 1) return ativas[0]!.id;
+  throw new Error(
+    ativas.length === 0
+      ? "Crie primeiro uma empresa em Configurações → Empresas."
+      : "Há mais do que uma empresa ativa: crie a unidade a partir da conta da empresa a que ela pertence.",
+  );
+}
 
 const unidadeSchema = z.object({
   id: z.string().uuid().optional(),
@@ -322,13 +381,17 @@ export const upsertUnidade = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const clean = vaziosParaNulo(data);
     if (data.id) {
+      await exigirUnidade(context.supabase, context.escopo, data.id);
       const { error } = await context.supabase.from("unidades").update(clean).eq("id", data.id);
       if (error) throw error;
       return { id: data.id };
     }
+    // A unidade nova nasce na empresa de quem a cria. O master global não tem
+    // empresa própria, por isso usa a única ativa; havendo mais do que uma, não
+    // se adivinha — seria criar a unidade no cliente errado.
     const { data: ins, error } = await context.supabase
       .from("unidades")
-      .insert(clean)
+      .insert({ ...clean, empresa_id: await empresaParaNovaUnidade(context) })
       .select("id")
       .single();
     if (error) throw error;
@@ -384,9 +447,11 @@ export const upsertLicenca = createServerFn({ method: "POST" })
   .middleware([requireEdicao])
   .inputValidator((input: unknown) => licencaSchema.parse(input))
   .handler(async ({ data, context }) => {
+    await exigirUnidade(context.supabase, context.escopo, data.unidade_id);
     const { diferencas, registarAuditoria } = await import("@/lib/auditoria.server");
     const clean = vaziosParaNulo(data);
     if (data.id) {
+      await exigirLicenca(context.supabase, context.escopo, data.id);
       // O estado anterior tem de ser lido antes da escrita: é o que permite
       // dizer, no histórico, qual era o valor de cada campo alterado.
       const { data: antes } = await context.supabase
@@ -428,6 +493,7 @@ export const deleteLicenca = createServerFn({ method: "POST" })
   .middleware([requireEdicao])
   .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
+    await exigirLicenca(context.supabase, context.escopo, data.id);
     const { registarAuditoria } = await import("@/lib/auditoria.server");
     const { data: antes } = await context.supabase
       .from("licencas")
@@ -470,8 +536,15 @@ export const upsertRT = createServerFn({ method: "POST" })
   .middleware([requireEdicao])
   .inputValidator((input: unknown) => rtSchema.parse(input))
   .handler(async ({ data, context }) => {
+    await exigirUnidade(context.supabase, context.escopo, data.unidade_id);
     const clean = vaziosParaNulo(data);
     if (data.id) {
+      await exigirLinhaDaUnidade(
+        context.supabase,
+        context.escopo,
+        "responsaveis_tecnicos",
+        data.id,
+      );
       const { error } = await context.supabase
         .from("responsaveis_tecnicos")
         .update(clean)
@@ -492,6 +565,7 @@ export const deleteRT = createServerFn({ method: "POST" })
   .middleware([requireEdicao])
   .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
+    await exigirLinhaDaUnidade(context.supabase, context.escopo, "responsaveis_tecnicos", data.id);
     const { error } = await context.supabase
       .from("responsaveis_tecnicos")
       .delete()
@@ -520,6 +594,15 @@ export const registrarDocumento = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
+    // O documento pode vir preso a uma unidade, a uma licença ou a um processo;
+    // confere-se o que vier, e exige-se ao menos um — um documento sem dono não
+    // pertence a empresa nenhuma e mais tarde ninguém saberia de quem era.
+    if (data.unidade_id) await exigirUnidade(context.supabase, context.escopo, data.unidade_id);
+    if (data.licenca_id) await exigirLicenca(context.supabase, context.escopo, data.licenca_id);
+    if (data.processo_id) await exigirProcesso(context.supabase, context.escopo, data.processo_id);
+    if (!data.unidade_id && !data.licenca_id && !data.processo_id) {
+      throw new Error("Indique a unidade, a licença ou o processo do documento.");
+    }
     const clean = vaziosParaNulo(data);
     const { data: ins, error } = await context.supabase
       .from("documentos")
@@ -536,7 +619,18 @@ export const deleteDocumento = createServerFn({ method: "POST" })
     z.object({ id: z.string().uuid(), storage_path: z.string() }).parse(input),
   )
   .handler(async ({ data, context }) => {
-    await context.supabase.storage.from("licencas-docs").remove([data.storage_path]);
+    await exigirDocumento(context.supabase, context.escopo, data.id);
+    // O caminho é lido da linha e não do que veio no pedido: confiar no
+    // `storage_path` do navegador deixava apagar do bucket o ficheiro de
+    // qualquer outra empresa, bastando mandar o caminho dele.
+    const { data: doc } = await context.supabase
+      .from("documentos")
+      .select("storage_path")
+      .eq("id", data.id)
+      .maybeSingle();
+    if (doc?.storage_path) {
+      await context.supabase.storage.from("licencas-docs").remove([doc.storage_path]);
+    }
     const { error } = await context.supabase.from("documentos").delete().eq("id", data.id);
     if (error) throw error;
     return { ok: true };
@@ -546,6 +640,18 @@ export const signedDocUrl = createServerFn({ method: "POST" })
   .middleware([requireAcesso])
   .inputValidator((input: unknown) => z.object({ path: z.string() }).parse(input))
   .handler(async ({ data, context }) => {
+    // Sem esta conferência, esta função assinava qualquer caminho do bucket:
+    // bastava conhecer o caminho para descarregar o documento de outra empresa.
+    // Aqui não chega filtrar uma consulta — o que sai é o ficheiro.
+    if (!context.escopo.global) {
+      const { data: doc } = await context.supabase
+        .from("documentos")
+        .select("id")
+        .eq("storage_path", data.path)
+        .maybeSingle();
+      if (!doc) throw new Error("Documento não encontrado.");
+      await exigirDocumento(context.supabase, context.escopo, doc.id);
+    }
     const { data: sig, error } = await context.supabase.storage
       .from("licencas-docs")
       .createSignedUrl(data.path, 300);
@@ -558,6 +664,7 @@ export const setVersaoVigente = createServerFn({ method: "POST" })
   .middleware([requireEdicao])
   .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
+    await exigirDocumento(context.supabase, context.escopo, data.id);
     const { error } = await context.supabase.rpc("set_versao_vigente", { _doc_id: data.id });
     if (error) throw error;
     return { ok: true };
@@ -568,6 +675,7 @@ export const getDossieUnidade = createServerFn({ method: "GET" })
   .middleware([requireAcesso])
   .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
+    await exigirUnidade(context.supabase, context.escopo, data.id);
     const [uni, lics, rts, docs, cnaes, checklist] = await Promise.all([
       context.supabase.from("unidades").select("*").eq("id", data.id).maybeSingle(),
       context.supabase.from("licencas").select("*").eq("unidade_id", data.id).order("orgao"),
@@ -605,11 +713,19 @@ export const getDossieUnidade = createServerFn({ method: "GET" })
 export const listProximosPassos = createServerFn({ method: "GET" })
   .middleware([requireAcesso])
   .handler(async ({ context }) => {
-    const { data, error } = await context.supabase
-      .from("checklist_itens")
-      .select(
-        "id, titulo, status, responsavel, data_conclusao, ordem, licencas!inner(id, orgao, unidade_id, data_vencimento, descricao, unidades!inner(id, nome))",
-      )
+    const ids = await unidadesDoEscopo(context.supabase, context.escopo);
+    const { data, error } = await dasUnidades(
+      context.supabase
+        .from("checklist_itens")
+        .select(
+          "id, titulo, status, responsavel, data_conclusao, ordem, licencas!inner(id, orgao, unidade_id, data_vencimento, descricao, unidades!inner(id, nome))",
+        ),
+      ids,
+      // A ligação é indireta: o item pende da licença, e é a licença que aponta
+      // à unidade. O `!inner` acima permite filtrar pela coluna da tabela
+      // ligada.
+      "licencas.unidade_id",
+    )
       .in("status", ["pendente", "em_curso"])
       .order("ordem")
       .limit(200);

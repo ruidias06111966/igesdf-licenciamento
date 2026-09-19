@@ -95,16 +95,26 @@ async function todasAsContas(): Promise<User[]> {
 export const listarUtilizadores = createServerFn({ method: "GET" })
   .middleware([requireMaster])
   .handler(async ({ context }) => {
-    const { data, error } = await context.supabase
+    const consulta = context.supabase
       .from("perfis_acesso")
-      .select("user_id, email, nome, perfil, suspenso, autorizado_em, ultimo_acesso, created_at")
+      .select(
+        "user_id, email, nome, perfil, suspenso, autorizado_em, ultimo_acesso, created_at, empresa_id",
+      )
       .order("created_at", { ascending: false });
+    // Um master de empresa vê as contas da sua empresa e mais nenhumas: a lista
+    // de utilizadores diria logo que outros clientes existem nesta instalação e
+    // quem lá trabalha.
+    const { data, error } = await (context.escopo.global
+      ? consulta
+      : consulta.eq("empresa_id", context.escopo.empresaId));
     if (error) throw new Error(error.message);
     const perfis = data ?? [];
 
-    // Contas que se cadastraram mas ainda não abriram o sistema não têm registo
-    // em `perfis_acesso` — ficariam invisíveis para o master, que nunca as
-    // poderia autorizar. Junta-se aqui a lista real de contas.
+    // Contas cadastradas que ainda não têm registo nem empresa só aparecem ao
+    // master global: é ele quem lhes atribui a empresa, e antes disso não
+    // pertencem a nenhuma para serem mostradas.
+    if (!context.escopo.global) return perfis;
+
     const contas = await todasAsContas();
     const conhecidos = new Set(perfis.map((p) => p.user_id));
     const emailsConhecidos = new Set(perfis.map((p) => (p.email ?? "").toLowerCase()));
@@ -116,6 +126,7 @@ export const listarUtilizadores = createServerFn({ method: "GET" })
       .map((u) => ({
         user_id: u.id,
         email: u.email!,
+        empresa_id: null as string | null,
         nome:
           (u.user_metadata as { nome?: string; full_name?: string } | null)?.nome ??
           (u.user_metadata as { full_name?: string } | null)?.full_name ??
@@ -136,6 +147,8 @@ const definirSchema = z.object({
   userId: z.string().uuid(),
   perfil: z.enum(["master", "edicao", "leitura"]).nullable(),
   suspenso: z.boolean().optional(),
+  /** Só o master global a define; um master de empresa não muda ninguém de empresa. */
+  empresaId: z.string().uuid().nullable().optional(),
 });
 
 /** Atribui, altera ou retira o perfil de uma conta. */
@@ -148,9 +161,35 @@ export const definirPerfilUtilizador = createServerFn({ method: "POST" })
     if (data.userId === context.sessao.userId && (data.perfil !== "master" || data.suspenso)) {
       throw new Error("Não é possível retirar o seu próprio acesso master.");
     }
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: alvo } = await context.supabase
+      .from("perfis_acesso")
+      .select("empresa_id")
+      .eq("user_id", data.userId)
+      .maybeSingle();
+
+    // Um master de empresa autoriza gente da sua empresa e mais ninguém, e a
+    // empresa da conta não muda por mão dele: sem isto, bastava-lhe chamar esta
+    // função com o id de alguém de outro cliente para lhe mexer no acesso, ou
+    // trazer essa conta para dentro da sua empresa.
+    let empresaId: string | null;
+    if (context.escopo.global) {
+      empresaId = data.empresaId !== undefined ? data.empresaId : (alvo?.empresa_id ?? null);
+    } else {
+      if (alvo && alvo.empresa_id !== context.escopo.empresaId) {
+        throw new Error("Esta conta não pertence à sua empresa.");
+      }
+      if (!alvo) {
+        throw new Error(
+          "Esta conta ainda não foi atribuída a nenhuma empresa. Peça ao responsável pelo sistema para a atribuir.",
+        );
+      }
+      empresaId = context.escopo.empresaId;
+    }
+
     // `upsert` porque a conta pode ainda não ter registo em `perfis_acesso`
     // (confirmou o e-mail mas nunca abriu o sistema).
-    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: conta } = await supabaseAdmin.auth.admin.getUserById(data.userId);
     const { error } = await context.supabase.from("perfis_acesso").upsert(
       {
@@ -161,6 +200,7 @@ export const definirPerfilUtilizador = createServerFn({ method: "POST" })
           (conta?.user?.user_metadata as { full_name?: string } | null)?.full_name ??
           null,
         perfil: data.perfil,
+        empresa_id: empresaId,
         suspenso: data.suspenso ?? false,
         autorizado_por: context.sessao.userId,
         autorizado_em: data.perfil ? new Date().toISOString() : null,

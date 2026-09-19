@@ -1,9 +1,9 @@
 /**
  * Registo de auditoria: quem, quando e o que mudou.
  *
- * O sistema não tem contas individuais — a identidade possível é o perfil da
- * senha usada (edição / master / consulta). É isso que fica gravado, junto com
- * o valor anterior e o novo de cada campo que realmente mudou.
+ * Fica gravado o e-mail da conta com o perfil, junto com o valor anterior e o
+ * novo de cada campo que realmente mudou, e a empresa a que a ação pertence —
+ * sem ela, a auditoria de uma empresa mostrava o que se passou nas outras.
  *
  * Nunca deve fazer falhar a operação principal: se o registo falhar, a licença
  * já foi gravada e não faz sentido devolver erro ao utilizador.
@@ -51,12 +51,17 @@ export async function registarAuditoria(
   registo: Registo,
 ): Promise<void> {
   try {
-    const { autorAtual } = await import("@/lib/acesso.server");
+    const { sessaoAtual } = await import("@/lib/acesso.server");
+    const sessao = await sessaoAtual();
+    // O master global não tem empresa, e daqui não se sabe de que empresa é a
+    // linha tocada. Fica sem empresa: a auditoria de cada cliente mostra de
+    // menos, nunca de mais.
     await supabase.from("atividade_log").insert({
+      empresa_id: sessao?.empresaId ?? null,
       entidade: registo.entidade,
       entidade_id: registo.entidade_id ?? null,
       acao: registo.acao,
-      perfil: await autorAtual(),
+      perfil: sessao ? (sessao.perfil ? `${sessao.email} (${sessao.perfil})` : sessao.email) : null,
       alteracoes: (registo.alteracoes ??
         []) as unknown as Database["public"]["Tables"]["atividade_log"]["Insert"]["alteracoes"],
       detalhes: (registo.detalhes ??

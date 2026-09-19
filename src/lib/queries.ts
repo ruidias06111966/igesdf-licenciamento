@@ -6,6 +6,7 @@ import {
   listProximosPassos,
   listUnidades,
 } from "@/lib/licencas.functions";
+import { listarEmpresas } from "@/lib/empresas.functions";
 import { listNormativas } from "@/lib/normativas.functions";
 import { listOrgaos } from "@/lib/orgaos.functions";
 import { getProcesso, listProcessos } from "@/lib/processos.functions";
@@ -38,6 +39,7 @@ export const chaves = {
   dossie: (id: string) => ["dossie", id] as const,
   checklist: (licencaId: string) => ["checklist", licencaId] as const,
   versoes: (documentoId: string) => ["versoes", documentoId] as const,
+  empresas: ["empresas"] as const,
   orgaos: ["orgaos"] as const,
   normativas: ["normativas"] as const,
   processos: ["processos"] as const,
@@ -47,6 +49,11 @@ export const chaves = {
 export const unidadesQuery = queryOptions({
   queryKey: chaves.unidades,
   queryFn: () => listUnidades(),
+});
+
+export const empresasQuery = queryOptions({
+  queryKey: chaves.empresas,
+  queryFn: () => listarEmpresas(),
 });
 
 export const licencasQuery = queryOptions({

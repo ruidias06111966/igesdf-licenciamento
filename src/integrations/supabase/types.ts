@@ -20,6 +20,7 @@ export type Database = {
           alteracoes: Json | null
           created_at: string
           detalhes: Json | null
+          empresa_id: string | null
           entidade: string
           entidade_id: string | null
           id: string
@@ -31,6 +32,7 @@ export type Database = {
           alteracoes?: Json | null
           created_at?: string
           detalhes?: Json | null
+          empresa_id?: string | null
           entidade: string
           entidade_id?: string | null
           id?: string
@@ -42,6 +44,7 @@ export type Database = {
           alteracoes?: Json | null
           created_at?: string
           detalhes?: Json | null
+          empresa_id?: string | null
           entidade?: string
           entidade_id?: string | null
           id?: string
@@ -388,6 +391,7 @@ export type Database = {
       }
       ia_modelos: {
         Row: {
+          empresa_id: string | null
           conteudo: string
           created_at: string
           id: string
@@ -403,6 +407,7 @@ export type Database = {
           versao: number
         }
         Insert: {
+          empresa_id?: string | null
           conteudo: string
           created_at?: string
           id?: string
@@ -418,6 +423,7 @@ export type Database = {
           versao?: number
         }
         Update: {
+          empresa_id?: string | null
           conteudo?: string
           created_at?: string
           id?: string
@@ -634,6 +640,39 @@ export type Database = {
           },
         ]
       }
+      empresas: {
+        Row: {
+          ativa: boolean
+          cnpj_raiz: string | null
+          created_at: string
+          id: string
+          logo_path: string | null
+          nome: string
+          sigla: string
+          updated_at: string
+        }
+        Insert: {
+          ativa?: boolean
+          cnpj_raiz?: string | null
+          created_at?: string
+          id?: string
+          logo_path?: string | null
+          nome: string
+          sigla: string
+          updated_at?: string
+        }
+        Update: {
+          ativa?: boolean
+          cnpj_raiz?: string | null
+          created_at?: string
+          id?: string
+          logo_path?: string | null
+          nome?: string
+          sigla?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       orgaos: {
         Row: {
           ativo: boolean
@@ -685,6 +724,7 @@ export type Database = {
           autorizado_por: string | null
           created_at: string
           email: string
+          empresa_id: string | null
           nome: string | null
           perfil: string | null
           suspenso: boolean
@@ -697,6 +737,7 @@ export type Database = {
           autorizado_por?: string | null
           created_at?: string
           email: string
+          empresa_id?: string | null
           nome?: string | null
           perfil?: string | null
           suspenso?: boolean
@@ -709,6 +750,7 @@ export type Database = {
           autorizado_por?: string | null
           created_at?: string
           email?: string
+          empresa_id?: string | null
           nome?: string | null
           perfil?: string | null
           suspenso?: boolean
@@ -975,6 +1017,7 @@ export type Database = {
           codigo_mv: string | null
           codigo_mv_nota: string | null
           created_at: string
+          empresa_id: string | null
           endereco: string | null
           id: string
           inicio_atividade: string | null
@@ -1007,6 +1050,7 @@ export type Database = {
           codigo_mv?: string | null
           codigo_mv_nota?: string | null
           created_at?: string
+          empresa_id?: string | null
           endereco?: string | null
           id?: string
           inicio_atividade?: string | null
@@ -1039,6 +1083,7 @@ export type Database = {
           codigo_mv?: string | null
           codigo_mv_nota?: string | null
           created_at?: string
+          empresa_id?: string | null
           endereco?: string | null
           id?: string
           inicio_atividade?: string | null
@@ -1081,6 +1126,7 @@ export type Database = {
       validacao_execucoes: {
         Row: {
           created_at: string
+          empresa_id: string | null
           executado_em: string
           executado_por: string | null
           id: string
@@ -1090,6 +1136,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          empresa_id?: string | null
           executado_em?: string
           executado_por?: string | null
           id?: string
@@ -1099,6 +1146,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          empresa_id?: string | null
           executado_em?: string
           executado_por?: string | null
           id?: string
@@ -1112,6 +1160,7 @@ export type Database = {
     Views: {
       v_licencas_dashboard: {
         Row: {
+          empresa_id: string | null
           created_at: string | null
           data_emissao: string | null
           data_protocolo: string | null
