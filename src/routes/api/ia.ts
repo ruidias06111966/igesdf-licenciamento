@@ -1,51 +1,21 @@
 import { createFileRoute } from "@tanstack/react-router";
+import type { Anexo, Mensagem } from "@/lib/ia/provedor.server";
 
 /**
- * Assistente de IA do IGESDF — endpoint de conversação em streaming.
+ * Assistente de IA — endpoint de conversação em streaming.
  *
- * Só o perfil master (senha própria) chega aqui: a verificação é feita no
- * servidor com o mesmo cookie assinado do resto do sistema, porque esconder o
- * menu na interface não impediria uma chamada direta ao endpoint (e cada
- * chamada consome créditos).
+ * Só o perfil master chega aqui, e a verificação é feita no servidor a partir
+ * do token da sessão: esconder o menu na interface não impediria uma chamada
+ * direta ao endpoint, e cada chamada gasta créditos. O contexto que acompanha a
+ * pergunta fica preso à empresa de quem pergunta.
  *
- * A chave `LOVABLE_API_KEY` (serviço de IA da plataforma) é lida apenas dentro
- * deste handler, que corre exclusivamente no servidor. Nunca é enviada ao
- * navegador nem devolvida em mensagens de erro.
+ * Com quem se fala — Anthropic ou a passagem da Lovable — decide-se em
+ * `@/lib/ia/provedor.server`, conforme a chave que estiver no ambiente. A chave
+ * é lida só lá, no servidor, e nunca é enviada ao navegador nem devolvida em
+ * mensagens de erro.
  */
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-type Anexo = { nome: string; tipo: string; dados: string };
-type Mensagem = { role: "user" | "assistant"; content: string; anexos?: Anexo[] };
-
-/** Extrai o base64 puro de um data URL ("data:...;base64,XXXX"). */
-function base64(dados: string): string {
-  const i = dados.indexOf("base64,");
-  return i >= 0 ? dados.slice(i + 7) : dados;
-}
-
-/** Garante um data URL completo para enviar ao serviço de IA. */
-function dataUrl(a: Anexo): string {
-  return a.dados.startsWith("data:") ? a.dados : `data:${a.tipo};base64,${base64(a.dados)}`;
-}
-
-/** Converte um anexo no bloco de conteúdo do serviço de IA da plataforma. */
-function parteAnexo(a: Anexo) {
-  if (a.tipo.startsWith("image/")) {
-    return { type: "image_url", image_url: { url: dataUrl(a) } };
-  }
-  if (a.tipo === "application/pdf") {
-    return { type: "file", file: { filename: a.nome || "documento.pdf", file_data: dataUrl(a) } };
-  }
-  // Texto simples (txt, md, csv): enviado como texto para o modelo.
-  let conteudo = "";
-  try {
-    conteudo = atob(base64(a.dados));
-  } catch {
-    conteudo = "(não foi possível ler o conteúdo deste ficheiro)";
-  }
-  return { type: "text", text: `Ficheiro anexado "${a.nome}":\n\n${conteudo.slice(0, 200_000)}` };
-}
 
 export const Route = createFileRoute("/api/ia")({
   server: {
@@ -111,14 +81,7 @@ export const Route = createFileRoute("/api/ia")({
           );
         }
 
-        const chave = process.env["LOVABLE_API_KEY"];
-        if (!chave) {
-          console.error("[ia] LOVABLE_API_KEY não configurada no ambiente do servidor.");
-          return new Response("Assistente indisponível no momento.", { status: 500 });
-        }
-
-        const modelo =
-          body.modelo === "aprofundado" ? "google/gemini-3-pro-preview" : "google/gemini-3.5-flash";
+        const modoAprofundado = body.modelo === "aprofundado";
 
         // O contexto é montado no servidor a partir da base de dados — o
         // navegador só indica a ação e, quando aplicável, a unidade. Depois é
@@ -141,117 +104,50 @@ export const Route = createFileRoute("/api/ia")({
             ? mensagens
             : [{ role: "user", content: body.pergunta ?? "Analisa os dados do contexto." }];
 
-        const payload: Array<Record<string, unknown>> = [{ role: "system", content: sistema }];
-        for (const m of historico) {
-          if (m.role === "user" && m.anexos && m.anexos.length > 0) {
-            payload.push({
-              role: "user",
-              content: [
-                { type: "text", text: m.content || "Analisa os documentos em anexo." },
-                ...m.anexos.map(parteAnexo),
-              ],
-            });
-          } else {
-            payload.push({ role: m.role, content: m.content });
-          }
-        }
-
         // Timeout: um pedido pendurado bloquearia o utilizador sem resposta.
         const controlo = new AbortController();
         const relogio = setTimeout(() => controlo.abort(), 120_000);
-
-        let resposta: Response;
-        try {
-          resposta = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-            method: "POST",
-            signal: controlo.signal,
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${chave}`,
-            },
-            body: JSON.stringify({
-              model: modelo,
-              stream: true,
-              stream_options: { include_usage: true },
-              max_tokens: body.acao ? 2000 : 8000,
-              messages: payload,
-            }),
-          });
-        } catch (erro) {
-          clearTimeout(relogio);
-          console.error("[ia] falha na chamada ao serviço de IA:", erro);
-          return new Response("Serviço de IA temporariamente indisponível. Tente novamente.", {
-            status: 503,
-          });
-        }
+        const { pedirIa } = await import("@/lib/ia/provedor.server");
+        const resultado = await pedirIa({
+          sistema,
+          mensagens: historico,
+          maxTokens: body.acao ? 2000 : 8000,
+          aprofundado: modoAprofundado,
+          sinal: controlo.signal,
+        });
         clearTimeout(relogio);
 
-        if (!resposta.ok || !resposta.body) {
-          // O corpo do erro do provedor fica só no registo do servidor: pode
-          // conter detalhes da conta e nunca deve chegar ao navegador.
-          const detalhe = await resposta.text().catch(() => "");
-          console.error(`[ia] serviço de IA respondeu ${resposta.status}:`, detalhe);
-          if (resposta.status === 402) {
-            return new Response(
-              "Créditos de IA esgotados. Recarregue os créditos da plataforma para voltar a usar o assistente.",
-              { status: 402 },
-            );
-          }
-          if (resposta.status === 403) {
-            return new Response("Serviço de IA bloqueado nas definições da plataforma.", {
-              status: 403,
-            });
-          }
-          if (resposta.status === 401) {
-            return new Response("Assistente indisponível no momento.", { status: 500 });
-          }
-          if (resposta.status === 429 || resposta.status >= 500) {
-            return new Response("Serviço de IA temporariamente indisponível. Tente novamente.", {
-              status: 503,
-            });
-          }
-          return new Response("Não foi possível processar o pedido do assistente.", {
-            status: 400,
-          });
+        if (!resultado.ok) {
+          return new Response(resultado.mensagem, { status: resultado.estado });
         }
 
-        // Converte o SSE do serviço de IA em texto simples, que o navegador lê
-        // diretamente do corpo da resposta, e regista o consumo no fim.
+        // Converte o fluxo de eventos do provedor em texto simples, que o
+        // navegador lê diretamente do corpo da resposta, e regista o consumo.
         const perfil = (await autorAtual()) ?? "master";
         const decoder = new TextDecoder();
         const encoder = new TextEncoder();
         let resto = "";
-        let entrada = 0;
-        let saida = 0;
+        const uso = { entrada: 0, saida: 0 };
         const stream = new TransformStream<Uint8Array, Uint8Array>({
           transform(chunk, controller) {
             resto += decoder.decode(chunk, { stream: true });
             const linhas = resto.split("\n");
             resto = linhas.pop() ?? "";
             for (const linha of linhas) {
-              if (!linha.startsWith("data:")) continue;
-              const dados = linha.slice(5).trim();
-              if (!dados || dados === "[DONE]") continue;
-              try {
-                const json = JSON.parse(dados) as {
-                  choices?: Array<{ delta?: { content?: string } }>;
-                  usage?: { prompt_tokens?: number; completion_tokens?: number };
-                };
-                if (json.usage?.prompt_tokens) entrada = json.usage.prompt_tokens;
-                if (json.usage?.completion_tokens) saida = json.usage.completion_tokens;
-                const texto = json.choices?.[0]?.delta?.content;
-                if (texto) controller.enqueue(encoder.encode(texto));
-              } catch {
-                /* fragmento incompleto: ignorado */
-              }
+              resultado.ler(linha, (texto) => controller.enqueue(encoder.encode(texto)), uso);
             }
           },
           flush() {
-            void registarUso({ perfil, acao, tokensEntrada: entrada, tokensSaida: saida });
+            void registarUso({
+              perfil,
+              acao,
+              tokensEntrada: uso.entrada,
+              tokensSaida: uso.saida,
+            });
           },
         });
 
-        return new Response(resposta.body.pipeThrough(stream), {
+        return new Response(resultado.corpo.pipeThrough(stream), {
           headers: {
             "Content-Type": "text/plain; charset=utf-8",
             "Cache-Control": "no-cache",

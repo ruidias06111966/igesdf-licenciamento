@@ -1,16 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { MARCA } from "@/lib/marca";
 
-type EnvioEmail = (
-  payload: { apiKey: string; from: string; to: string; subject: string; html: string },
-  opcoes: Record<string, unknown>,
-) => Promise<unknown>;
-
-type EmailModule = {
-  sendLovableEmail?: EnvioEmail;
-  default?: EnvioEmail & { sendLovableEmail?: EnvioEmail };
-};
-
 function escaparHtml(valor: string): string {
   return valor
     .replace(/&/g, "&amp;")
@@ -73,8 +63,7 @@ export const Route = createFileRoute("/api/public/hooks/enviar-alertas")({
           contactosPorUnidade.set(rt.unidade_id, lista);
         }
 
-        const mod = (await import("@lovable.dev/email-js")) as unknown as EmailModule;
-        const send = mod.sendLovableEmail ?? mod.default?.sendLovableEmail ?? mod.default;
+        const { enviarEmail } = await import("@/lib/email/enviar.server");
 
         type LicencaAlerta = {
           id: string;
@@ -122,18 +111,16 @@ export const Route = createFileRoute("/api/public/hooks/enviar-alertas")({
           const todos = [...new Set([...destinatarios, ...daUnidade])];
 
           try {
-            if (typeof send !== "function") throw new Error("Módulo de e-mail indisponível");
             for (const to of todos) {
-              await send(
-                {
-                  apiKey: process.env.LOVABLE_API_KEY!,
-                  from: `${MARCA.produto} <notify@lovable.app>`,
-                  to,
-                  subject: assunto,
-                  html,
-                },
-                {},
-              );
+              // A chave de idempotência evita mandar o mesmo aviso duas vezes
+              // se a rotina correr duas vezes no mesmo dia.
+              await enviarEmail({
+                para: to,
+                assunto,
+                html,
+                etiqueta: "alerta-vencimento",
+                chaveIdempotencia: `venc-${l.id}-${dias}-${to}`,
+              });
             }
             await supabaseAdmin.from("notificacoes_vencimento").insert({
               licenca_id: l.id,

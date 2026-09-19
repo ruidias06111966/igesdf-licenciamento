@@ -130,64 +130,132 @@ type Bruto = { texto: string; tokens: { entrada: number; saida: number } };
 
 const PEDIDO = "Extraia os dados deste certificado em JSON.";
 
-/** Motivo mais frequente da falha: o serviço de IA da plataforma sem créditos. */
+/** Motivo mais frequente da falha: o serviço de IA sem créditos. */
 const SEM_CREDITOS =
-  "A leitura automática está sem créditos de IA. Recarregue os créditos da plataforma e tente novamente — o certificado continua arquivado.";
+  "A leitura automática está sem créditos de IA. Recarregue os créditos da conta e tente novamente — o certificado continua arquivado.";
 
-/** Leitura pelo serviço de IA da plataforma (não depende de créditos próprios). */
-async function lerPelaPlataforma(arquivo: Uint8Array, mime: string): Promise<Bruto> {
-  const chave = process.env["LOVABLE_API_KEY"];
-  if (!chave) throw new Error("sem-chave-plataforma");
-  const dataUrl = `data:${mime};base64,${base64(arquivo)}`;
-  const conteudo =
-    mime === "application/pdf"
-      ? [{ type: "file", file: { filename: "certificado.pdf", file_data: dataUrl } }]
-      : [{ type: "image_url", image_url: { url: dataUrl } }];
+/**
+ * Leitura do certificado pelo serviço de IA.
+ *
+ * Segue o mesmo provedor do assistente — Anthropic quando há
+ * `ANTHROPIC_API_KEY`, Lovable enquanto não houver. Ao contrário do assistente,
+ * aqui não há streaming: pede-se uma resposta inteira, que é um JSON.
+ */
+async function lerPeloServicoIa(arquivo: Uint8Array, mime: string): Promise<Bruto> {
+  const { provedorAtivo } = await import("@/lib/ia/provedor.server");
+  const provedor = provedorAtivo();
+  if (provedor === null) throw new Error("sem-chave-ia");
+  const dados = base64(arquivo);
 
-  const resposta = await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
-    method: "POST",
-    signal: AbortSignal.timeout(120_000),
-    headers: { "Content-Type": "application/json", Authorization: `Bearer ${chave}` },
-    body: JSON.stringify({
-      model: "google/gemini-3.5-flash",
-      max_tokens: 16000,
-      messages: [
-        { role: "system", content: INSTRUCOES },
-        { role: "user", content: [...conteudo, { type: "text", text: PEDIDO }] },
-      ],
-    }),
-  });
+  const resposta =
+    provedor === "anthropic"
+      ? await fetch("https://api.anthropic.com/v1/messages", {
+          method: "POST",
+          signal: AbortSignal.timeout(120_000),
+          headers: {
+            "Content-Type": "application/json",
+            "x-api-key": process.env["ANTHROPIC_API_KEY"]!.trim(),
+            "anthropic-version": "2023-06-01",
+          },
+          body: JSON.stringify({
+            model: "claude-sonnet-5",
+            max_tokens: 16000,
+            system: INSTRUCOES,
+            messages: [
+              {
+                role: "user",
+                content: [
+                  mime === "application/pdf"
+                    ? {
+                        type: "document",
+                        source: { type: "base64", media_type: "application/pdf", data: dados },
+                      }
+                    : { type: "image", source: { type: "base64", media_type: mime, data: dados } },
+                  { type: "text", text: PEDIDO },
+                ],
+              },
+            ],
+          }),
+        })
+      : await fetch("https://ai.gateway.lovable.dev/v1/chat/completions", {
+          method: "POST",
+          signal: AbortSignal.timeout(120_000),
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${process.env["LOVABLE_API_KEY"]!.trim()}`,
+          },
+          body: JSON.stringify({
+            model: "google/gemini-3.5-flash",
+            max_tokens: 16000,
+            messages: [
+              { role: "system", content: INSTRUCOES },
+              {
+                role: "user",
+                content: [
+                  mime === "application/pdf"
+                    ? {
+                        type: "file",
+                        file: {
+                          filename: "certificado.pdf",
+                          file_data: `data:${mime};base64,${dados}`,
+                        },
+                      }
+                    : { type: "image_url", image_url: { url: `data:${mime};base64,${dados}` } },
+                  { type: "text", text: PEDIDO },
+                ],
+              },
+            ],
+          }),
+        });
+
   if (!resposta.ok) {
     const detalhe = await resposta.text().catch(() => "");
-    console.error(`[certificado] plataforma respondeu ${resposta.status}:`, detalhe.slice(0, 500));
+    console.error(
+      `[certificado] serviço de IA respondeu ${resposta.status}:`,
+      detalhe.slice(0, 500),
+    );
     if (resposta.status === 402 || /credit/i.test(detalhe)) throw new Error(SEM_CREDITOS);
-    if (resposta.status === 429) throw new Error("limite-plataforma");
-    throw new Error(`plataforma-${resposta.status}`);
+    if (resposta.status === 429) throw new Error("limite-servico-ia");
+    throw new Error(`servico-ia-${resposta.status}`);
   }
+
   const json = (await resposta.json()) as {
+    // Anthropic
+    content?: Array<{ type?: string; text?: string }>;
+    usage?: {
+      input_tokens?: number;
+      output_tokens?: number;
+      prompt_tokens?: number;
+      completion_tokens?: number;
+    };
+    // Formato OpenAI
     choices?: Array<{ message?: { content?: string } }>;
-    usage?: { prompt_tokens?: number; completion_tokens?: number };
   };
+
+  const texto =
+    json.content
+      ?.filter((b) => b.type === "text")
+      .map((b) => b.text ?? "")
+      .join("") ||
+    json.choices?.[0]?.message?.content ||
+    "";
+
   return {
-    texto: json.choices?.[0]?.message?.content ?? "",
+    texto,
     tokens: {
-      entrada: json.usage?.prompt_tokens ?? 0,
-      saida: json.usage?.completion_tokens ?? 0,
+      entrada: json.usage?.input_tokens ?? json.usage?.prompt_tokens ?? 0,
+      saida: json.usage?.output_tokens ?? json.usage?.completion_tokens ?? 0,
     },
   };
 }
-/**
- * Lê o certificado e devolve os dados estruturados.
- *
- * A leitura é feita exclusivamente pelo serviço de IA da plataforma.
- */
+/** Lê o certificado e devolve os dados estruturados. */
 export async function extrairCertificado(
   arquivo: Uint8Array,
   mime: string,
 ): Promise<{ dados: Extracao; tokens: { entrada: number; saida: number } }> {
   let bruto: Bruto;
   try {
-    bruto = await lerPelaPlataforma(arquivo, mime);
+    bruto = await lerPeloServicoIa(arquivo, mime);
   } catch (erro) {
     console.error("[certificado] leitura pelo serviço de IA falhou:", erro);
     const motivo = erro instanceof Error ? erro.message : String(erro);

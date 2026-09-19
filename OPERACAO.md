@@ -29,11 +29,30 @@ ambiente do projeto, no painel do Lovable Cloud.
 | `EMAIL_FROM_DOMAIN`          | Domínio mostrado no cabeçalho `From:`. Cosmético.                                |
 | `ALERTAS_CRON_SECRET`        | Protege o endpoint que dispara os alertas de vencimento.                         |
 | `ALERTAS_EMAIL_DESTINATARIO` | Para onde vão esses alertas.                                                     |
-| `LOVABLE_API_KEY`            | Necessária para enviar qualquer e-mail.                                          |
+| `RESEND_API_KEY`             | Envia os e-mails pela Resend. Sem ela, saem pela Lovable.                        |
+| `ANTHROPIC_API_KEY`          | Põe o assistente a falar direto com a Anthropic. Sem ela, fala pela Lovable.     |
+| `LOVABLE_API_KEY`            | Caminho antigo dos e-mails e do assistente, enquanto os dois acima não existirem.|
 
-Os alertas de vencimento só funcionam com as três últimas definidas **e** com um
-agendamento a chamar o endpoint. Sem isso, o sistema continua a mostrar os
+Os alertas de vencimento só funcionam com um serviço de e-mail configurado **e**
+com um agendamento a chamar o endpoint. Sem isso, o sistema continua a mostrar os
 vencimentos no ecrã, mas não avisa ninguém por e-mail.
+
+### Sair da Lovable, aos poucos
+
+Os e-mails e o assistente têm dois caminhos, e a escolha é a variável de
+ambiente: definida a chave nova, passam a usá-la; sem ela, continuam pela
+Lovable. Assim a troca não deixa o sistema sem enviar e-mails nem sem
+assistente entre a alteração do código e a chegada da chave.
+
+O que ainda depende da Lovable e não tem alternativa no código:
+
+- **Os e-mails de autenticação** (confirmar conta, repor senha) passam pelo
+  `lovable/email/auth/webhook`, que está registado nas definições de
+  autenticação do Supabase. Trocá-lo exige mexer lá, não só aqui.
+- **O alojamento.** O build já produz um pacote para Cloudflare Workers, o que
+  torna a mudança viável, mas o endereço continua a ser servido pela Lovable.
+- **A base de dados**, que está numa organização da Lovable e não na conta
+  QiDominios. É o ponto que decide o resto.
 
 ## 2. Nome e domínio
 
