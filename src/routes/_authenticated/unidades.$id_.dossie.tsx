@@ -25,7 +25,7 @@ import { formatDate, formatDateTime } from "@/lib/dates";
 import { applyPrintMode, getSavedPrintMode } from "@/lib/print-mode";
 import type { ChecklistItemDossie, Licenca } from "@/lib/rows";
 import { cn } from "@/lib/utils";
-import { titulo, url } from "@/lib/marca";
+import { MARCA, titulo, url } from "@/lib/marca";
 
 export const Route = createFileRoute("/_authenticated/unidades/$id_/dossie")({
   loader: ({ context, params }) => context.queryClient.ensureQueryData(dossieQuery(params.id)),
@@ -370,7 +370,7 @@ function Dossie() {
       )}
 
       <footer className="print-only border-t pt-2 text-xs text-muted-foreground">
-        Relatório gerado por IGESDF - Licenciamento · {formatDateTime(new Date().toISOString())}
+        Relatório gerado por {MARCA.produto} · {formatDateTime(new Date().toISOString())}
       </footer>
     </div>
   );

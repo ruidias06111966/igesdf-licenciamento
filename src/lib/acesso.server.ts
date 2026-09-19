@@ -134,14 +134,19 @@ export async function sessaoDaIdentidade(eu: IdentidadeConfirmada): Promise<Sess
     }
 
     const perfilInicial: Perfil | null = ehResponsavel ? "master" : null;
-    await supabaseAdmin.from("perfis_acesso").insert({
-      user_id: eu.userId,
-      email: eu.email,
-      nome: eu.nome,
-      perfil: perfilInicial,
-      autorizado_em: perfilInicial ? new Date().toISOString() : null,
-      ultimo_acesso: new Date().toISOString(),
-    });
+    // `upsert` e não `insert`: o registo já é criado no momento do cadastro,
+    // por isso pode existir uma corrida com esse registo — nunca deve falhar.
+    await supabaseAdmin.from("perfis_acesso").upsert(
+      {
+        user_id: eu.userId,
+        email: eu.email,
+        nome: eu.nome,
+        perfil: perfilInicial,
+        autorizado_em: perfilInicial ? new Date().toISOString() : null,
+        ultimo_acesso: new Date().toISOString(),
+      },
+      { onConflict: "user_id" },
+    );
     return {
       userId: eu.userId,
       email: eu.email,

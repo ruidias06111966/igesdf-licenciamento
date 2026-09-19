@@ -1,4 +1,5 @@
 import { auth, defineMcp } from "@lovable.dev/mcp-js";
+import { MARCA } from "@/lib/marca";
 import listarUnidades from "./tools/listar-unidades";
 import detalheUnidade from "./tools/detalhe-unidade";
 import listarLicencas from "./tools/listar-licencas";
@@ -12,7 +13,7 @@ const projectRef = import.meta.env["VITE_SUPABASE_PROJECT_ID"] ?? "project-ref-u
 
 export default defineMcp({
   name: "igesdf-licenciamento",
-  title: "IGESDF - Licenciamento",
+  title: MARCA.produto,
   version: "0.1.0",
   instructions:
     "Ferramentas de consulta do sistema de licenciamento do IGESDF: unidades (hospitais, UPAs e administrativos), licenças e alvarás por órgão licenciador (VISADF, DF LEGAL, CBMDF, IBRAM, SUSDEC, PCDF, SEAGRI, SEEDF), prazos de vencimento, processos SEI com checklists e normativas aplicáveis. Todas as ferramentas são só de leitura e exigem uma conta autorizada.",
