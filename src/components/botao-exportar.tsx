@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { baixarCsv, type ColunaCsv } from "@/lib/csv";
+import { useEmpresaAtual } from "@/lib/empresa-atual";
 import { baixarPlanilha } from "@/lib/exportar/planilha";
 import { exportarDocumento } from "@/lib/exportar-documento";
 import {
@@ -73,21 +74,27 @@ export function BotaoExportar<T>({
     protocolo: metaInicial?.protocolo ?? "",
   });
 
+  const empresa = useEmpresaAtual();
+
   const metaLimpa = useMemo<MetaExport>(
     () => ({
+      cliente: empresa ? { sigla: empresa.sigla, nome: empresa.nome } : null,
       competencia: meta.competencia?.trim() || undefined,
       unidade: meta.unidade?.trim() || undefined,
       orgao: meta.orgao?.trim() || undefined,
       processo: meta.processo?.trim() || undefined,
       protocolo: meta.protocolo?.trim() || undefined,
     }),
-    [meta],
+    [meta, empresa],
   );
 
   const doc = useMemo(
     () => ({
       titulo,
       subtitulo,
+      cliente: empresa
+        ? { sigla: empresa.sigla, nome: empresa.nome, logoUrl: empresa.logo_url }
+        : null,
       meta: metaLimpa,
       colunas: colunas.map((c) => ({ cabecalho: c.cabecalho, situacao: c.situacao })),
       linhas: linhas.map((l) =>
@@ -98,7 +105,7 @@ export function BotaoExportar<T>({
       ),
       orientacao,
     }),
-    [titulo, subtitulo, metaLimpa, colunas, linhas, orientacao],
+    [titulo, subtitulo, metaLimpa, colunas, linhas, orientacao, empresa],
   );
 
   const base = modulo ?? folha ?? nomeArquivo;
@@ -168,7 +175,7 @@ export function BotaoExportar<T>({
 
           <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-6">
             {campo("competencia", "Competência", "2026-08")}
-            {campo("unidade", "Unidade", "Rede IGESDF")}
+            {campo("unidade", "Unidade", empresa ? `Rede ${empresa.sigla}` : "Todas as unidades")}
             {campo("orgao", "Órgão", "Todos")}
             {campo("processo", "Processo SEI", "00060-00000000/2026-00")}
             {campo("protocolo", "Protocolo/documento", "SEI nº 000000")}

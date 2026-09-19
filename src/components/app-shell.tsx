@@ -14,12 +14,12 @@ import {
   Sparkles,
 } from "lucide-react";
 import { useState, type ComponentType } from "react";
-import logoIgesdf from "@/assets/igesdf-logo.jpg.asset.json";
 import { Button } from "@/components/ui/button";
 import { AlertasVencimento } from "@/components/alertas-vencimento";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { cn } from "@/lib/utils";
-import { CLIENTE, MARCA } from "@/lib/marca";
+import { MARCA } from "@/lib/marca";
+import { useEmpresaAtual } from "@/lib/empresa-atual";
 import { usePodeEditar, useEhMaster } from "@/lib/perfil";
 
 type ItemNav = { to: string; label: string; icon: ComponentType<{ className?: string }> };
@@ -48,22 +48,35 @@ const NAV_MASTER: ItemNav[] = [
 /**
  * Marca do produto com o cliente por baixo.
  *
- * O logótipo continua a ser o do IGESDF porque é a organização cujos dados o
- * sistema gere e quem o usa todos os dias; o nome em destaque é o do produto.
+ * O logótipo vem da empresa da sessão, carregado em Configurações → Empresas.
+ * Deixou de ser um ficheiro no código por duas razões que se juntam: servindo
+ * vários clientes, o logótipo de um não serve o outro; e o ficheiro estava
+ * alojado na Lovable, portanto desaparecia no dia em que o sistema saísse de lá.
+ *
+ * Sem empresa única — o caso do responsável pelo sistema, que as vê todas — fica
+ * só a marca do produto. Escolher uma ao acaso poria o logótipo de um cliente
+ * à frente dos dados de outro.
  */
 function Marca({ compacta }: { compacta?: boolean }) {
+  const empresa = useEmpresaAtual();
   return (
     <div className="flex items-center gap-2.5">
-      <span className="flex shrink-0 items-center justify-center rounded-md bg-white p-1.5">
-        <img
-          src={logoIgesdf.url}
-          alt={`${CLIENTE.sigla} — ${CLIENTE.nome}`}
-          className="h-6 w-auto"
-        />
+      <span className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-md bg-white">
+        {empresa?.logo_url ? (
+          <img
+            src={empresa.logo_url}
+            alt={`${empresa.sigla} — ${empresa.nome}`}
+            className="size-full object-contain p-1"
+          />
+        ) : (
+          <FileCheck2 className="size-5 text-sidebar" aria-hidden="true" />
+        )}
       </span>
       <div className="min-w-0 leading-tight">
         <div className="truncate text-sm font-semibold">{MARCA.produto}</div>
-        {!compacta && <div className="text-xs opacity-70">{CLIENTE.sigla}</div>}
+        {!compacta && (
+          <div className="truncate text-xs opacity-70">{empresa?.sigla ?? MARCA.suite}</div>
+        )}
       </div>
     </div>
   );

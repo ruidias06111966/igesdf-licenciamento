@@ -1,11 +1,18 @@
 import { createFileRoute, useNavigate, useRouter } from "@tanstack/react-router";
 import { useState } from "react";
 import { BookOpen, Eye, EyeOff, MailCheck } from "lucide-react";
-import logoIgesdf from "@/assets/igesdf-logo.jpg.asset.json";
-import manualAsset from "@/assets/manual-igesdf.pdf.asset.json";
 import { supabase } from "@/integrations/supabase/client";
 import { mensagemErro } from "@/lib/errors";
-import { CLIENTE, MARCA, titulo, url } from "@/lib/marca";
+import { MARCA, titulo, url } from "@/lib/marca";
+
+/**
+ * Manual de utilização, servido de `public/`.
+ *
+ * Estava alojado na Lovable, num caminho `/__l5e/assets-v1/...` que só existe
+ * lá dentro: no dia em que o sistema saísse, a ligação morria. Passa a ser um
+ * ficheiro do repositório.
+ */
+const MANUAL = "/manual.pdf";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,12 +36,12 @@ export const Route = createFileRoute("/auth")({
       { title: titulo("Entrar") },
       {
         name: "description",
-        content: `Acesso ao painel de compliance regulatório do ${CLIENTE.sigla}: gestão de licenças, alvarás e prazos de renovação da rede hospitalar do Distrito Federal.`,
+        content: `${MARCA.descricao}. Acesso reservado a contas autorizadas.`,
       },
       { property: "og:title", content: titulo("Entrar") },
       {
         property: "og:description",
-        content: `Acesso ao painel de compliance regulatório do ${CLIENTE.sigla}.`,
+        content: MARCA.descricao,
       },
       { property: "og:url", content: url("/auth") },
       { name: "robots", content: "noindex" },
@@ -129,13 +136,8 @@ function AuthPage() {
       <div className="flex items-center justify-center px-4 py-8 sm:px-8 sm:py-12">
         <Card className="w-full max-w-[26rem]">
           <CardHeader>
-            <div className="mb-2 flex items-center gap-2 lg:hidden">
-              <img
-                src={logoIgesdf.url}
-                alt={`Logótipo ${CLIENTE.sigla}`}
-                className="h-6 w-auto shrink-0"
-              />
-              <span className="min-w-0 truncate font-semibold">{MARCA.produto}</span>
+            <div className="mb-2 lg:hidden">
+              <span className="font-semibold">{MARCA.produto}</span>
             </div>
             <CardTitle>
               {modo === "criar"
@@ -154,7 +156,7 @@ function AuthPage() {
           </CardHeader>
           <CardContent>
             <a
-              href={manualAsset.url}
+              href={MANUAL}
               target="_blank"
               rel="noopener noreferrer"
               className="mb-4 flex items-start gap-3 rounded-md border border-primary/40 bg-primary/5 p-3 text-sm transition-colors hover:bg-primary/10"
@@ -304,22 +306,9 @@ function PainelResumo() {
   return (
     <div className="hidden flex-col justify-between gap-10 bg-sidebar px-8 py-10 text-sidebar-foreground lg:flex lg:overflow-y-auto xl:px-14 xl:py-14">
       <div className="mx-auto flex w-full max-w-2xl flex-col">
-        <header className="mb-10 flex items-center gap-4 xl:mb-12 xl:gap-5">
-          <span className="flex size-20 shrink-0 items-center justify-center rounded-2xl bg-white p-3 shadow-sm xl:size-24">
-            <img
-              src={logoIgesdf.url}
-              alt={`${CLIENTE.sigla} — ${CLIENTE.nome}`}
-              className="h-full w-auto object-contain"
-            />
-          </span>
-          <div className="min-w-0">
-            <h1 className="truncate text-xl font-semibold leading-tight xl:text-2xl">
-              {MARCA.produto}
-            </h1>
-            <p className="text-sm opacity-70 xl:text-[15px]">
-              {MARCA.suite} · {CLIENTE.sigla}
-            </p>
-          </div>
+        <header className="mb-10 xl:mb-12">
+          <h1 className="text-xl font-semibold leading-tight xl:text-2xl">{MARCA.produto}</h1>
+          <p className="text-sm opacity-70 xl:text-[15px]">{MARCA.suite}</p>
         </header>
 
         <section>
@@ -334,9 +323,9 @@ function PainelResumo() {
           </h2>
 
           <p className="mb-8 max-w-[58ch] text-[clamp(15px,1.15vw,17px)] leading-relaxed opacity-80">
-            Controle de licenciamento das unidades do {CLIENTE.sigla} por atividade económica — não
-            por órgão. Validades, indeferimentos e pendências de protocolo numa matriz única, com
-            alerta antes do vencimento.
+            Controle de licenciamento por atividade económica — não por órgão. Validades,
+            indeferimentos e pendências de protocolo numa matriz única, com alerta antes do
+            vencimento.
           </p>
 
           <div className="flex flex-wrap gap-2">
@@ -353,7 +342,7 @@ function PainelResumo() {
       </div>
 
       <div className="mx-auto w-full max-w-2xl text-xs leading-relaxed opacity-60">
-        {CLIENTE.nome} · um sistema {MARCA.suite}
+        Um sistema {MARCA.suite}
       </div>
     </div>
   );

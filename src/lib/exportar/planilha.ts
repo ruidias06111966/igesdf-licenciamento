@@ -9,6 +9,7 @@
 import type { ColunaCsv } from "@/lib/csv";
 import { corSituacao, MARCA, SITUACOES_LEGENDA, corPadrao } from "@/lib/exportar/paleta";
 import { linhasMetadados, type MetaExport } from "@/lib/exportar/metadados";
+import { MARCA as MARCA_PRODUTO } from "@/lib/marca";
 
 export type OpcoesPlanilha = {
   /** Título apresentado na primeira linha da folha. */
@@ -131,8 +132,14 @@ export async function baixarPlanilha<T>(
 
   // Folha de capa: cabeçalho institucional, metadados SEI e legenda de cores.
   const meta = linhasMetadados(opcoes.meta);
+  // O timbre da planilha é o da empresa dona dos dados: exportar um relatório
+  // de um cliente com o nome de outro no cabeçalho e nas propriedades do
+  // ficheiro é erro que chega ao órgão licenciador.
+  const emissor = opcoes.meta?.cliente
+    ? `${opcoes.meta.cliente.sigla} — ${opcoes.meta.cliente.nome}`
+    : MARCA_PRODUTO.produto;
   const capaMatriz: unknown[][] = [
-    ["IGESDF — NÚCLEO DE LICENCIAMENTO (NUCON)"],
+    [emissor.toUpperCase()],
     [opcoes.titulo],
     [opcoes.subtitulo ?? ""],
     [],
@@ -197,8 +204,8 @@ export async function baixarPlanilha<T>(
   livro.Props = {
     Title: opcoes.titulo,
     Subject: opcoes.subtitulo ?? "",
-    Author: "IGESDF — Núcleo de Licenciamento",
-    Company: "IGESDF",
+    Author: emissor,
+    Company: opcoes.meta?.cliente?.sigla ?? MARCA_PRODUTO.produto,
     Keywords: meta.map((m) => `${m.rotulo}: ${m.valor}`).join("; "),
   };
 

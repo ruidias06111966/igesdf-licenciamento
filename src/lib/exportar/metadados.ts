@@ -9,8 +9,14 @@
 export type MetaExport = {
   /** Competência de referência (ex.: "2026-08" ou "Agosto/2026"). */
   competencia?: string | null;
-  /** Unidade a que o relatório se refere; "Rede IGESDF" quando é global. */
+  /** Unidade a que o relatório se refere; a rede inteira quando é global. */
   unidade?: string | null;
+  /**
+   * Empresa dona dos dados. Entra no nome do ficheiro e na capa, por isso não
+   * pode ficar fixa: um relatório de um cliente não sai com a sigla de outro,
+   * nem no nome do anexo que vai para o órgão licenciador.
+   */
+  cliente?: { sigla: string; nome: string } | null;
   /** Órgão licenciador filtrado, quando existir. */
   orgao?: string | null;
   /** Número do processo SEI, quando existir. */
@@ -21,8 +27,8 @@ export type MetaExport = {
   observacao?: string | null;
 };
 
-const ORGAO = "IGESDF";
-const AREA = "NUCON";
+/** Usado quando o relatório não está preso a uma empresa. */
+const EMISSOR_PADRAO = "QiLicenciamentos";
 
 export function competenciaAtual(d = new Date()) {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
@@ -46,11 +52,11 @@ export function fatia(valor: string | null | undefined, max = 28) {
 
 /**
  * Nome padronizado:
- * `IGESDF-NUCON_Licencas_UPA-Gama_SUSDEC_2026-08_SEI-00060-000123_20260821-1043`
+ * `IGESDF_Licencas_UPA-Gama_SUSDEC_2026-08_SEI-00060-000123_20260821-1043`
  */
 export function nomePadronizado(modulo: string, meta: MetaExport = {}, extensao?: string) {
   const partes = [
-    `${ORGAO}-${AREA}`,
+    fatia(meta.cliente?.sigla ?? EMISSOR_PADRAO, 20),
     fatia(modulo, 32) || "Relatorio",
     fatia(meta.unidade, 28),
     fatia(meta.orgao, 20),
@@ -65,9 +71,17 @@ export function nomePadronizado(modulo: string, meta: MetaExport = {}, extensao?
 /** Pares chave/valor da capa e das propriedades do ficheiro. */
 export function linhasMetadados(meta: MetaExport = {}): { rotulo: string; valor: string }[] {
   const linhas: { rotulo: string; valor: string }[] = [
-    { rotulo: "Órgão emissor", valor: "IGESDF — Núcleo de Licenciamento (NUCON)" },
+    {
+      rotulo: "Órgão emissor",
+      valor: meta.cliente ? `${meta.cliente.sigla} — ${meta.cliente.nome}` : EMISSOR_PADRAO,
+    },
     { rotulo: "Competência", valor: meta.competencia ?? competenciaAtual() },
-    { rotulo: "Unidade", valor: meta.unidade ?? "Rede IGESDF (todas as unidades)" },
+    {
+      rotulo: "Unidade",
+      valor:
+        meta.unidade ??
+        (meta.cliente ? `Rede ${meta.cliente.sigla} (todas as unidades)` : "Todas as unidades"),
+    },
     { rotulo: "Órgão licenciador", valor: meta.orgao ?? "Todos" },
   ];
   if (meta.processo) linhas.push({ rotulo: "Processo SEI", valor: meta.processo });

@@ -1,9 +1,38 @@
 import { Link } from "@tanstack/react-router";
 import { ChevronRight } from "lucide-react";
 import type { ReactNode } from "react";
-import logoIgesdf from "@/assets/igesdf-logo.jpg.asset.json";
+import { useEmpresaAtual } from "@/lib/empresa-atual";
+import { MARCA } from "@/lib/marca";
 
 export type Migalha = { label: string; to?: string };
+
+/**
+ * Timbre que sai no papel e no PDF, com o logótipo e o nome por extenso da
+ * empresa a que os dados pertencem — carregados em Configurações → Empresas.
+ *
+ * Sem empresa única não se inventa timbre nenhum: fica o nome do produto. Um
+ * documento que sai para um órgão licenciador com o timbre do cliente errado é
+ * pior do que um documento sem timbre.
+ */
+function CabecalhoImpressao() {
+  const empresa = useEmpresaAtual();
+  return (
+    <div className="print-only mb-3 hidden">
+      <div className="flex items-center gap-3 border-b pb-2">
+        {empresa?.logo_url && (
+          <img
+            src={empresa.logo_url}
+            alt={empresa.sigla}
+            style={{ height: "12mm", width: "auto" }}
+          />
+        )}
+        <span className="text-xs tracking-widest uppercase">
+          {empresa ? `${empresa.nome} — Licenciamento` : MARCA.produto}
+        </span>
+      </div>
+    </div>
+  );
+}
 
 type Props = {
   titulo: string;
@@ -22,14 +51,7 @@ export function PageHeader({ titulo, descricao, acoes, migalhas }: Props) {
   return (
     <header className="space-y-3">
       {/* Cabeçalho institucional: só aparece no papel / PDF. */}
-      <div className="print-only mb-3 hidden">
-        <div className="flex items-center gap-3 border-b pb-2">
-          <img src={logoIgesdf.url} alt="IGESDF" style={{ height: "12mm", width: "auto" }} />
-          <span className="text-xs tracking-widest uppercase">
-            Instituto de Gestão Estratégica de Saúde do Distrito Federal — Licenciamento
-          </span>
-        </div>
-      </div>
+      <CabecalhoImpressao />
       {migalhas && migalhas.length > 0 && (
         <nav aria-label="Navegação estrutural" className="no-print">
           <ol className="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">

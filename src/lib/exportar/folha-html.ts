@@ -5,7 +5,6 @@
  */
 import { corSituacao, MARCA, SITUACOES_LEGENDA, corPadrao } from "@/lib/exportar/paleta";
 import { linhasMetadados, type MetaExport } from "@/lib/exportar/metadados";
-import logoIgesdf from "@/assets/igesdf-logo.jpg.asset.json";
 // `MARCA` daqui são as cores da marca; o nome do produto vem com outro nome
 // para não colidir com elas.
 import { MARCA as PRODUTO } from "@/lib/marca";
@@ -13,10 +12,22 @@ import { MARCA as PRODUTO } from "@/lib/marca";
 /**
  * O documento é aberto noutra janela/iframe, por isso o endereço do logótipo
  * tem de ser absoluto — um caminho relativo não resolveria lá.
+ *
+ * O logótipo vem agora da empresa dona dos dados, e não de um ficheiro fixo no
+ * código: cada cliente tem o seu, e o antigo estava alojado na Lovable.
  */
-function urlLogo() {
-  if (typeof window === "undefined") return logoIgesdf.url;
-  return new URL(logoIgesdf.url, window.location.origin).href;
+function urlLogo(doc: DocumentoTabela) {
+  const bruto = doc.cliente?.logoUrl;
+  if (!bruto) return null;
+  if (typeof window === "undefined") return bruto;
+  return new URL(bruto, window.location.origin).href;
+}
+
+/** Timbre do documento: `<img>` só quando há logótipo carregado. */
+function marcaHtml(doc: DocumentoTabela, classe: string) {
+  const src = urlLogo(doc);
+  const sigla = doc.cliente?.sigla ?? PRODUTO.produto;
+  return src ? `<img class="${classe}" src="${src}" alt="${esc(sigla)}">` : "";
 }
 
 export type Orientacao = "portrait" | "landscape";
@@ -24,6 +35,8 @@ export type Orientacao = "portrait" | "landscape";
 export type DocumentoTabela = {
   titulo: string;
   subtitulo?: string;
+  /** Empresa dona dos dados, para o timbre do documento. */
+  cliente?: { sigla: string; nome: string; logoUrl: string | null } | null;
   meta?: MetaExport;
   colunas: { cabecalho: string; situacao?: boolean }[];
   linhas: string[][];
@@ -56,7 +69,7 @@ function legendaHtml() {
 function capaHtml(doc: DocumentoTabela) {
   const linhas = linhasMetadados(doc.meta);
   return `<section class="folha capa">
-  <div class="marca"><img class="marca-logo" src="${urlLogo()}" alt="IGESDF"><div><div class="marca-nome">IGESDF</div><div class="marca-sub">Núcleo de Licenciamento · NUCON</div></div></div>
+  <div class="marca">${marcaHtml(doc, "marca-logo")}<div><div class="marca-nome">${esc(doc.cliente?.sigla ?? PRODUTO.produto)}</div><div class="marca-sub">${esc(doc.cliente?.nome ?? PRODUTO.descricao)}</div></div></div>
   <h1>${esc(doc.titulo)}</h1>
   ${doc.subtitulo ? `<p class="sub">${esc(doc.subtitulo)}</p>` : ""}
   <table class="meta"><tbody>
@@ -86,7 +99,7 @@ function tabelaHtml(doc: DocumentoTabela) {
     )
     .join("");
   return `<section class="folha dados">
-  <div class="cabecalho-dados"><span class="cabecalho-marca"><img src="${urlLogo()}" alt="IGESDF">${esc(doc.titulo)}</span><span>${esc(doc.subtitulo ?? "")}</span></div>
+  <div class="cabecalho-dados"><span class="cabecalho-marca">${marcaHtml(doc, "")}${esc(doc.titulo)}</span><span>${esc(doc.subtitulo ?? "")}</span></div>
   <table class="grade"><thead><tr>${cabecalho}</tr></thead><tbody>${corpo}</tbody></table>
 </section>`;
 }
