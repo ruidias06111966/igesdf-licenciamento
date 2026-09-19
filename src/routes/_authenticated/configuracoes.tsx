@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { Clock, History, Palette, ShieldCheck, Upload, Users } from "lucide-react";
+import { Building2, Clock, History, Palette, ShieldCheck, Upload, Users } from "lucide-react";
 import type { ComponentType } from "react";
 import { PageHeader } from "@/components/page-header";
 import { SubNav } from "@/components/sub-nav";
@@ -35,6 +35,14 @@ const ATALHOS: {
   icon: ComponentType<{ className?: string }>;
   master?: boolean;
 }[] = [
+  {
+    to: "/empresas",
+    titulo: "Empresas",
+    descricao:
+      "Clientes servidos por esta instalação: sigla, nome por extenso, raiz do CNPJ e o logótipo que sai nos documentos das suas unidades.",
+    icon: Building2,
+    master: true,
+  },
   {
     to: "/utilizadores",
     titulo: "Acesso",

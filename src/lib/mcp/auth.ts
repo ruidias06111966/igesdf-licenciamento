@@ -9,10 +9,11 @@ function env(nome: string): string | undefined {
 }
 
 /**
- * O sistema não tem contas individuais — o acesso web usa uma senha partilhada.
- * No MCP a identidade vem do token OAuth, por isso restringimos a chamada às
- * contas de e-mail explicitamente autorizadas em MCP_EMAILS_AUTORIZADOS
- * (lista separada por vírgulas). Sem a lista configurada, nada é autorizado.
+ * No MCP a identidade vem do token OAuth, e não da sessão do navegador, por
+ * isso o perfil atribuído em `perfis_acesso` não é consultado aqui: a chamada
+ * é restringida às contas de e-mail explicitamente autorizadas em
+ * MCP_EMAILS_AUTORIZADOS (lista separada por vírgulas). Sem a lista
+ * configurada, nada é autorizado — falha fechado.
  */
 export function exigirAutorizacao(ctx: ToolContext): string {
   if (!ctx.isAuthenticated()) {

@@ -634,6 +634,39 @@ export type Database = {
           },
         ]
       }
+      empresas: {
+        Row: {
+          ativa: boolean
+          cnpj_raiz: string | null
+          created_at: string
+          id: string
+          logo_path: string | null
+          nome: string
+          sigla: string
+          updated_at: string
+        }
+        Insert: {
+          ativa?: boolean
+          cnpj_raiz?: string | null
+          created_at?: string
+          id?: string
+          logo_path?: string | null
+          nome: string
+          sigla: string
+          updated_at?: string
+        }
+        Update: {
+          ativa?: boolean
+          cnpj_raiz?: string | null
+          created_at?: string
+          id?: string
+          logo_path?: string | null
+          nome?: string
+          sigla?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       orgaos: {
         Row: {
           ativo: boolean
@@ -975,6 +1008,7 @@ export type Database = {
           codigo_mv: string | null
           codigo_mv_nota: string | null
           created_at: string
+          empresa_id: string | null
           endereco: string | null
           id: string
           inicio_atividade: string | null
@@ -1007,6 +1041,7 @@ export type Database = {
           codigo_mv?: string | null
           codigo_mv_nota?: string | null
           created_at?: string
+          empresa_id?: string | null
           endereco?: string | null
           id?: string
           inicio_atividade?: string | null
@@ -1039,6 +1074,7 @@ export type Database = {
           codigo_mv?: string | null
           codigo_mv_nota?: string | null
           created_at?: string
+          empresa_id?: string | null
           endereco?: string | null
           id?: string
           inicio_atividade?: string | null
