@@ -1,6 +1,7 @@
 import { defineTool } from "@lovable.dev/mcp-js";
 import { z } from "zod";
-import { exigirAutorizacao } from "../auth";
+import { escopoDoMcp } from "../auth";
+import { daEmpresa, dasUnidades, unidadesDoEscopo } from "@/lib/escopo.server";
 import { db, texto } from "../db";
 
 export default defineTool({
@@ -18,21 +19,28 @@ export default defineTool({
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ unidade, numero, incluir_itens }, ctx) => {
-    exigirAutorizacao(ctx);
+    const { escopo } = await escopoDoMcp(ctx);
     const supabase = await db();
-    let q = supabase
-      .from("processos_sei")
-      .select(
-        "id, numero, tipo, assunto, orgao, situacao, responsavel, data_abertura, link, unidade_id",
-      )
-      .eq("ativo", true)
-      .order("created_at", { ascending: false })
-      .limit(200);
+    const ids = await unidadesDoEscopo(supabase, escopo);
+    let q = dasUnidades(
+      supabase
+        .from("processos_sei")
+        .select(
+          "id, numero, tipo, assunto, orgao, situacao, responsavel, data_abertura, link, unidade_id",
+        )
+        .eq("ativo", true)
+        .order("created_at", { ascending: false })
+        .limit(200),
+      ids,
+    );
     if (numero) q = q.ilike("numero", `%${numero}%`);
     const { data: processos, error } = await q;
     if (error) return { content: [{ type: "text", text: error.message }], isError: true };
 
-    const { data: unidades } = await supabase.from("unidades").select("id, nome");
+    const { data: unidades } = await daEmpresa(
+      supabase.from("unidades").select("id, nome"),
+      escopo,
+    );
     const nomePorId = new Map((unidades ?? []).map((u) => [u.id, u.nome]));
     let lista = (processos ?? []).map((p) => ({
       ...p,

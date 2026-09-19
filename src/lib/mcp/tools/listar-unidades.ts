@@ -1,6 +1,7 @@
 import { defineTool } from "@lovable.dev/mcp-js";
 import { z } from "zod";
-import { exigirAutorizacao } from "../auth";
+import { escopoDoMcp } from "../auth";
+import { daEmpresa } from "@/lib/escopo.server";
 import { db, texto } from "../db";
 
 export default defineTool({
@@ -14,13 +15,16 @@ export default defineTool({
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ tipo, procura }, ctx) => {
-    exigirAutorizacao(ctx);
+    const { escopo } = await escopoDoMcp(ctx);
     const supabase = await db();
-    let q = supabase
-      .from("unidades")
-      .select("id, nome, tipo, cnpj, numero_iges, regiao_administrativa, endereco")
-      .eq("ativa", true)
-      .order("numero_iges", { ascending: true, nullsFirst: false });
+    let q = daEmpresa(
+      supabase
+        .from("unidades")
+        .select("id, nome, tipo, cnpj, numero_iges, regiao_administrativa, endereco")
+        .eq("ativa", true)
+        .order("numero_iges", { ascending: true, nullsFirst: false }),
+      escopo,
+    );
     if (tipo) q = q.eq("tipo", tipo as never);
     if (procura) q = q.ilike("nome", `%${procura}%`);
     const { data, error } = await q;

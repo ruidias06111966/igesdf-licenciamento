@@ -3,6 +3,12 @@ import { z } from "zod";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 import { requireEdicao } from "@/lib/acesso-middleware";
+import {
+  daEmpresa,
+  exigirLinhaDaEmpresa,
+  exigirProcesso,
+  exigirUnidade,
+} from "@/lib/escopo.server";
 import { modeloSchema } from "@/lib/modelos-schema";
 
 /**
@@ -17,10 +23,10 @@ import { modeloSchema } from "@/lib/modelos-schema";
 export const listModelos = createServerFn({ method: "GET" })
   .middleware([requireEdicao])
   .handler(async ({ context }) => {
-    const { data, error } = await context.supabase
-      .from("ia_modelos")
-      .select("*")
-      .order("updated_at", { ascending: false });
+    const { data, error } = await daEmpresa(
+      context.supabase.from("ia_modelos").select("*").order("updated_at", { ascending: false }),
+      context.escopo,
+    );
     if (error) throw error;
     return data ?? [];
   });
@@ -29,6 +35,7 @@ export const listVersoesModelo = createServerFn({ method: "POST" })
   .middleware([requireEdicao])
   .inputValidator((input: unknown) => z.object({ modelo_id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
+    await exigirLinhaDaEmpresa(context.supabase, context.escopo, "ia_modelos", data.modelo_id);
     const { data: linhas, error } = await context.supabase
       .from("ia_modelo_versoes")
       .select("id, versao, titulo, conteudo, comentario, perfil, created_at")
@@ -45,6 +52,7 @@ export const restaurarVersaoModelo = createServerFn({ method: "POST" })
     z.object({ modelo_id: z.string().uuid(), versao_id: z.string().uuid() }).parse(input),
   )
   .handler(async ({ data, context }) => {
+    await exigirLinhaDaEmpresa(context.supabase, context.escopo, "ia_modelos", data.modelo_id);
     const [{ data: modelo }, { data: versao }] = await Promise.all([
       context.supabase.from("ia_modelos").select("*").eq("id", data.modelo_id).maybeSingle(),
       context.supabase.from("ia_modelo_versoes").select("*").eq("id", data.versao_id).maybeSingle(),
@@ -88,7 +96,10 @@ export const upsertModelo = createServerFn({ method: "POST" })
   .middleware([requireEdicao])
   .inputValidator((input: unknown) => modeloSchema.parse(input))
   .handler(async ({ data, context }) => {
+    if (data.unidade_id) await exigirUnidade(context.supabase, context.escopo, data.unidade_id);
+    if (data.processo_id) await exigirProcesso(context.supabase, context.escopo, data.processo_id);
     const registo = {
+      empresa_id: context.escopo.global ? null : context.escopo.empresaId,
       titulo: data.titulo,
       tipo: data.tipo,
       conteudo: data.conteudo,
@@ -100,6 +111,7 @@ export const upsertModelo = createServerFn({ method: "POST" })
       observacoes: data.observacoes || null,
     };
     if (data.id) {
+      await exigirLinhaDaEmpresa(context.supabase, context.escopo, "ia_modelos", data.id);
       const { data: atual } = await context.supabase
         .from("ia_modelos")
         .select("*")
@@ -133,6 +145,7 @@ export const deleteModelo = createServerFn({ method: "POST" })
   .middleware([requireEdicao])
   .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
+    await exigirLinhaDaEmpresa(context.supabase, context.escopo, "ia_modelos", data.id);
     const { error } = await context.supabase.from("ia_modelos").delete().eq("id", data.id);
     if (error) throw error;
     return { ok: true };
@@ -170,6 +183,9 @@ export const anexarModelo = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
+    await exigirLinhaDaEmpresa(context.supabase, context.escopo, "ia_modelos", data.id);
+    if (data.unidade_id) await exigirUnidade(context.supabase, context.escopo, data.unidade_id);
+    if (data.processo_id) await exigirProcesso(context.supabase, context.escopo, data.processo_id);
     const { data: modelo, error: erroModelo } = await context.supabase
       .from("ia_modelos")
       .select("*")

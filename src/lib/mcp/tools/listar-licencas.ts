@@ -1,6 +1,7 @@
 import { defineTool } from "@lovable.dev/mcp-js";
 import { z } from "zod";
-import { exigirAutorizacao } from "../auth";
+import { escopoDoMcp } from "../auth";
+import { daEmpresa } from "@/lib/escopo.server";
 import { db, texto } from "../db";
 
 export default defineTool({
@@ -16,16 +17,19 @@ export default defineTool({
   },
   annotations: { readOnlyHint: true, idempotentHint: true, openWorldHint: false },
   handler: async ({ orgao, status, unidade, limite }, ctx) => {
-    exigirAutorizacao(ctx);
+    const { escopo } = await escopoDoMcp(ctx);
     const supabase = await db();
     const max = Math.min(Math.max(limite ?? 100, 1), 500);
-    let q = supabase
-      .from("v_licencas_dashboard")
-      .select(
-        "id, unidade_nome, unidade_tipo, orgao, status, descricao, numero, data_vencimento, dias_restantes, semaforo, processo_sei",
-      )
-      .order("data_vencimento", { ascending: true, nullsFirst: false })
-      .limit(max);
+    let q = daEmpresa(
+      supabase
+        .from("v_licencas_dashboard")
+        .select(
+          "id, unidade_nome, unidade_tipo, orgao, status, descricao, numero, data_vencimento, dias_restantes, semaforo, processo_sei",
+        )
+        .order("data_vencimento", { ascending: true, nullsFirst: false })
+        .limit(max),
+      escopo,
+    );
     if (orgao) q = q.eq("orgao", orgao as never);
     if (status) q = q.eq("status", status as never);
     if (unidade) q = q.ilike("unidade_nome", `%${unidade}%`);

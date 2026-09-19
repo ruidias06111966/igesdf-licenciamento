@@ -1,5 +1,6 @@
 import { createMiddleware } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
+import { escopoDaSessao } from "@/lib/escopo.server";
 
 type ClaimsAcesso = {
   email?: unknown;
@@ -48,7 +49,7 @@ export const requireAcesso = createMiddleware({ type: "function" })
       );
     }
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    return next({ context: { supabase: supabaseAdmin, sessao } });
+    return next({ context: { supabase: supabaseAdmin, sessao, escopo: escopoDaSessao(sessao) } });
   });
 
 /**
@@ -71,7 +72,7 @@ export const requireEdicao = createMiddleware({ type: "function" })
       );
     }
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    return next({ context: { supabase: supabaseAdmin, sessao } });
+    return next({ context: { supabase: supabaseAdmin, sessao, escopo: escopoDaSessao(sessao) } });
   });
 
 /**
@@ -87,5 +88,23 @@ export const requireMaster = createMiddleware({ type: "function" })
       throw new Error("Este módulo é reservado ao acesso master.");
     }
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
-    return next({ context: { supabase: supabaseAdmin, sessao } });
+    return next({ context: { supabase: supabaseAdmin, sessao, escopo: escopoDaSessao(sessao) } });
+  });
+
+/**
+ * Exige o master global — o responsável pelo sistema, sem empresa atribuída.
+ *
+ * O master de uma empresa manda dentro dela, mas não pode criar empresas nem
+ * ver a lista das outras: era por aí que descobriria que clientes mais existem
+ * nesta instalação.
+ */
+export const requireMasterGlobal = createMiddleware({ type: "function" })
+  .middleware([requireSupabaseAuth])
+  .server(async ({ next, context }) => {
+    const sessao = await sessaoValidada(context.userId, context.claims);
+    if (sessao.perfil !== "master" || sessao.empresaId !== null) {
+      throw new Error("Este módulo é reservado ao responsável pelo sistema.");
+    }
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+    return next({ context: { supabase: supabaseAdmin, sessao, escopo: escopoDaSessao(sessao) } });
   });

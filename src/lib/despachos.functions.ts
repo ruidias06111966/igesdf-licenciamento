@@ -1,5 +1,6 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireMaster } from "@/lib/acesso-middleware";
+import { daEmpresa, dasUnidades, exigirUnidade, unidadesDoEscopo } from "@/lib/escopo.server";
 
 export const dadosDespachoUnidade = createServerFn({ method: "POST" })
   .middleware([requireMaster])
@@ -7,6 +8,7 @@ export const dadosDespachoUnidade = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const id = String(data?.unidade_id ?? "");
     if (!/^[0-9a-f-]{36}$/i.test(id)) throw new Error("Unidade inválida.");
+    await exigirUnidade(context.supabase, context.escopo, id);
     const supabase = context.supabase;
 
     const [unidade, cnaes, licencas, processos] = await Promise.all([
@@ -50,14 +52,21 @@ export const dadosConsolidado = createServerFn({ method: "POST" })
   .handler(async ({ context }) => {
     const supabase = context.supabase;
 
-    const unidades = await supabase
-      .from("unidades")
-      .select(
-        "id, nome, nome_fantasia, tipo, cnpj, regiao_administrativa, ativa, situacao_edificacao",
-      )
-      .eq("ativa", true)
-      .order("nome");
+    // O consolidado é o relatório de toda a rede — de uma rede só. Um master
+    // de empresa tem de receber a dele, não a soma de todos os clientes.
+    const unidades = await daEmpresa(
+      supabase
+        .from("unidades")
+        .select(
+          "id, nome, nome_fantasia, tipo, cnpj, regiao_administrativa, ativa, situacao_edificacao",
+        )
+        .eq("ativa", true)
+        .order("nome"),
+      context.escopo,
+    );
     if (unidades.error) throw unidades.error;
+
+    const idsUnidades = await unidadesDoEscopo(supabase, context.escopo);
 
     // Paginação explícita: a base já passa das mil licenças e o PostgREST
     // corta silenciosamente no limite por omissão.
@@ -72,11 +81,14 @@ export const dadosConsolidado = createServerFn({ method: "POST" })
     }[] = [];
     const passo = 1000;
     for (let inicio = 0; ; inicio += passo) {
-      const pagina = await supabase
-        .from("licencas")
-        .select("id, unidade_id, orgao, descricao, status, data_vencimento, updated_at")
-        .order("id")
-        .range(inicio, inicio + passo - 1);
+      const pagina = await dasUnidades(
+        supabase
+          .from("licencas")
+          .select("id, unidade_id, orgao, descricao, status, data_vencimento, updated_at")
+          .order("id")
+          .range(inicio, inicio + passo - 1),
+        idsUnidades,
+      );
       if (pagina.error) throw pagina.error;
       const linhas = pagina.data ?? [];
       licencas.push(...linhas);

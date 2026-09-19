@@ -1,6 +1,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import type { Database } from "@/integrations/supabase/types";
 import { requireEdicao } from "@/lib/acesso-middleware";
+import { daEmpresa } from "@/lib/escopo.server";
 import { linhasImportacaoSchema, type LinhaImportacao } from "@/lib/importacao-schema";
 
 /**
@@ -37,9 +38,13 @@ export const importarLicencas = createServerFn({ method: "POST" })
   .handler(async ({ data, context }) => {
     const { diferencas, registarAuditoria } = await import("@/lib/auditoria.server");
 
-    const { data: unidades, error: erroUnidades } = await context.supabase
-      .from("unidades")
-      .select("id, nome, nome_fantasia, cnpj, numero_iges");
+    // Filtrar aqui basta para toda a importação: o índice abaixo só passa a
+    // conhecer as unidades da empresa, e uma linha da planilha que nomeie a
+    // unidade de outro cliente deixa de encontrar correspondência.
+    const { data: unidades, error: erroUnidades } = await daEmpresa(
+      context.supabase.from("unidades").select("id, nome, nome_fantasia, cnpj, numero_iges"),
+      context.escopo,
+    );
     if (erroUnidades) throw erroUnidades;
 
     const indice = new Map<string, string>();

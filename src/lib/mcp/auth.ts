@@ -34,3 +34,32 @@ export function exigirAutorizacao(ctx: ToolContext): string {
   }
   return email;
 }
+
+/**
+ * Empresa a que a chamada MCP tem acesso.
+ *
+ * Aqui a identidade vem do token OAuth e não da sessão do navegador, por isso a
+ * empresa é procurada pelo e-mail em `perfis_acesso`. Sem perfil atribuído não
+ * há alcance nenhum: estar na lista de e-mails autorizados abre a porta do MCP,
+ * não os dados de um cliente.
+ */
+export async function escopoDoMcp(ctx: ToolContext) {
+  const email = exigirAutorizacao(ctx);
+  const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+  const { data } = await supabaseAdmin
+    .from("perfis_acesso")
+    .select("perfil, empresa_id, suspenso")
+    .ilike("email", email)
+    .maybeSingle();
+
+  if (!data || data.suspenso || !data.perfil) {
+    throw new ToolError("A sua conta não tem perfil atribuído neste sistema.");
+  }
+  if (data.perfil === "master" && data.empresa_id === null) {
+    return { escopo: { global: true as const, empresaId: null }, email };
+  }
+  if (!data.empresa_id) {
+    throw new ToolError("A sua conta não está associada a nenhuma empresa.");
+  }
+  return { escopo: { global: false as const, empresaId: data.empresa_id }, email };
+}

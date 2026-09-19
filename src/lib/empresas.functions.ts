@@ -1,18 +1,17 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
-import { requireAcesso, requireMaster } from "@/lib/acesso-middleware";
+import { requireAcesso, requireMasterGlobal } from "@/lib/acesso-middleware";
+import { daEmpresa } from "@/lib/escopo.server";
 
 /**
  * Empresas clientes servidas por esta instalação.
  *
- * Gerir empresas é do master: criar uma empresa é abrir espaço a um cliente
- * novo, e trocar-lhe o logótipo muda o timbre dos documentos que saem para os
- * órgãos licenciadores. Ler é de qualquer perfil, porque a interface e as
- * exportações precisam do nome e do logótipo para os mostrar.
+ * Criar, editar e desativar empresas é do master global — o responsável pelo
+ * sistema. Um master de empresa manda dentro da sua, mas não pode criar outras
+ * nem sequer saber que clientes mais existem nesta instalação.
  *
- * Nota sobre o estado atual: enquanto o isolamento entre empresas não estiver
- * feito, `listarEmpresas` devolve todas a quem tiver acesso ao sistema. Quando
- * essa etapa chegar, é aqui que se passa a filtrar pelas empresas da pessoa.
+ * Ler é de qualquer perfil, porque a interface e as exportações precisam do
+ * nome e do logótipo para os mostrar — mas cada um só lê a sua empresa.
  */
 
 const BUCKET = "empresa-logos";
@@ -37,20 +36,24 @@ const empresaSchema = z.object({
 export const listarEmpresas = createServerFn({ method: "GET" })
   .middleware([requireAcesso])
   .handler(async ({ context }) => {
-    const { data, error } = await context.supabase
+    // A tabela `empresas` não tem `empresa_id`: a sua própria chave é que o é.
+    const consulta = context.supabase
       .from("empresas")
       .select("id, sigla, nome, cnpj_raiz, logo_path, ativa, created_at")
       .order("ativa", { ascending: false })
       .order("sigla", { ascending: true });
+    const { data, error } = await (context.escopo.global
+      ? consulta
+      : consulta.eq("id", context.escopo.empresaId));
     if (error) throw new Error(error.message);
 
     // As unidades vêm à parte e contam-se aqui, em vez de um agregado do
     // PostgREST: são poucas dezenas, e assim não se depende de a relação estar
     // declarada nos tipos gerados.
-    const { data: unidades, error: erroUnidades } = await context.supabase
-      .from("unidades")
-      .select("empresa_id")
-      .eq("ativa", true);
+    const { data: unidades, error: erroUnidades } = await daEmpresa(
+      context.supabase.from("unidades").select("empresa_id").eq("ativa", true),
+      context.escopo,
+    );
     if (erroUnidades) throw new Error(erroUnidades.message);
 
     const porEmpresa = new Map<string, number>();
@@ -80,7 +83,7 @@ function urlDoLogo(caminho: string | null): string | null {
 }
 
 export const upsertEmpresa = createServerFn({ method: "POST" })
-  .middleware([requireMaster])
+  .middleware([requireMasterGlobal])
   .inputValidator((input: unknown) => empresaSchema.parse(input))
   .handler(async ({ data, context }) => {
     const registo = {
@@ -121,7 +124,7 @@ function mensagemDeSigla(erro: string, sigla: string): string {
  * escolher, e o histórico fica.
  */
 export const desativarEmpresa = createServerFn({ method: "POST" })
-  .middleware([requireMaster])
+  .middleware([requireMasterGlobal])
   .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
     const { error } = await context.supabase
@@ -133,7 +136,7 @@ export const desativarEmpresa = createServerFn({ method: "POST" })
   });
 
 export const enviarLogoEmpresa = createServerFn({ method: "POST" })
-  .middleware([requireMaster])
+  .middleware([requireMasterGlobal])
   .inputValidator((input: unknown) => {
     if (!(input instanceof FormData)) throw new Error("Envio inválido: esperado FormData");
     const arquivo = input.get("arquivo");

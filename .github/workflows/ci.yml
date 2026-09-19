@@ -52,12 +52,13 @@ jobs:
       - name: CSS — regras
         run: npx stylelint 'src/**/*.css' --allow-empty-input
 
-      # `tests/matriz.spec.ts` exercita funções puras e não abre navegador,
+      # Os dois exercitam funções puras e leitura de ficheiros, sem abrir
+      # navegador,
       # por isso não é preciso `playwright install` aqui. Se algum dia forem
       # acrescentados testes que naveguem na aplicação, acrescente antes deste
       # passo: `npx playwright install --with-deps chromium`.
       - name: Testes
-        run: npx playwright test tests/matriz.spec.ts
+        run: npx playwright test tests/matriz.spec.ts tests/isolamento.spec.ts
 
       - name: Build de produção
         run: npm run build

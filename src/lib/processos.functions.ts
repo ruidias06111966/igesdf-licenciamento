@@ -2,6 +2,13 @@ import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 import { requireAcesso, requireEdicao } from "@/lib/acesso-middleware";
 import { vaziosParaNulo } from "@/lib/sanitize";
+import {
+  dasUnidades,
+  exigirItemDoProcesso,
+  exigirProcesso,
+  exigirUnidade,
+  unidadesDoEscopo,
+} from "@/lib/escopo.server";
 
 const ORGAO = z.enum([
   "VISA",
@@ -29,12 +36,16 @@ const ORGAO = z.enum([
 export const listProcessos = createServerFn({ method: "GET" })
   .middleware([requireAcesso])
   .handler(async ({ context }) => {
+    const ids = await unidadesDoEscopo(context.supabase, context.escopo);
     const [proc, itens] = await Promise.all([
-      context.supabase
-        .from("processos_sei")
-        .select("*, unidades(id, nome, tipo)")
-        .eq("ativo", true)
-        .order("created_at", { ascending: false }),
+      dasUnidades(
+        context.supabase
+          .from("processos_sei")
+          .select("*, unidades(id, nome, tipo)")
+          .eq("ativo", true)
+          .order("created_at", { ascending: false }),
+        ids,
+      ),
       context.supabase.from("processo_itens").select("processo_id, situacao, obrigatorio"),
     ]);
     if (proc.error) throw proc.error;
@@ -57,6 +68,7 @@ export const getProcesso = createServerFn({ method: "GET" })
   .middleware([requireAcesso])
   .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
+    await exigirProcesso(context.supabase, context.escopo, data.id);
     const [proc, itens, docs] = await Promise.all([
       context.supabase
         .from("processos_sei")
@@ -96,8 +108,10 @@ export const upsertProcesso = createServerFn({ method: "POST" })
   .middleware([requireEdicao])
   .inputValidator((input: unknown) => processoSchema.parse(input))
   .handler(async ({ data, context }) => {
+    if (data.unidade_id) await exigirUnidade(context.supabase, context.escopo, data.unidade_id);
     const clean = vaziosParaNulo(data);
     if (data.id) {
+      await exigirProcesso(context.supabase, context.escopo, data.id);
       const { error } = await context.supabase
         .from("processos_sei")
         .update(clean)
@@ -157,6 +171,7 @@ export const deleteProcesso = createServerFn({ method: "POST" })
   .middleware([requireEdicao])
   .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
+    await exigirProcesso(context.supabase, context.escopo, data.id);
     const { error } = await context.supabase
       .from("processos_sei")
       .update({ ativo: false })
@@ -176,6 +191,7 @@ export const gerarChecklistProcesso = createServerFn({ method: "POST" })
     z.object({ processo_id: z.string().uuid(), orgao: ORGAO.optional() }).parse(input),
   )
   .handler(async ({ data, context }) => {
+    await exigirProcesso(context.supabase, context.escopo, data.processo_id);
     const { data: proc, error: pe } = await context.supabase
       .from("processos_sei")
       .select("id, orgao")
@@ -241,8 +257,12 @@ export const upsertProcessoItem = createServerFn({ method: "POST" })
   .middleware([requireEdicao])
   .inputValidator((input: unknown) => itemSchema.parse(input))
   .handler(async ({ data, context }) => {
+    if (data.processo_id) {
+      await exigirProcesso(context.supabase, context.escopo, data.processo_id);
+    }
     const clean = vaziosParaNulo(data);
     if (data.id) {
+      await exigirItemDoProcesso(context.supabase, context.escopo, data.id);
       const { error } = await context.supabase
         .from("processo_itens")
         .update(clean)
@@ -271,6 +291,7 @@ export const setSituacaoItem = createServerFn({ method: "POST" })
       .parse(input),
   )
   .handler(async ({ data, context }) => {
+    await exigirItemDoProcesso(context.supabase, context.escopo, data.id);
     const patch: { situacao: string; data_entrega?: string | null } = { situacao: data.situacao };
     if (data.situacao === "entregue") patch.data_entrega = new Date().toISOString().slice(0, 10);
     const { error } = await context.supabase.from("processo_itens").update(patch).eq("id", data.id);
@@ -282,6 +303,7 @@ export const deleteProcessoItem = createServerFn({ method: "POST" })
   .middleware([requireEdicao])
   .inputValidator((input: unknown) => z.object({ id: z.string().uuid() }).parse(input))
   .handler(async ({ data, context }) => {
+    await exigirItemDoProcesso(context.supabase, context.escopo, data.id);
     const { error } = await context.supabase.from("processo_itens").delete().eq("id", data.id);
     if (error) throw error;
     return { ok: true };
