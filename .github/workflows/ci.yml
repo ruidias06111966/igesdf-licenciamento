@@ -1,0 +1,63 @@
+name: CI
+
+# Corre as mesmas verificações que se fazem antes de publicar, para que uma
+# alteração que parta os tipos, o lint ou o build seja apanhada no pull request
+# e não depois de sincronizar com o Lovable.
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# Um push novo no mesmo ramo cancela a execução anterior: o que interessa é o
+# estado do último commit, não o histórico de execuções a meio.
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verificar:
+    name: Tipos, lint e testes
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci --no-audit --no-fund
+
+      # Cada verificação é um passo próprio para que o resumo do GitHub diga
+      # logo o que falhou, sem ser preciso abrir os registos.
+      - name: Tipos
+        run: npx tsc --noEmit
+
+      # As três verificações que o script `lint` do package.json agrupa. Aqui
+      # correm separadas porque esse script invoca `bun run`, e este ambiente
+      # usa npm.
+      - name: Lint
+        run: npx eslint .
+
+      - name: CSS — sintaxe
+        run: node scripts/validate-css.mjs
+
+      - name: CSS — regras
+        run: npx stylelint 'src/**/*.css' --allow-empty-input
+
+      # `tests/matriz.spec.ts` exercita funções puras e não abre navegador,
+      # por isso não é preciso `playwright install` aqui. Se algum dia forem
+      # acrescentados testes que naveguem na aplicação, acrescente antes deste
+      # passo: `npx playwright install --with-deps chromium`.
+      - name: Testes
+        run: npx playwright test tests/matriz.spec.ts
+
+      - name: Build de produção
+        run: npm run build
