@@ -23,6 +23,7 @@ import { deleteProcesso, gerarChecklistProcesso } from "@/lib/processos.function
 import { mensagemErro } from "@/lib/errors";
 import { invalidarDados, processosQuery, unidadesQuery } from "@/lib/queries";
 import type { ProcessoLista } from "@/lib/rows";
+import { titulo, url } from "@/lib/marca";
 
 export const Route = createFileRoute("/_authenticated/processos/")({
   loader: async ({ context }) => {
@@ -35,22 +36,22 @@ export const Route = createFileRoute("/_authenticated/processos/")({
   pendingComponent: () => <CardGridSkeleton itens={6} />,
   head: () => ({
     meta: [
-      { title: "Processos SEI — IGESDF - Licenciamento" },
+      { title: titulo("Processos SEI") },
       {
         name: "description",
         content:
           "Controle dos processos SEI de licenciamento por unidade: documentos exigidos, anexos e acompanhamento junto de cada órgão.",
       },
-      { property: "og:title", content: "Processos SEI — IGESDF" },
+      { property: "og:title", content: titulo("Processos SEI") },
       {
         property: "og:description",
         content: "Acompanhamento dos processos SEI de licenciamento das unidades do IGESDF.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { property: "og:url", content: "https://igesdf-licenciamento.qidominios.tech/processos" },
+      { property: "og:url", content: url("/processos") },
     ],
-    links: [{ rel: "canonical", href: "https://igesdf-licenciamento.qidominios.tech/processos" }],
+    links: [{ rel: "canonical", href: url("/processos") }],
   }),
   errorComponent: ({ error, reset }) => <ErrorState error={error} onRetry={reset} />,
 });

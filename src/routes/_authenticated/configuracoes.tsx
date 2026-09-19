@@ -5,18 +5,19 @@ import { PageHeader } from "@/components/page-header";
 import { SubNav } from "@/components/sub-nav";
 import { useEhMaster } from "@/lib/perfil";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { titulo } from "@/lib/marca";
 
 export const Route = createFileRoute("/_authenticated/configuracoes")({
   component: Pagina,
   head: () => ({
     meta: [
-      { title: "Configurações · IGESDF Licenciamento" },
+      { title: titulo("Configurações") },
       {
         name: "description",
         content:
           "Central de configurações do licenciamento do IGESDF: correção automática, importação de CSV, auditoria e cores das exportações.",
       },
-      { property: "og:title", content: "Configurações · IGESDF Licenciamento" },
+      { property: "og:title", content: titulo("Configurações") },
       {
         property: "og:description",
         content: "Rotinas, importação, auditoria e paleta das exportações num só lugar.",

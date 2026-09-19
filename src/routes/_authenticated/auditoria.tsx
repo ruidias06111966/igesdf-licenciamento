@@ -28,17 +28,18 @@ import {
 } from "@/lib/auditoria-labels";
 import { sufixoData, type ColunaCsv } from "@/lib/csv";
 import { BotaoExportar } from "@/components/botao-exportar";
+import { titulo } from "@/lib/marca";
 
 export const Route = createFileRoute("/_authenticated/auditoria")({
   head: () => ({
     meta: [
-      { title: "Auditoria — IGESDF Licenciamento" },
+      { title: titulo("Auditoria") },
       {
         name: "description",
         content:
           "Histórico de alterações das licenças, documentos e despachos: data, perfil e campos alterados.",
       },
-      { property: "og:title", content: "Auditoria — IGESDF Licenciamento" },
+      { property: "og:title", content: titulo("Auditoria") },
       {
         property: "og:description",
         content: "Registo completo das alterações feitas no controlo de licenciamento.",

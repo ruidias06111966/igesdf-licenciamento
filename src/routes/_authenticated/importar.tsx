@@ -25,17 +25,18 @@ import {
   type LinhaImportacao,
 } from "@/lib/importacao-schema";
 import { importarLicencas, type ResultadoLinha } from "@/lib/importacao.functions";
+import { titulo } from "@/lib/marca";
 
 export const Route = createFileRoute("/_authenticated/importar")({
   head: () => ({
     meta: [
-      { title: "Importar licenças — IGESDF Licenciamento" },
+      { title: titulo("Importar licenças") },
       {
         name: "description",
         content:
           "Carga de licenças por planilha CSV com pré-visualização das alterações antes de gravar.",
       },
-      { property: "og:title", content: "Importar licenças — IGESDF Licenciamento" },
+      { property: "og:title", content: titulo("Importar licenças") },
       {
         property: "og:description",
         content: "Atualize licenças em massa a partir de uma planilha, com conferência prévia.",

@@ -27,6 +27,7 @@ import {
 } from "@/lib/domain";
 import { formatDate } from "@/lib/dates";
 import type { CnaeUnidade, Documento, Licenca, Unidade } from "@/lib/rows";
+import { titulo, url } from "@/lib/marca";
 
 export const Route = createFileRoute("/_authenticated/unidades/$id")({
   loader: ({ context, params }) => context.queryClient.ensureQueryData(unidadeQuery(params.id)),
@@ -34,26 +35,26 @@ export const Route = createFileRoute("/_authenticated/unidades/$id")({
   pendingComponent: () => <PageSkeleton colunas={6} linhas={5} />,
   head: ({ params }) => ({
     meta: [
-      { title: "Unidade — IGESDF - Licenciamento" },
+      { title: titulo("Unidade") },
       {
         name: "description",
         content:
           "Ficha detalhada da unidade: CNAEs, licenças por órgão, documentos versionados, checklists e responsáveis técnicos.",
       },
-      { property: "og:title", content: "Ficha da unidade — IGESDF - Licenciamento" },
+      { property: "og:title", content: titulo("Ficha da unidade") },
       {
         property: "og:description",
         content: "Detalhe de licenciamento, documentos e checklists da unidade IGESDF.",
       },
       {
         property: "og:url",
-        content: `https://igesdf-licenciamento.qidominios.tech/unidades/${params.id}`,
+        content: url(`/unidades/${params.id}`),
       },
     ],
     links: [
       {
         rel: "canonical",
-        href: `https://igesdf-licenciamento.qidominios.tech/unidades/${params.id}`,
+        href: url(`/unidades/${params.id}`),
       },
     ],
   }),

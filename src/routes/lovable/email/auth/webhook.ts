@@ -7,13 +7,11 @@ import { MagicLinkEmail } from "@/lib/email-templates/magic-link";
 import { RecoveryEmail } from "@/lib/email-templates/recovery";
 import { EmailChangeEmail } from "@/lib/email-templates/email-change";
 import { ReauthenticationEmail } from "@/lib/email-templates/reauthentication";
+import { FROM_DOMAIN, SENDER_DOMAIN } from "@/lib/email-templates/dominio";
+import { MARCA, url } from "@/lib/marca";
 
-// Configuration
-const SITE_NAME = "IGESDF - Licenciamento";
-const SENDER_DOMAIN = "notify.igesdf-licenciamento.qidominios.tech";
-const ROOT_DOMAIN = "igesdf-licenciamento.qidominios.tech";
-const FROM_DOMAIN = "notify.igesdf-licenciamento.qidominios.tech";
-const SITE_URL = `https://${ROOT_DOMAIN}`;
+const SITE_NAME = MARCA.produto;
+const SITE_URL = url();
 
 // The SDK handler owns verification, dispatch, and retry semantics; this file
 // owns only the email decisions: subjects, templates, and per-type props.

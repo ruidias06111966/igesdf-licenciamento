@@ -25,6 +25,7 @@ import { formatDate, formatDateTime } from "@/lib/dates";
 import { applyPrintMode, getSavedPrintMode } from "@/lib/print-mode";
 import type { ChecklistItemDossie, Licenca } from "@/lib/rows";
 import { cn } from "@/lib/utils";
+import { titulo, url } from "@/lib/marca";
 
 export const Route = createFileRoute("/_authenticated/unidades/$id_/dossie")({
   loader: ({ context, params }) => context.queryClient.ensureQueryData(dossieQuery(params.id)),
@@ -34,27 +35,27 @@ export const Route = createFileRoute("/_authenticated/unidades/$id_/dossie")({
     ({ print: s.print ? 1 : undefined }) as { print?: 1 },
   head: ({ params }) => ({
     meta: [
-      { title: "Dossiê da unidade — IGESDF - Licenciamento" },
+      { title: titulo("Dossiê da unidade") },
       {
         name: "description",
         content:
           "Dossiê consolidado de conformidade da unidade: licenças por órgão, checklists, documentos e responsáveis técnicos, pronto para auditoria.",
       },
-      { property: "og:title", content: "Dossiê de conformidade — IGESDF" },
+      { property: "og:title", content: titulo("Dossiê de conformidade") },
       {
         property: "og:description",
         content: "Relatório consolidado de conformidade da unidade IGESDF.",
       },
       {
         property: "og:url",
-        content: `https://igesdf-licenciamento.qidominios.tech/unidades/${params.id}/dossie`,
+        content: url(`/unidades/${params.id}/dossie`),
       },
       { name: "robots", content: "noindex" },
     ],
     links: [
       {
         rel: "canonical",
-        href: `https://igesdf-licenciamento.qidominios.tech/unidades/${params.id}/dossie`,
+        href: url(`/unidades/${params.id}/dossie`),
       },
     ],
   }),

@@ -32,19 +32,20 @@ import {
 } from "@/lib/despacho/consolidado";
 import { AcoesCopiar, FolhaDespacho, markdownDe } from "@/lib/despacho/folha";
 import { SubNav } from "@/components/sub-nav";
+import { titulo } from "@/lib/marca";
 
 export const Route = createFileRoute("/_authenticated/consolidado")({
   component: ConsolidadoPage,
   errorComponent: ({ error, reset }) => <ErrorState error={error} onRetry={reset} />,
   head: () => ({
     meta: [
-      { title: "Consolidado da Rede — IGESDF - Licenciamento" },
+      { title: titulo("Consolidado da Rede") },
       {
         name: "description",
         content:
           "Despacho consolidado mensal ou trimestral do licenciamento de toda a rede IGESDF, com quadros por unidade e por órgão.",
       },
-      { property: "og:title", content: "Consolidado da rede — IGESDF" },
+      { property: "og:title", content: titulo("Consolidado da rede") },
       {
         property: "og:description",
         content: "Panorama do licenciamento da rede com pendências, vencidas e tempos de espera.",
@@ -57,7 +58,7 @@ export const Route = createFileRoute("/_authenticated/consolidado")({
 
 const ASSINANTES_PADRAO = [
   { nome: "Rui José Lopes Dias", cargo: "Núcleo de Conformidade — NUCON/IGESDF" },
-  { nome: "Paulo Ricardo Oliveira Lima", cargo: "Gerência de Conformidade — IGESDF" },
+  { nome: "Paulo Ricardo Oliveira Lima", cargo: titulo("Gerência de Conformidade") },
 ];
 
 function mesAtual() {

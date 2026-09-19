@@ -1,6 +1,7 @@
 import * as React from "react";
 
 import { Body, Container, Head, Heading, Html, Preview, Text } from "@react-email/components";
+import { CLIENTE, MARCA } from "@/lib/marca";
 
 interface ReauthenticationEmailProps {
   token: string;
@@ -12,7 +13,7 @@ export const ReauthenticationEmail = ({ token }: ReauthenticationEmailProps) => 
     <Preview>O seu código de verificação</Preview>
     <Body style={main}>
       <Container style={container}>
-        <Text style={marca}>IGESDF - Licenciamento</Text>
+        <Text style={marca}>{MARCA.produto}</Text>
         <Heading style={h1}>Confirme a sua identidade</Heading>
         <Text style={text}>Use o código abaixo para confirmar a operação:</Text>
         <Text style={codeStyle}>{token}</Text>
@@ -20,8 +21,7 @@ export const ReauthenticationEmail = ({ token }: ReauthenticationEmailProps) => 
           O código expira em poucos minutos. Se não foi você, ignore este e-mail.
         </Text>
         <Text style={footer}>
-          IGESDF - Licenciamento · Instituto de Gestão Estratégica de Saúde do Distrito Federal.
-          Mensagem automática — não responda a este e-mail.
+          {MARCA.produto} · {CLIENTE.nome}. Mensagem automática — não responda a este e-mail.
         </Text>
       </Container>
     </Body>

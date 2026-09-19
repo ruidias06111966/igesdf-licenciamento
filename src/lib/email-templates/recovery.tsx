@@ -10,6 +10,7 @@ import {
   Preview,
   Text,
 } from "@react-email/components";
+import { CLIENTE, MARCA } from "@/lib/marca";
 
 interface RecoveryEmailProps {
   siteName: string;
@@ -35,8 +36,7 @@ export const RecoveryEmail = ({ siteName, confirmationUrl }: RecoveryEmailProps)
           Se não pediu a alteração, ignore este e-mail — a sua senha continua a mesma.
         </Text>
         <Text style={footer}>
-          IGESDF - Licenciamento · Instituto de Gestão Estratégica de Saúde do Distrito Federal.
-          Mensagem automática — não responda a este e-mail.
+          {MARCA.produto} · {CLIENTE.nome}. Mensagem automática — não responda a este e-mail.
         </Text>
       </Container>
     </Body>

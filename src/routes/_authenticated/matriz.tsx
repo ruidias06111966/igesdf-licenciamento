@@ -31,6 +31,7 @@ import { montarGrade, temPendencia, type Celula } from "@/lib/matriz";
 import type { Unidade } from "@/lib/rows";
 import { cn } from "@/lib/utils";
 import { SubNav } from "@/components/sub-nav";
+import { titulo, url } from "@/lib/marca";
 
 export const Route = createFileRoute("/_authenticated/matriz")({
   loader: ({ context }) =>
@@ -42,16 +43,16 @@ export const Route = createFileRoute("/_authenticated/matriz")({
   pendingComponent: () => <PageSkeleton colunas={8} linhas={10} />,
   head: () => ({
     meta: [
-      { title: "Matriz de compliance — IGESDF" },
+      { title: titulo("Matriz de compliance") },
       {
         name: "description",
         content:
           "Matriz cruzada unidade × órgão licenciador: situação, vencimento e pendências de cada licença da rede IGESDF numa única visão.",
       },
-      { property: "og:title", content: "Matriz de compliance — IGESDF" },
-      { property: "og:url", content: "https://igesdf-licenciamento.qidominios.tech/matriz" },
+      { property: "og:title", content: titulo("Matriz de compliance") },
+      { property: "og:url", content: url("/matriz") },
     ],
-    links: [{ rel: "canonical", href: "https://igesdf-licenciamento.qidominios.tech/matriz" }],
+    links: [{ rel: "canonical", href: url("/matriz") }],
   }),
   errorComponent: ({ error, reset }) => <ErrorState error={error} onRetry={reset} />,
 });

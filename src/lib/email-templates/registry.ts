@@ -1,10 +1,18 @@
 import type { ComponentType } from "react";
 
+/**
+ * Dados de um template. A forma concreta varia de template para template, por
+ * isso o registo só garante que é um conjunto de campos nomeados — quem
+ * regista um template com props tipadas fá-lo com um `as ComponenteTemplate`.
+ */
+export type DadosTemplate = Record<string, unknown>;
+export type ComponenteTemplate = ComponentType<DadosTemplate>;
+
 export interface TemplateEntry {
-  component: ComponentType<any>;
-  subject: string | ((data: Record<string, any>) => string);
+  component: ComponenteTemplate;
+  subject: string | ((data: DadosTemplate) => string);
   displayName?: string;
-  previewData?: Record<string, any>;
+  previewData?: DadosTemplate;
   /** Fixed recipient — overrides caller-provided recipientEmail when set. */
   to?: string;
 }

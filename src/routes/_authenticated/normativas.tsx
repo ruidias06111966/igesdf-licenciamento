@@ -37,6 +37,7 @@ import { invalidarDados, normativasQuery } from "@/lib/queries";
 import { formatDate } from "@/lib/dates";
 import { mensagemErro } from "@/lib/errors";
 import type { Normativa } from "@/lib/rows";
+import { titulo, url } from "@/lib/marca";
 
 const TIPOS = [
   { value: "rdc", label: "RDC (ANVISA)" },
@@ -78,20 +79,20 @@ export const Route = createFileRoute("/_authenticated/normativas")({
   pendingComponent: () => <CardGridSkeleton itens={5} />,
   head: () => ({
     meta: [
-      { title: "Normativas e processos SEI — IGESDF - Licenciamento" },
+      { title: titulo("Normativas e processos SEI") },
       {
         name: "description",
         content:
           "Arquivo de RDCs da ANVISA, normativas da VISADF, portarias, leis e processos SEI aplicáveis ao licenciamento de UPAs e hospitais do IGESDF.",
       },
-      { property: "og:title", content: "Normativas, portarias e processos SEI — IGESDF" },
+      { property: "og:title", content: titulo("Normativas, portarias e processos SEI") },
       {
         property: "og:description",
         content: "Base legal do licenciamento sanitário e ambiental das unidades do IGESDF.",
       },
-      { property: "og:url", content: "https://igesdf-licenciamento.qidominios.tech/normativas" },
+      { property: "og:url", content: url("/normativas") },
     ],
-    links: [{ rel: "canonical", href: "https://igesdf-licenciamento.qidominios.tech/normativas" }],
+    links: [{ rel: "canonical", href: url("/normativas") }],
   }),
   errorComponent: ({ error, reset }) => <ErrorState error={error} onRetry={reset} />,
 });

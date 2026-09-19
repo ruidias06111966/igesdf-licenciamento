@@ -30,18 +30,19 @@ import { PageHeader } from "@/components/page-header";
 import { BibliotecaModelos, GuardarModelo } from "@/components/modelos-ia";
 import { useEhMaster } from "@/lib/perfil";
 import { cn } from "@/lib/utils";
+import { titulo } from "@/lib/marca";
 
 export const Route = createFileRoute("/_authenticated/ia")({
   component: PaginaIA,
   head: () => ({
     meta: [
-      { title: "Assistente IA — IGESDF - Licenciamento" },
+      { title: titulo("Assistente IA") },
       {
         name: "description",
         content:
           "Assistente de inteligência artificial para redigir despachos, processos e resolver questões de licenciamento das unidades do IGESDF.",
       },
-      { property: "og:title", content: "Assistente IA — IGESDF - Licenciamento" },
+      { property: "og:title", content: titulo("Assistente IA") },
       {
         property: "og:description",
         content: "Apoio de IA à redação de despachos e à análise de documentos de licenciamento.",

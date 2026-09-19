@@ -1,50 +1,90 @@
-# Como pôr o sistema a funcionar
+# QiLicenciamentos — operação
 
-## 1. Variáveis de ambiente obrigatórias
+Sistema de controlo de licenciamentos e alvarás, da suíte **QiDominios**.
+Cliente: **IGESDF** — Instituto de Gestão Estratégica de Saúde do Distrito
+Federal.
 
-Estas duas **não ficam no ficheiro `.env`** (que está versionado no Git e seria
-publicado com o código). Defina-as como variáveis/segredos de ambiente do
-projeto, no painel do Lovable Cloud:
+Endereço de produção pretendido: <https://qilicenciamento.qidominios.com.br>
 
-| Variável                    | Para quê                                                        |
-| --------------------------- | --------------------------------------------------------------- |
-| `ACESSO_SENHA`              | Senha única de entrada da equipe. Sem ela ninguém entra.        |
-| `SUPABASE_SERVICE_ROLE_KEY` | Chave com que o servidor lê e grava os dados. Sem ela nenhuma página carrega. |
+## 1. Variáveis de ambiente
 
-Se faltar alguma, o sistema não quebra em silêncio: o ecrã de entrada avisa que
-`ACESSO_SENHA` não está definida, e as páginas internas mostram um aviso a
-apontar `SUPABASE_SERVICE_ROLE_KEY`.
+Nenhuma destas fica no ficheiro `.env`: esse ficheiro **está versionado no Git**
+e seria publicado junto com o código. Defina-as como variáveis/segredos de
+ambiente do projeto, no painel do Lovable Cloud.
 
-Opcionais, só para os e-mails de alerta de vencimento:
-`ALERTAS_CRON_SECRET`, `ALERTAS_EMAIL_DESTINATARIO`, `LOVABLE_API_KEY`.
+### Obrigatórias
 
-## 2. Aplicar a migração pendente
+| Variável                    | Para quê                                                                      |
+| --------------------------- | ----------------------------------------------------------------------------- |
+| `SUPABASE_SERVICE_ROLE_KEY` | Chave com que o servidor lê e grava os dados. Sem ela nenhuma página carrega.  |
+| `SUPABASE_URL`              | Endereço do projeto Supabase.                                                  |
+| `SUPABASE_PUBLISHABLE_KEY`  | Chave usada para validar o token de sessão de quem entra.                      |
 
-Falta aplicar `supabase/migrations/20260730120000_dashboard_view_somente_unidades_ativas.sql`.
-Ela corrige a view do painel (que contava licenças de unidades já desativadas) e
-impede itens de checklist duplicados.
+### Opcionais
 
-O Lovable aplica as migrações da pasta `supabase/migrations/` ao sincronizar o
-branch. Para aplicar à mão, cole o conteúdo do ficheiro no **SQL Editor** do
-projeto Supabase (`mbpoevhioiywpyrnffez`) e execute. É segura de repetir: usa
-`CREATE OR REPLACE`, `IF NOT EXISTS` e desduplica antes de criar o índice único.
+| Variável                     | Para quê                                                                        |
+| ---------------------------- | ------------------------------------------------------------------------------- |
+| `ACESSO_MASTER_EMAIL`        | Conta sempre master. Por omissão `qidominio@gmail.com`.                          |
+| `EMAIL_SENDER_DOMAIN`        | Subdomínio remetente dos e-mails. Ver a secção 3 — **não mudar sem DNS feito**. |
+| `EMAIL_FROM_DOMAIN`          | Domínio mostrado no cabeçalho `From:`. Cosmético.                                |
+| `ALERTAS_CRON_SECRET`        | Protege o endpoint que dispara os alertas de vencimento.                         |
+| `ALERTAS_EMAIL_DESTINATARIO` | Para onde vão esses alertas.                                                     |
+| `LOVABLE_API_KEY`            | Necessária para enviar qualquer e-mail.                                          |
 
-## 3. Publicar
+Os alertas de vencimento só funcionam com as três últimas definidas **e** com um
+agendamento a chamar o endpoint. Sem isso, o sistema continua a mostrar os
+vencimentos no ecrã, mas não avisa ninguém por e-mail.
+
+## 2. Nome e domínio
+
+O nome do produto e o endereço estão num sítio só: `src/lib/marca.ts`. Mudar o
+nome ou o domínio é mudar esse ficheiro — títulos das páginas, `canonical`,
+`og:url`, sitemap, barra lateral, ecrã de entrada e rodapé dos e-mails
+acompanham sozinhos.
+
+`MARCA` é o produto (QiLicenciamentos) e `CLIENTE` é quem o usa (IGESDF). Os
+dois estão separados de propósito: os documentos oficiais exportados continuam a
+sair com o timbre do IGESDF/NUCON, porque isso é um facto sobre o documento e
+não uma questão de marca.
+
+## 3. Domínio dos e-mails — ler antes de mexer
+
+O subdomínio remetente tem de estar **delegado aos nameservers da Lovable e
+verificado do lado deles**. Por isso ele *não* acompanha automaticamente o
+domínio novo: continua em `notify.igesdf-licenciamento.qidominios.tech`, que é o
+que está verificado hoje.
+
+Trocá-lo no código antes de a delegação existir faz com que **nenhum e-mail
+saia** — confirmação de conta, recuperação de senha e alertas incluídos — e a
+falha só aparece quando alguém tenta criar conta.
+
+A ordem correta é:
+
+1. Criar `notify.qilicenciamento.qidominios.com.br` e delegá-lo à Lovable.
+2. Esperar que a Lovable confirme a verificação.
+3. Só então definir `EMAIL_SENDER_DOMAIN=notify.qilicenciamento.qidominios.com.br`.
+
+Nada disto exige alterar código.
+
+## 4. Publicar
 
 O projeto está ligado ao Lovable: os commits enviados para o branch sincronizam
-e ficam disponíveis no editor, de onde se publica. A aplicação fica em
-https://igesdf-licenciamento.lovable.app
+e ficam disponíveis no editor, de onde se publica.
 
-## Rodar na sua máquina
+Para o endereço `qilicenciamento.qidominios.com.br` responder, é preciso
+apontá-lo ao projeto nas definições de domínio da Lovable. Enquanto isso não
+estiver feito, o sistema funciona na mesma no endereço `.lovable.app`; o que
+muda é que os `canonical`/`og:url` já apontam para o endereço novo.
+
+## 5. Rodar na sua máquina
 
 Precisa de Node.js 20+.
 
 ```sh
 npm install
 
-# senha só para o ambiente local; *.local está fora do Git
-printf 'ACESSO_SENHA="a-sua-senha"\n'                >  .env.local
-printf 'SUPABASE_SERVICE_ROLE_KEY="a-chave"\n'       >> .env.local
+# segredos só do ambiente local; *.local está fora do Git
+printf 'SUPABASE_SERVICE_ROLE_KEY="a-chave"\n' > .env.local
 
 npm run dev
 ```
@@ -52,34 +92,36 @@ npm run dev
 Verificações antes de publicar:
 
 ```sh
-npx tsc --noEmit    # tipos
-npm run lint        # formatação e regras
-npm run build       # build de produção
+npx tsc --noEmit                      # tipos
+npx eslint src                        # regras e formatação
+npx playwright test tests/matriz.spec.ts   # testes
+npm run build                         # build de produção
 ```
 
-## Como o acesso funciona
+## 6. Como o acesso funciona
 
-Não há cadastro nem contas individuais. Pede-se a senha única uma vez; o
-servidor confere-a e emite um cookie assinado, `HttpOnly`, válido 30 dias.
+Cada pessoa cria a sua conta (e-mail + senha), confirma o e-mail e fica
+**pendente** até o utilizador master lhe atribuir um perfil:
+
+| Perfil    | Pode                                                      |
+| --------- | --------------------------------------------------------- |
+| `leitura` | Consultar e imprimir.                                      |
+| `edicao`  | O anterior, mais criar, alterar e excluir registos.        |
+| `master`  | Tudo, mais autorizar contas, despachos e o assistente IA.  |
+
+A gestão de contas está em **Configurações → Acesso**.
 
 O acesso aos dados é feito **sempre** pelo servidor, com a service role. As
-políticas RLS continuam fechadas ao papel `anon`, portanto a chave publicável
-que viaja no navegador não consegue ler nem escrever nada diretamente na API do
-Supabase. É isso que faz a senha valer alguma coisa: sem essa separação,
-qualquer pessoa poderia falar direto com o banco e ignorar a senha.
+políticas RLS continuam fechadas aos papéis `anon` e `authenticated`, portanto a
+chave publicável que viaja no navegador não consegue ler nem escrever nada
+diretamente na API do Supabase. Tudo passa pelas funções de servidor, onde o
+perfil é conferido antes de qualquer leitura ou escrita.
 
-Consequências práticas:
+Os anexos ficam num bucket privado; o download é feito por link temporário
+gerado pelo sistema.
 
-- **Trocar `ACESSO_SENHA` desliga todas as sessões abertas na hora.** A senha é
-  a chave que assina os cookies. Útil quando alguém sai da equipe.
-- Os anexos ficam num bucket privado; o download é feito por link temporário
-  gerado pelo sistema.
-- Após 8 tentativas erradas, a origem fica bloqueada 15 minutos.
+## 7. Migrações
 
-### Sobre o comprimento da senha
-
-Uma senha de 6 dígitos numéricos tem um milhão de combinações. O limite de
-tentativas eleva bastante o custo de a adivinhar, mas ele é contado em memória:
-num ambiente com várias instâncias do servidor, cada uma conta em separado.
-Numa senha com letras e mais caracteres esta ressalva deixa de importar —
-recomendo trocar quando for conveniente. Basta alterar `ACESSO_SENHA`.
+O Lovable aplica as migrações da pasta `supabase/migrations/` ao sincronizar o
+branch. Para aplicar à mão, cole o conteúdo do ficheiro no **SQL Editor** do
+projeto Supabase e execute.

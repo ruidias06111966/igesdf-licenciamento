@@ -24,6 +24,7 @@ import { formatDate, formatDaysLeft } from "@/lib/dates";
 import { ORGAOS, orgaoLabel, parseCnae, semaforoColor, statusLabel } from "@/lib/domain";
 import { sufixoData, type ColunaCsv } from "@/lib/csv";
 import type { LicencaDashboard } from "@/lib/rows";
+import { titulo } from "@/lib/marca";
 
 export const Route = createFileRoute("/_authenticated/relatorio-mensal")({
   loader: ({ context }) => context.queryClient.ensureQueryData(licencasQuery),
@@ -31,13 +32,13 @@ export const Route = createFileRoute("/_authenticated/relatorio-mensal")({
   pendingComponent: () => <PageSkeleton cartoes={4} colunas={6} />,
   head: () => ({
     meta: [
-      { title: "Relatório mensal por órgão — IGESDF - Licenciamento" },
+      { title: titulo("Relatório mensal por órgão") },
       {
         name: "description",
         content:
           "Consolidado mensal por órgão (VISADF, CBMDF, IBRAM, CNES): contagem de licenças, prazos, vencidas e a vencer, pronto para PDF e Excel.",
       },
-      { property: "og:title", content: "Relatório mensal por órgão — IGESDF" },
+      { property: "og:title", content: titulo("Relatório mensal por órgão") },
       {
         property: "og:description",
         content: "Contagem, prazos e listas de licenças vencidas e a vencer, por órgão e por mês.",

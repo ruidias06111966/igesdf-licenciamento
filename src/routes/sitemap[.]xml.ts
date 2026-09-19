@@ -1,7 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
 import type {} from "@tanstack/react-start";
+import { url } from "@/lib/marca";
 
-const BASE_URL = "https://igesdf-licenciamento.qidominios.tech";
+const BASE_URL = url();
 
 export const Route = createFileRoute("/sitemap.xml")({
   server: {
