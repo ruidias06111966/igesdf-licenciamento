@@ -67,7 +67,6 @@ export const registarCadastro = createServerFn({ method: "POST" })
 /* Gestão de utilizadores — reservada ao master                            */
 /* ---------------------------------------------------------------------- */
 
-
 export const listarUtilizadores = createServerFn({ method: "GET" })
   .middleware([requireMaster])
   .handler(async ({ context }) => {
@@ -88,10 +87,7 @@ export const listarUtilizadores = createServerFn({ method: "GET" })
 
     const emFalta = (contas?.users ?? [])
       .filter(
-        (u) =>
-          !!u.email &&
-          !conhecidos.has(u.id) &&
-          !emailsConhecidos.has(u.email.toLowerCase()),
+        (u) => !!u.email && !conhecidos.has(u.id) && !emailsConhecidos.has(u.email.toLowerCase()),
       )
       .map((u) => ({
         user_id: u.id,
@@ -111,7 +107,6 @@ export const listarUtilizadores = createServerFn({ method: "GET" })
       (b.created_at ?? "").localeCompare(a.created_at ?? ""),
     );
   });
-
 
 const definirSchema = z.object({
   userId: z.string().uuid(),
@@ -149,7 +144,6 @@ export const definirPerfilUtilizador = createServerFn({ method: "POST" })
       { onConflict: "user_id" },
     );
     if (error) throw new Error(error.message);
-
 
     const { registarAuditoria } = await import("@/lib/auditoria.server");
     await registarAuditoria(context.supabase, {

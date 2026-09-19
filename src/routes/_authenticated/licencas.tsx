@@ -41,6 +41,7 @@ import { BotaoExportar } from "@/components/botao-exportar";
 import type { LicencaDashboard } from "@/lib/rows";
 import { cn } from "@/lib/utils";
 import { SubNav } from "@/components/sub-nav";
+import { titulo, url } from "@/lib/marca";
 
 /**
  * Filtros no URL, e não em `useState`.
@@ -84,20 +85,20 @@ export const Route = createFileRoute("/_authenticated/licencas")({
   pendingComponent: () => <PageSkeleton colunas={7} linhas={8} />,
   head: () => ({
     meta: [
-      { title: "Licenças — IGESDF - Licenciamento" },
+      { title: titulo("Licenças") },
       {
         name: "description",
         content:
           "Listagem global de licenças e alvarás por unidade, CNAE e órgão (VISADF, CBMDF, IBRAM, DF LEGAL) da rede IGESDF.",
       },
-      { property: "og:title", content: "Licenças — IGESDF - Licenciamento" },
+      { property: "og:title", content: titulo("Licenças") },
       {
         property: "og:description",
         content: "Gestão global de licenças e alvarás da rede hospitalar do IGESDF.",
       },
-      { property: "og:url", content: "https://igesdf-licenciamento.qidominios.tech/licencas" },
+      { property: "og:url", content: url("/licencas") },
     ],
-    links: [{ rel: "canonical", href: "https://igesdf-licenciamento.qidominios.tech/licencas" }],
+    links: [{ rel: "canonical", href: url("/licencas") }],
   }),
   errorComponent: ({ error, reset }) => <ErrorState error={error} onRetry={reset} />,
 });

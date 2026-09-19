@@ -20,6 +20,7 @@ import { ORGAOS, orgaoLabel, parseCnae, statusLabel } from "@/lib/domain";
 import { formatDate, formatDaysLeft, formatMonth, toIsoDate, today } from "@/lib/dates";
 import type { LicencaDashboard } from "@/lib/rows";
 import { SubNav } from "@/components/sub-nav";
+import { titulo, url } from "@/lib/marca";
 
 export const Route = createFileRoute("/_authenticated/calendario")({
   loader: ({ context }) =>
@@ -31,20 +32,20 @@ export const Route = createFileRoute("/_authenticated/calendario")({
   pendingComponent: () => <PageSkeleton linhas={8} colunas={3} />,
   head: () => ({
     meta: [
-      { title: "Vencimentos — IGESDF - Licenciamento" },
+      { title: titulo("Vencimentos") },
       {
         name: "description",
         content:
           "Calendário de vencimentos de licenças e alvarás da rede IGESDF, com semáforo por prazo e filtros por órgão e unidade.",
       },
-      { property: "og:title", content: "Calendário de vencimentos — IGESDF" },
+      { property: "og:title", content: titulo("Calendário de vencimentos") },
       {
         property: "og:description",
         content: "Datas de vencimento e renovação de licenças da rede hospitalar do IGESDF.",
       },
-      { property: "og:url", content: "https://igesdf-licenciamento.qidominios.tech/calendario" },
+      { property: "og:url", content: url("/calendario") },
     ],
-    links: [{ rel: "canonical", href: "https://igesdf-licenciamento.qidominios.tech/calendario" }],
+    links: [{ rel: "canonical", href: url("/calendario") }],
   }),
   errorComponent: ({ error, reset }) => <ErrorState error={error} onRetry={reset} />,
 });

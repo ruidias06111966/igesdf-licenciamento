@@ -18,18 +18,19 @@ import {
   SITUACOES_LEGENDA,
   type TemaExport,
 } from "@/lib/exportar/paleta";
+import { titulo } from "@/lib/marca";
 
 export const Route = createFileRoute("/_authenticated/exportacao")({
   component: Pagina,
   head: () => ({
     meta: [
-      { title: "Cores das exportações · IGESDF Licenciamento" },
+      { title: titulo("Cores das exportações") },
       {
         name: "description",
         content:
           "Configure a paleta institucional e as cores do semáforo usadas no PDF, Excel e Word das exportações do licenciamento do IGESDF.",
       },
-      { property: "og:title", content: "Cores das exportações · IGESDF Licenciamento" },
+      { property: "og:title", content: titulo("Cores das exportações") },
       {
         property: "og:description",
         content: "Paleta institucional e semáforo de validade das exportações do IGESDF.",

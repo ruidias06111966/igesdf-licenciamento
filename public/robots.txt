@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://igesdf-licenciamento.qidominios.tech/sitemap.xml
+Sitemap: https://qilicenciamento.qidominios.com.br/sitemap.xml

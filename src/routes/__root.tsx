@@ -12,6 +12,9 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { Toaster } from "@/components/ui/sonner";
+import { CLIENTE, MARCA, url } from "@/lib/marca";
+
+const DESCRICAO = `Sistema de gestão de licenciamentos, alvarás e compliance regulatório da rede hospitalar do ${CLIENTE.sigla}.`;
 
 function NotFoundComponent() {
   return (
@@ -80,28 +83,16 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { name: "google", content: "notranslate" },
-      { title: "IGESDF - Licenciamento — Gestão de Licenciamentos" },
-      {
-        name: "description",
-        content:
-          "Sistema de gestão de licenciamentos, alvarás e compliance regulatório da rede hospitalar do IGESDF.",
-      },
-      { name: "author", content: "IGESDF - Licenciamento" },
-      { property: "og:title", content: "IGESDF - Licenciamento — Gestão de Licenciamentos" },
-      {
-        property: "og:description",
-        content:
-          "Sistema de gestão de licenciamentos, alvarás e compliance regulatório da rede hospitalar do IGESDF.",
-      },
+      { title: `${MARCA.produto} — ${MARCA.descricao}` },
+      { name: "description", content: DESCRICAO },
+      { name: "author", content: MARCA.suite },
+      { property: "og:title", content: `${MARCA.produto} — ${MARCA.descricao}` },
+      { property: "og:description", content: DESCRICAO },
       { property: "og:type", content: "website" },
-      { property: "og:site_name", content: "IGESDF - Licenciamento" },
+      { property: "og:site_name", content: MARCA.produto },
       { name: "twitter:card", content: "summary_large_image" },
-      { name: "twitter:title", content: "IGESDF - Licenciamento — Gestão de Licenciamentos" },
-      {
-        name: "twitter:description",
-        content:
-          "Sistema de gestão de licenciamentos, alvarás e compliance regulatório da rede hospitalar do IGESDF.",
-      },
+      { name: "twitter:title", content: `${MARCA.produto} — ${MARCA.descricao}` },
+      { name: "twitter:description", content: DESCRICAO },
     ],
     links: [
       {
@@ -124,17 +115,15 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
           "@graph": [
             {
               "@type": "Organization",
-              name: "IGESDF — Instituto de Gestão Estratégica de Saúde do Distrito Federal",
-              url: "https://igesdf-licenciamento.qidominios.tech",
-              description:
-                "Rede pública hospitalar do Distrito Federal (hospitais e UPAs) gerida pelo IGESDF.",
+              name: `${CLIENTE.sigla} — ${CLIENTE.nome}`,
+              url: url(),
+              description: `Rede pública hospitalar do Distrito Federal (hospitais e UPAs) gerida pelo ${CLIENTE.sigla}.`,
             },
             {
               "@type": "WebSite",
-              name: "IGESDF - Licenciamento",
-              url: "https://igesdf-licenciamento.qidominios.tech",
-              description:
-                "Sistema de gestão de licenciamentos, alvarás e compliance regulatório da rede hospitalar do IGESDF.",
+              name: MARCA.produto,
+              url: url(),
+              description: DESCRICAO,
             },
           ],
         }),

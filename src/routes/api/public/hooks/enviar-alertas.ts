@@ -1,4 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { MARCA } from "@/lib/marca";
 
 type EnvioEmail = (
   payload: { apiKey: string; from: string; to: string; subject: string; html: string },
@@ -98,8 +99,8 @@ export const Route = createFileRoute("/api/public/hooks/enviar-alertas")({
           const orgao = orgaoLabel(l.orgao as never);
           const iso = l.data_vencimento ?? "—";
           const assunto = vencida
-            ? `[IGESDF - Licenciamento] Licença ${orgao} — ${nomeUnidade} está VENCIDA`
-            : `[IGESDF - Licenciamento] Licença ${orgao} — ${nomeUnidade} vence em ${dias} dias`;
+            ? `[${MARCA.produto}] Licença ${orgao} — ${nomeUnidade} está VENCIDA`
+            : `[${MARCA.produto}] Licença ${orgao} — ${nomeUnidade} vence em ${dias} dias`;
 
           const cor = vencida ? "#dc2626" : "#0ea5b7";
           const chamada = vencida
@@ -126,7 +127,7 @@ export const Route = createFileRoute("/api/public/hooks/enviar-alertas")({
               await send(
                 {
                   apiKey: process.env.LOVABLE_API_KEY!,
-                  from: "IGESDF - Licenciamento <notify@lovable.app>",
+                  from: `${MARCA.produto} <notify@lovable.app>`,
                   to,
                   subject: assunto,
                   html,

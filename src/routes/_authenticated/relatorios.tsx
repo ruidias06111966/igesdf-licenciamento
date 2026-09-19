@@ -44,6 +44,7 @@ import type { LicencaDashboard, Unidade } from "@/lib/rows";
 import { cn } from "@/lib/utils";
 import { SubNav } from "@/components/sub-nav";
 import { RelerCertificados } from "@/components/reler-certificados";
+import { titulo, url } from "@/lib/marca";
 
 export const Route = createFileRoute("/_authenticated/relatorios")({
   loader: ({ context }) =>
@@ -55,20 +56,20 @@ export const Route = createFileRoute("/_authenticated/relatorios")({
   pendingComponent: () => <PageSkeleton cartoes={6} colunas={7} />,
   head: () => ({
     meta: [
-      { title: "Relatórios — IGESDF - Licenciamento" },
+      { title: titulo("Relatórios") },
       {
         name: "description",
         content:
           "Relatórios de conformidade por unidade e por órgão, com pendências, prazos de renovação e exportação PDF para auditoria.",
       },
-      { property: "og:title", content: "Relatórios de conformidade — IGESDF" },
+      { property: "og:title", content: titulo("Relatórios de conformidade") },
       {
         property: "og:description",
         content: "Relatórios de conformidade regulatória e exportação PDF para auditoria.",
       },
-      { property: "og:url", content: "https://igesdf-licenciamento.qidominios.tech/relatorios" },
+      { property: "og:url", content: url("/relatorios") },
     ],
-    links: [{ rel: "canonical", href: "https://igesdf-licenciamento.qidominios.tech/relatorios" }],
+    links: [{ rel: "canonical", href: url("/relatorios") }],
   }),
   errorComponent: ({ error, reset }) => <ErrorState error={error} onRetry={reset} />,
 });

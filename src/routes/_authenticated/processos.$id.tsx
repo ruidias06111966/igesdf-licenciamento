@@ -36,6 +36,7 @@ import {
 } from "@/lib/processos.functions";
 import { invalidarDados, processoQuery } from "@/lib/queries";
 import type { Documento, ProcessoItem } from "@/lib/rows";
+import { titulo } from "@/lib/marca";
 
 export const Route = createFileRoute("/_authenticated/processos/$id")({
   loader: ({ context, params }) => context.queryClient.ensureQueryData(processoQuery(params.id)),
@@ -43,13 +44,13 @@ export const Route = createFileRoute("/_authenticated/processos/$id")({
   pendingComponent: () => <PageSkeleton />,
   head: () => ({
     meta: [
-      { title: "Processo SEI — IGESDF - Licenciamento" },
+      { title: titulo("Processo SEI") },
       {
         name: "description",
         content:
           "Detalhe do processo SEI: checklist de documentação exigida, anexos do processo e situação junto do órgão.",
       },
-      { property: "og:title", content: "Processo SEI — IGESDF" },
+      { property: "og:title", content: titulo("Processo SEI") },
       {
         property: "og:description",
         content: "Documentação exigida e anexos de um processo SEI de licenciamento.",

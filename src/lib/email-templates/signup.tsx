@@ -11,6 +11,7 @@ import {
   Preview,
   Text,
 } from "@react-email/components";
+import { CLIENTE, MARCA } from "@/lib/marca";
 
 interface SignupEmailProps {
   siteName: string;
@@ -51,8 +52,7 @@ export const SignupEmail = ({
           perfil (consulta, edição ou master).
         </Text>
         <Text style={footer}>
-          IGESDF - Licenciamento · Instituto de Gestão Estratégica de Saúde do Distrito Federal.
-          Mensagem automática — não responda a este e-mail.
+          {MARCA.produto} · {CLIENTE.nome}. Mensagem automática — não responda a este e-mail.
         </Text>
       </Container>
     </Body>

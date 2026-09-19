@@ -25,17 +25,18 @@ import { dataHora } from "@/lib/auditoria-labels";
 import { invalidarDados } from "@/lib/queries";
 import { mensagemErro } from "@/lib/errors";
 import { usePodeEditar } from "@/lib/perfil";
+import { titulo } from "@/lib/marca";
 
 export const Route = createFileRoute("/_authenticated/rotina")({
   head: () => ({
     meta: [
-      { title: "Correção automática — IGESDF - Licenciamento" },
+      { title: titulo("Correção automática") },
       {
         name: "description",
         content:
           "Configure o horário e o fuso da correção automática diária das licenças vencidas e execute a rotina manualmente em lote.",
       },
-      { property: "og:title", content: "Correção automática de licenças — IGESDF" },
+      { property: "og:title", content: titulo("Correção automática de licenças") },
       {
         property: "og:description",
         content: "Horário, fuso e execução manual da rotina que marca licenças vencidas.",

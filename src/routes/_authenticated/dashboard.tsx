@@ -42,6 +42,7 @@ import { formatDate, formatDaysLeft } from "@/lib/dates";
 import type { LicencaDashboard, ProximoPasso } from "@/lib/rows";
 import { cn } from "@/lib/utils";
 import { SubNav } from "@/components/sub-nav";
+import { titulo, url } from "@/lib/marca";
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   loader: ({ context }) =>
@@ -53,21 +54,21 @@ export const Route = createFileRoute("/_authenticated/dashboard")({
   pendingComponent: () => <PageSkeleton cartoes={4} colunas={6} />,
   head: () => ({
     meta: [
-      { title: "Painel — IGESDF - Licenciamento" },
+      { title: titulo("Painel") },
       {
         name: "description",
         content:
           "Painel consolidado de compliance da rede IGESDF: KPIs de licenças vigentes, vencidas, críticas e próximos passos por órgão.",
       },
-      { property: "og:title", content: "Painel — IGESDF - Licenciamento" },
+      { property: "og:title", content: titulo("Painel") },
       {
         property: "og:description",
         content:
           "Visão consolidada de licenças, vencimentos e próximos passos da rede hospitalar do IGESDF.",
       },
-      { property: "og:url", content: "https://igesdf-licenciamento.qidominios.tech/dashboard" },
+      { property: "og:url", content: url("/dashboard") },
     ],
-    links: [{ rel: "canonical", href: "https://igesdf-licenciamento.qidominios.tech/dashboard" }],
+    links: [{ rel: "canonical", href: url("/dashboard") }],
   }),
   errorComponent: ({ error, reset }) => <ErrorState error={error} onRetry={reset} />,
 });

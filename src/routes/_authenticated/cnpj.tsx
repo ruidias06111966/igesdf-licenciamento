@@ -33,28 +33,29 @@ import {
   titularDe,
   type CategoriaCnpj,
 } from "@/lib/cnpj-unidades";
+import { titulo, url } from "@/lib/marca";
 
 export const Route = createFileRoute("/_authenticated/cnpj")({
   loader: ({ context }) => context.queryClient.ensureQueryData(unidadesQuery),
   component: CnpjPage,
   head: () => ({
     meta: [
-      { title: "Cadastro CNPJ — IGESDF - Licenciamento" },
+      { title: titulo("Cadastro CNPJ") },
       {
         name: "description",
         content:
           "Quadro de consulta com os CNPJ do IGESDF e da SES-DF, número CNES e código SOULMV de cada unidade, com cópia rápida e exportação.",
       },
-      { property: "og:title", content: "Cadastro CNPJ das unidades — IGESDF" },
+      { property: "og:title", content: titulo("Cadastro CNPJ das unidades") },
       {
         property: "og:description",
         content: "CNPJ, CNES e código MV das unidades do IGESDF, com busca, cópia e exportação.",
       },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary" },
-      { property: "og:url", content: "https://igesdf-licenciamento.qidominios.tech/cnpj" },
+      { property: "og:url", content: url("/cnpj") },
     ],
-    links: [{ rel: "canonical", href: "https://igesdf-licenciamento.qidominios.tech/cnpj" }],
+    links: [{ rel: "canonical", href: url("/cnpj") }],
   }),
   errorComponent: ({ error, reset }) => <ErrorState error={error} onRetry={reset} />,
 });

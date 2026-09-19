@@ -42,17 +42,18 @@ import { mensagemErro } from "@/lib/errors";
 import { usePodeEditar } from "@/lib/perfil";
 import { invalidarDados } from "@/lib/queries";
 import type { ColunaCsv } from "@/lib/csv";
+import { titulo } from "@/lib/marca";
 
 export const Route = createFileRoute("/_authenticated/validacao")({
   head: () => ({
     meta: [
-      { title: "Validação do sistema — IGESDF - Licenciamento" },
+      { title: titulo("Validação do sistema") },
       {
         name: "description",
         content:
           "Conferência de coerência dos dados de licenciamento do IGESDF, com correção direta das pendências, histórico das execuções e relatório em PDF ou CSV.",
       },
-      { property: "og:title", content: "Validação do sistema — IGESDF - Licenciamento" },
+      { property: "og:title", content: titulo("Validação do sistema") },
       {
         property: "og:description",
         content: "Pendências de dados, ações de correção e relatório de validação.",

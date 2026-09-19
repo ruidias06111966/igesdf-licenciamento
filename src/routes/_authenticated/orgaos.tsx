@@ -18,6 +18,7 @@ import { deleteOrgao, upsertOrgao } from "@/lib/orgaos.functions";
 import { invalidarDados, orgaosQuery } from "@/lib/queries";
 import { mensagemErro } from "@/lib/errors";
 import type { Orgao_ } from "@/lib/rows";
+import { titulo, url } from "@/lib/marca";
 
 export const Route = createFileRoute("/_authenticated/orgaos")({
   loader: ({ context }) => context.queryClient.ensureQueryData(orgaosQuery),
@@ -25,20 +26,20 @@ export const Route = createFileRoute("/_authenticated/orgaos")({
   pendingComponent: () => <CardGridSkeleton itens={6} />,
   head: () => ({
     meta: [
-      { title: "Órgãos — IGESDF - Licenciamento" },
+      { title: titulo("Órgãos") },
       {
         name: "description",
         content:
           "Cadastro dos órgãos licenciadores utilizados pelo IGESDF: DF LEGAL, SUSDEC, CBMDF, IBRAM, VISADF, PCDF, SEAGRI e SEEDF.",
       },
-      { property: "og:title", content: "Órgãos licenciadores — IGESDF" },
+      { property: "og:title", content: titulo("Órgãos licenciadores") },
       {
         property: "og:description",
         content: "Órgãos oficiais envolvidos no licenciamento das unidades do IGESDF.",
       },
-      { property: "og:url", content: "https://igesdf-licenciamento.qidominios.tech/orgaos" },
+      { property: "og:url", content: url("/orgaos") },
     ],
-    links: [{ rel: "canonical", href: "https://igesdf-licenciamento.qidominios.tech/orgaos" }],
+    links: [{ rel: "canonical", href: url("/orgaos") }],
   }),
   errorComponent: ({ error, reset }) => <ErrorState error={error} onRetry={reset} />,
 });

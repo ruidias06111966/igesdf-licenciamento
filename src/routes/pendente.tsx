@@ -5,18 +5,19 @@ import { supabase } from "@/integrations/supabase/client";
 import { usePerfil } from "@/lib/perfil";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { MARCA, titulo } from "@/lib/marca";
 
 export const Route = createFileRoute("/pendente")({
   component: Pagina,
   head: () => ({
     meta: [
-      { title: "Acesso pendente — IGESDF - Licenciamento" },
+      { title: titulo("Acesso pendente") },
       {
         name: "description",
         content:
           "A sua conta aguarda autorização do utilizador master do sistema de licenciamento do IGESDF.",
       },
-      { property: "og:title", content: "Acesso pendente — IGESDF - Licenciamento" },
+      { property: "og:title", content: titulo("Acesso pendente") },
       {
         property: "og:description",
         content: "A conta aguarda autorização do utilizador master.",
@@ -46,7 +47,7 @@ function Pagina() {
         <CardHeader>
           <div className="mb-2 flex items-center gap-2">
             <ShieldCheck className="size-6 text-primary" aria-hidden="true" />
-            <span className="font-semibold">IGESDF - Licenciamento</span>
+            <span className="font-semibold">{MARCA.produto}</span>
           </div>
           <CardTitle className="flex items-center gap-2">
             <Clock className="size-5" aria-hidden="true" />

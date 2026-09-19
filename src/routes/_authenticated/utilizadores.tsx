@@ -17,18 +17,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { titulo } from "@/lib/marca";
 
 export const Route = createFileRoute("/_authenticated/utilizadores")({
   component: Pagina,
   head: () => ({
     meta: [
-      { title: "Acesso · IGESDF Licenciamento" },
+      { title: titulo("Acesso") },
       {
         name: "description",
         content:
           "Autorização de contas do sistema de licenciamento do IGESDF: perfis de consulta, edição e master, com suspensão de acesso.",
       },
-      { property: "og:title", content: "Acesso · IGESDF Licenciamento" },
+      { property: "og:title", content: titulo("Acesso") },
       {
         property: "og:description",
         content: "Quem entra no sistema e com que perfil — autorizado pelo master.",

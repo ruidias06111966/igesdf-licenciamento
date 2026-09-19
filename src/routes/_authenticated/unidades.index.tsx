@@ -22,6 +22,7 @@ import { invalidarDados, unidadesQuery } from "@/lib/queries";
 import { TIPO_UNIDADE_LABEL, situacaoEdificacaoLabel, tipoUnidadeLabel } from "@/lib/domain";
 import type { Unidade } from "@/lib/rows";
 import { SubNav } from "@/components/sub-nav";
+import { titulo, url } from "@/lib/marca";
 
 export const Route = createFileRoute("/_authenticated/unidades/")({
   loader: ({ context }) => context.queryClient.ensureQueryData(unidadesQuery),
@@ -29,20 +30,20 @@ export const Route = createFileRoute("/_authenticated/unidades/")({
   pendingComponent: () => <CardGridSkeleton itens={6} />,
   head: () => ({
     meta: [
-      { title: "Unidades — IGESDF - Licenciamento" },
+      { title: titulo("Unidades") },
       {
         name: "description",
         content:
           "Cadastro das unidades hospitalares e UPAs do IGESDF, com CNPJ, CF/DF, processo SEI e situação de licenciamento por órgão.",
       },
-      { property: "og:title", content: "Unidades — IGESDF - Licenciamento" },
+      { property: "og:title", content: titulo("Unidades") },
       {
         property: "og:description",
         content: "Hospitais e UPAs da rede IGESDF e o respectivo estado de licenciamento.",
       },
-      { property: "og:url", content: "https://igesdf-licenciamento.qidominios.tech/unidades" },
+      { property: "og:url", content: url("/unidades") },
     ],
-    links: [{ rel: "canonical", href: "https://igesdf-licenciamento.qidominios.tech/unidades" }],
+    links: [{ rel: "canonical", href: url("/unidades") }],
   }),
   errorComponent: ({ error, reset }) => <ErrorState error={error} onRetry={reset} />,
 });

@@ -1,25 +1,19 @@
 import * as React from "react";
 import { render } from "@react-email/render";
 import { EmailAPIError, sendLovableEmail } from "@lovable.dev/email-js";
-import { TEMPLATES } from "./registry";
+import { TEMPLATES, type DadosTemplate } from "./registry";
+import { FROM_DOMAIN, SENDER_DOMAIN } from "./dominio";
+import { MARCA } from "@/lib/marca";
 
 // Server-only: reads LOVABLE_API_KEY. Never import from client components.
 
-// Configuration baked in at scaffold time
-const SITE_NAME = "igesdf-licenciamento";
-// SENDER_DOMAIN is the verified sender subdomain FQDN (e.g., "notify.example.com").
-// It MUST match the subdomain delegated to Lovable's nameservers. NEVER use the root domain.
-const SENDER_DOMAIN = "notify.igesdf-licenciamento.qidominios.tech";
-// FROM_DOMAIN is the domain shown in the From: header (e.g., "example.com").
-// Can be the root domain when display_from_root is enabled — this is cosmetic only.
-const FROM_DOMAIN = "notify.igesdf-licenciamento.qidominios.tech";
+const SITE_NAME = MARCA.produto;
 
 export type SendTemplateEmailResult =
-  | { sent: true }
-  | { sent: false; reason: "recipient_suppressed" };
+  { sent: true } | { sent: false; reason: "recipient_suppressed" };
 
 export interface SendTemplateEmailOptions {
-  templateData?: Record<string, any>;
+  templateData?: DadosTemplate;
   /** Dedupes retries of the same logical send; defaults to a random UUID (no dedupe). */
   idempotencyKey?: string;
   replyTo?: string;

@@ -6,6 +6,9 @@
 import { corSituacao, MARCA, SITUACOES_LEGENDA, corPadrao } from "@/lib/exportar/paleta";
 import { linhasMetadados, type MetaExport } from "@/lib/exportar/metadados";
 import logoIgesdf from "@/assets/igesdf-logo.jpg.asset.json";
+// `MARCA` daqui são as cores da marca; o nome do produto vem com outro nome
+// para não colidir com elas.
+import { MARCA as PRODUTO } from "@/lib/marca";
 
 /**
  * O documento é aberto noutra janela/iframe, por isso o endereço do logótipo
@@ -61,7 +64,7 @@ function capaHtml(doc: DocumentoTabela) {
     <tr><th>Registos</th><td>${doc.linhas.length}</td></tr>
   </tbody></table>
   ${legendaHtml()}
-  <p class="nota">Documento gerado pelo sistema IGESDF — Licenciamento para instrução processual no SEI.</p>
+  <p class="nota">Documento gerado pelo sistema ${esc(PRODUTO.produto)} para instrução processual no SEI.</p>
 </section>`;
 }
 

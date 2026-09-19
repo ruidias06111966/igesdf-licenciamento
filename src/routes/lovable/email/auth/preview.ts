@@ -7,19 +7,21 @@ import { MagicLinkEmail } from "@/lib/email-templates/magic-link";
 import { RecoveryEmail } from "@/lib/email-templates/recovery";
 import { EmailChangeEmail } from "@/lib/email-templates/email-change";
 import { ReauthenticationEmail } from "@/lib/email-templates/reauthentication";
+import { MARCA } from "@/lib/marca";
+import type { ComponenteTemplate, DadosTemplate } from "@/lib/email-templates/registry";
 
-const EMAIL_TEMPLATES: Record<string, React.ComponentType<any>> = {
+// Cada template tem as suas próprias props; aqui só interessa poder renderizá-lo
+// a partir dos dados de exemplo, daí a conversão única para o tipo do registo.
+const EMAIL_TEMPLATES = {
   signup: SignupEmail,
   invite: InviteEmail,
   magiclink: MagicLinkEmail,
   recovery: RecoveryEmail,
   email_change: EmailChangeEmail,
   reauthentication: ReauthenticationEmail,
-};
+} as unknown as Record<string, ComponenteTemplate>;
 
-// Configuration
-const SITE_NAME = "IGESDF - Licenciamento";
-const ROOT_DOMAIN = "igesdf-licenciamento.qidominios.tech";
+const SITE_NAME = MARCA.produto;
 
 // Sample data for preview mode ONLY (not used in actual email sending).
 // URLs are baked in at scaffold time from the project's real data.
@@ -28,7 +30,7 @@ const ROOT_DOMAIN = "igesdf-licenciamento.qidominios.tech";
 // even if the project's domain has changed since the template was scaffolded.
 const SAMPLE_PROJECT_URL = "https://igesdf-licenciamento.lovable.app";
 const SAMPLE_EMAIL = "user@example.test";
-const SAMPLE_DATA: Record<string, object> = {
+const SAMPLE_DATA: Record<string, DadosTemplate> = {
   signup: {
     siteName: SITE_NAME,
     siteUrl: SAMPLE_PROJECT_URL,

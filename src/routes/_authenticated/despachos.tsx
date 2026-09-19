@@ -36,6 +36,7 @@ import {
 } from "@/lib/despacho/nucleo";
 import { montarDespachoUnidade, type CamposDespacho } from "@/lib/despacho/unidade";
 import { AcoesCopiar, FolhaDespacho, markdownDe } from "@/lib/despacho/folha";
+import { titulo } from "@/lib/marca";
 
 export const Route = createFileRoute("/_authenticated/despachos")({
   loader: ({ context }) => context.queryClient.ensureQueryData(unidadesQuery),
@@ -43,13 +44,13 @@ export const Route = createFileRoute("/_authenticated/despachos")({
   errorComponent: ({ error, reset }) => <ErrorState error={error} onRetry={reset} />,
   head: () => ({
     meta: [
-      { title: "Despachos — IGESDF - Licenciamento" },
+      { title: titulo("Despachos") },
       {
         name: "description",
         content:
           "Gerador de despachos de licenciamento por unidade, com CNAEs, situação por órgão e validades vindas da base.",
       },
-      { property: "og:title", content: "Despachos de licenciamento — IGESDF" },
+      { property: "og:title", content: titulo("Despachos de licenciamento") },
       {
         property: "og:description",
         content: "Monta o despacho da unidade a partir das licenças registadas no sistema.",
@@ -62,7 +63,7 @@ export const Route = createFileRoute("/_authenticated/despachos")({
 
 const ASSINANTES_PADRAO = [
   { nome: "Rui José Lopes Dias", cargo: "Núcleo de Conformidade — NUCON/IGESDF" },
-  { nome: "Paulo Ricardo Oliveira Lima", cargo: "Gerência de Conformidade — IGESDF" },
+  { nome: "Paulo Ricardo Oliveira Lima", cargo: titulo("Gerência de Conformidade") },
 ];
 
 function DespachosPage() {
